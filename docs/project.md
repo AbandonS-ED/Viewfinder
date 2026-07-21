@@ -1,6 +1,6 @@
 # project.md — 项目状态
 
-> Viewfinder (取景器) 的当前状态快照。**架构 / 验收标准** 见 [`prd.md`](./prd.md) 和 [`arc.md`](./arc.md)。
+> Viewfinder (取景器) 的当前状态快照。**架构 / 验收标准** 见 [`prd.md`](prd.md) 和 [`arc.md`](arc.md)。
 
 ---
 
@@ -124,9 +124,9 @@
 
 - 仓库：https://github.com/AbandonS-ED/Viewfinder
 - 源 iOS 项目 (参考用)：`D:\桌面\Nikon_connect\` (上级目录)
-- 实施详细方案：[`Viewfinder方案.md`](./Viewfinder方案.md)
-- PRD：[`prd.md`](./prd.md)
-- 架构：[`arc.md`](./arc.md)
+- 实施详细方案：[`Viewfinder方案.md`](Viewfinder方案.md)
+- PRD：[`prd.md`](prd.md)
+- 架构：[`arc.md`](arc.md)
 
 ---
 

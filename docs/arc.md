@@ -1,6 +1,6 @@
 # arc.md — 架构文档
 
-> Viewfinder (取景器) 的架构层信息。**做什么 / 验收标准**见 [`prd.md`](./prd.md)；**实施细节 / Phase 拆分 / 源文件映射**见 [`Viewfinder方案.md`](./Viewfinder方案.md)。
+> Viewfinder (取景器) 的架构层信息。**做什么 / 验收标准**见 [`prd.md`](prd.md)；**实施细节 / Phase 拆分 / 源文件映射**见 [`Viewfinder方案.md`](Viewfinder方案.md)。
 
 ---
 
@@ -194,9 +194,9 @@ lib/
 
 ## 9. 关联文档
 
-- **做什么 / 验收标准** → [`prd.md`](./prd.md)
-- **当前进度 / 状态** → [`project.md`](./project.md)
-- **实施细节 / Phase 拆分** → [`Viewfinder方案.md`](./Viewfinder方案.md)
+- **做什么 / 验收标准** → [`prd.md`](prd.md)
+- **当前进度 / 状态** → [`project.md`](project.md)
+- **实施细节 / Phase 拆分** → [`Viewfinder方案.md`](Viewfinder方案.md)
 
 ---
 

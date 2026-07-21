@@ -2,7 +2,7 @@
 
 > **Viewfinder (取景器)**：通过 Wi-Fi 热点连接相机 (首期 Nikon)，浏览照片列表并批量下载到手机的 Flutter 跨端 app。
 >
-> 本文档只回答"做什么、做到什么程度算完成"。**怎么做**详见 [`arc.md`](./arc.md) 和 [`Viewfinder方案.md`](./Viewfinder方案.md)。
+> 本文档只回答"做什么、做到什么程度算完成"。**怎么做**详见 [`arc.md`](arc.md) 和 [`Viewfinder方案.md`](Viewfinder方案.md)。
 
 ---
 
@@ -171,9 +171,9 @@
 
 ## 7. 关联文档
 
-- **架构与模块划分** → [`arc.md`](./arc.md)
-- **当前状态 / 进度看板** → [`project.md`](./project.md)
-- **实施细节 (Phase 拆分、风险、源文件映射)** → [`Viewfinder方案.md`](./Viewfinder方案.md)
+- **架构与模块划分** → [`arc.md`](arc.md)
+- **当前状态 / 进度看板** → [`project.md`](project.md)
+- **实施细节 (Phase 拆分、风险、源文件映射)** → [`Viewfinder方案.md`](Viewfinder方案.md)
 
 ---
 
