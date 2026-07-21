@@ -62,7 +62,7 @@
 ```
 lib/
 ├── main.dart, app.dart
-├── domain/         ← 17 个 freezed data class (CameraConnectionConfig / PhotoAsset / DownloadJob / 等)
+├── domain/         ← 14 个 freezed model + 1 个特殊 (DownloadActivityAttributes)
 ├── protocol/       ← PTP/IP 实现
 │   ├── primitives/      ← 命令/响应编解码
 │   ├── transport/       ← socket 长连接
@@ -78,7 +78,7 @@ lib/
 
 ## 4. 数据模型 (Domain 层)
 
-17 个 freezed class，对应原 iOS `Domain/` 目录下 17 个 `.swift` 文件。
+14 个 freezed model + 1 个特殊 `DownloadActivityAttributes`，对应原 iOS `Domain/` 目录下 15 个 `.swift` 文件（其中 `DownloadActivityAttributes` 由 app + iOS widget 双 target 共用，纯 Dart 项目无 widget 故独立处理）。
 
 | Class | 角色 | 关键字段 |
 |---|---|---|
@@ -96,6 +96,7 @@ lib/
 | `LogEntry` | 日志条目 | timestamp, level, message |
 | `AlertContext` | 错误提示上下文 | title, message, severity |
 | `CameraAppError` | 错误枚举 | (networkFailure / protocolError / storageFull / 等) |
+| `DownloadActivityAttributes` *(特殊)* | 进度通知 attributes (原 iOS 供 widget + app 共用) | queueID, totalItemCount, ContentState |
 
 **原则**：
 - 所有 class `final` + immutable (`@immutable` 来自 freezed)
@@ -165,7 +166,7 @@ lib/
 | 原 iOS 文件 | Flutter 落点 |
 |---|---|
 | `App/NikonConnectApp.swift` | `lib/main.dart` + `lib/app.dart` |
-| `Domain/*.swift` (17 个) | `lib/domain/*.dart` (freezed) |
+| `Domain/*.swift` (15 个 = 14 普通 + 1 特殊) | `lib/domain/*.dart` (freezed) |
 | `Services/PTPIP*.swift` | `lib/protocol/**/*.dart` |
 | `Services/ExperimentalNikonTransport.swift` | `lib/protocol/experimental_nikon_transport.dart` |
 | `Services/CameraTransport*.swift` | `lib/protocol/camera_transport.dart` |

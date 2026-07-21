@@ -113,7 +113,7 @@
 
 - 单测目录：`test/`，**镜像** `lib/` 结构
 - 集成测试：`integration_test/`
-- 命名：`describe('X', () { it('does Y', () {...}); });`（用 `package:test` 的标准）
+- 命名：用 Dart `package:test` / `package:flutter_test` 标准——`group('X', () { test('does Y', () {...}); });`
 - 每个 PR / commit 前必须 `flutter test` 全绿
 
 ### 6.3 测试不准做的事

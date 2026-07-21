@@ -74,7 +74,7 @@
 | `ActivityKit` Live Activity | ❌ 不实现 | Android 无对应，跨端统一降级 |
 | `UIImpactFeedbackGenerator` | `HapticFeedback.lightImpact()` 等 | API 较粗，足够用 |
 | `Local Network` 权限弹窗 | iOS: `NSLocalNetworkUsageDescription`；Android: `ACCESS_WIFI_STATE` + `CHANGE_WIFI_MULTICAST_STATE` | iOS 一句话；Android 静默 |
-| 后台下载 | iOS `URLSession.background`；Android Foreground Service (`dataSync` type, Android 14+) | Flutter 用 `flutter_background_service` 封装，**两边行为差异需对齐** |
+| 后台下载 | iOS **当前未实现** (Network.framework 裸 TCP 不支持 background session，需另设计机制)；Android Foreground Service (`dataSync` type, Android 14+) | Android 用 `flutter_background_service` 封装；**iOS 端 Phase 3 待评估** |
 | 相机热点网络监测 | `connectivity_plus` + `network_info_plus` | 监听断线重试 |
 | XcodeGen / xcodebuild | `flutter build ios / apk / appbundle` | Flutter 自带 |
 
@@ -111,7 +111,7 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   │   ├── ptpip_data_block.dart
 │   │   │   └── ptpip_object_info.dart
 │   │   ├── transport/               # 长连接 + socket
-│   │   │   ├── ptpip_socket.dart           # expect/actual: dart:io vs mock
+│   │   │   ├── ptpip_socket.dart           # abstract class + 实现 (IoPtpipSocket / FakePtpipSocket)
 │   │   │   ├── ptpip_connection.dart       # 心跳 / 重连
 │   │   │   └── connection_state.dart
 │   │   ├── session/                 # 会话层 (对应 PTPIPSession+*.swift)
@@ -119,8 +119,8 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   │   ├── session_lifecycle.dart      # OpenSession / CloseSession
 │   │   │   ├── asset_traversal.dart        # GetObjectHandles / GetObjectInfo
 │   │   │   └── transfers.dart              # GetObject / 数据流
-│   │   └── camera_transport.dart           # 品牌抽象 (对应 CameraTransport)
-│   │   └── experimental_nikon_transport.dart
+│   ├── camera_transport.dart           # 品牌抽象 (对应 CameraTransport)
+│   └── experimental_nikon_transport.dart
 │   │
 │   ├── services/                    # 应用级服务
 │   │   ├── preferences_store.dart   # shared_preferences 包装
@@ -215,7 +215,7 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 |---|---|
 | `withUnsafeBytes { Data(buffer) }` | `ByteData` + `Uint8List`，小端序用 `ByteData.setUint32(0, v, Endian.little)` |
 | `async/await` over `Network.NWConnection` continuation | `Stream` / `Completer` over `Socket` 的 `listen` 回调 |
-| `actor`-like 互斥 (Swift 没有 actor 关键字时手写 lock) | `dart:isolate` 不需要；用单 `Completer` + 串行 `await` 链即可，async 调度天然互斥 |
+| 原 Swift 用 `actor` 关键字 (Swift 5.5+) 保证串行访问 | Dart 无需 `actor`；用单 `Completer` + 串行 `await` 链即可，async 调度天然互斥 |
 | 错误模型 `CameraAppError` enum | Dart `Sealed class` (3.0+) + `freezed` |
 | `Sendable` 标注 | Dart 顶层函数 / immutable class 自动 send-safe；无需标注 |
 
@@ -281,10 +281,12 @@ class FakePtpipSocket implements PtpipSocket {
 ### 7.3 进度通知统一方案 (替代 Live Activity)
 
 ```
-iOS:    NotificationCenter + UNUserNotificationCenter (本地通知，含 progress bar)
+iOS:    UNUserNotificationCenter 本地通知 (静态文字通知，**不支持 progress bar** — 用户需打开 app 看进度)
 Android: Foreground Service + NotificationCompat.Builder.setProgress()
         + 通知点击 → deep link 回 app 当前下载页
 ```
+
+> ⚠️ **iOS 用户进度体验降级**：原 iOS 用 Live Activity 显示锁屏进度条，但 Live Activity Android 无对应且本项目不实现，所以 iOS 端退化为静态文字通知。这一降级在 `prd.md` §3 F3 已标注。
 
 `flutter_local_notifications` 包双端都能用，但 Android 端进度条需要 service 保活 — 用 `flutter_background_service` 包装。
 
@@ -296,7 +298,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 
 ### Phase 0 — 工程骨架 (1-2 天)
 
-- `flutter create nikon_connect --org com.yaoyihan --platforms=ios,android`
+- `flutter create viewfinder --org com.yaoyihan --platforms=ios,android`
 - 配置 `pubspec.yaml`：Riverpod / freezed / connectivity_plus / flutter_local_notifications / flutter_background_service / gal
 - 配置 `analysis_options.yaml` (启用 `flutter_lints` + `public_member_api_docs`)
 - 落地 `lib/domain/` 全部 freezed model 文件 (机械翻译原 17 个 Swift 文件)
@@ -305,7 +307,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 ### Phase 1 — 协议层 + Dart 协议层单测 (5-7 天) — **最关键**
 
 - 实现 `lib/protocol/primitives/` 全部编解码
-- 实现 `lib/protocol/transport/ptpip_connection.dart` (含 `expect/actual` 拆 socket 接口)
+- 实现 `lib/protocol/transport/ptpip_connection.dart`（定义 `PtpipSocket` 抽象类 + `IoPtpipSocket`/`FakePtpipSocket` 两种实现）
 - 实现 `lib/protocol/session/` 三块 (lifecycle / traversal / transfers)
 - 实现 `ExperimentalNikonTransport`
 - 翻写 `Tests/PTPIPSessionAssetTraversalTests.swift` 为 Dart 版 (用 fake socket server)
@@ -391,7 +393,7 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | `App/CameraSessionCoordinator.swift` | `lib/services/wifi_watcher.dart` + Riverpod 协调 |
 | `App/RootTabView.swift` | `lib/app.dart` 的 `NavigationBar` |
 | `App/StatusBadgeView.swift` | `lib/features/shared/status_badge.dart` |
-| `Domain/*.swift` (17 个) | `lib/domain/*.dart` (freezed) |
+| `Domain/*.swift` (15 个 = 14 普通 + 1 特殊) | `lib/domain/*.dart` (freezed) |
 | `Features/ConnectionSetup/*` | `lib/features/connection_setup/*` |
 | `Features/PhotoBrowser/*` | `lib/features/photo_browser/*` |
 | `Features/Downloads/*` | `lib/features/downloads/*` |
@@ -415,6 +417,27 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | `Services/PTPIPTCPConnection.swift` | `lib/protocol/transport/ptpip_connection.dart` |
 | `DownloadActivityWidget/*` | ❌ 删除 (跨端不实现 Live Activity) |
 | `Tests/*.swift` (7 个) | `test/**/*.dart` (重写为 Dart 单测) |
+
+### 11.1 补充映射 (嵌套类型 + 接口协议)
+
+iOS 的 Swift 单文件常包含多个类型，且 Service 实现都有对应接口协议。映射补全：
+
+| 原 iOS 内容 | 所在文件 | Flutter 端落点 |
+|---|---|---|
+| `PhotoAssetKind` enum (raw/jpeg/png/movie) | `Domain/PhotoAsset.swift` | `lib/domain/photo_asset.dart` 同文件 |
+| `PhotoAssetThumbnailInfo` struct | `Domain/PhotoAsset.swift` | 同上 |
+| `PhotoAssetPage` struct (分页返回) | `Domain/PhotoAsset.swift` | 同上 |
+| `CameraCapability` enum | `Domain/CameraSession.swift` | `lib/domain/camera_session.dart` 同文件 |
+| `DownloadJobStatus` enum (queued/running/.../failed) | `Domain/DownloadJob.swift` | `lib/domain/download_job.dart` 同文件 |
+| `DownloadQueueStatus` enum | `Domain/DownloadQueueState.swift` | 同文件 |
+| `DownloadThroughputTransferMode` enum (fullObject/partialObject/unknown) | `Domain/DownloadThroughputDiagnostics.swift` | 同文件 |
+| `DownloadTransferProgress` struct (进度回调类型) | `Services/CameraTransport.swift` | `lib/protocol/camera_transport.dart` 同文件 |
+| `DownloadAssetPrioritizer` enum (JPEG 优先排序) | `Features/Downloads/DownloadManagerViewModel.swift` | `lib/services/download_asset_prioritizer.dart` 单独抽出 |
+| `CameraTransportFactoryProtocol` (工厂接口) | `Services/CameraTransportFactoryProtocol.swift` | `lib/protocol/camera_transport_factory.dart` (abstract class) |
+| `AppPreferencesStoring` (接口) | `Services/AppPreferencesStoring.swift` | `lib/services/preferences_storing.dart` (abstract class) |
+| `DownloadStoring` (接口) | `Services/DownloadStoring.swift` | `lib/services/download_storing.dart` (abstract class) |
+| `AssetThumbnailServing` (接口) | `Services/AssetThumbnailServing.swift` | `lib/services/asset_thumbnail_serving.dart` (abstract class) |
+| `DownloadActivityAttributes` (特殊) | `Domain/DownloadActivityAttributes.swift` | `lib/services/download_progress_attributes.dart` (iOS widget 不再需要，独立成文件) |
 
 ---
 
