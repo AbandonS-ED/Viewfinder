@@ -289,7 +289,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
         + 通知点击 → deep link 回 app 当前下载页
 ```
 
-> ⚠️ **iOS 用户进度体验降级**：原 iOS 用 Live Activity 显示锁屏进度条，但 Live Activity Android 无对应且本项目不实现，所以 iOS 端退化为静态文字通知。这一降级在 `prd.md` §3 F3 已标注。
+> ⚠️ **iOS 用户进度体验降级**：原 iOS 用 Live Activity 显示锁屏进度条，但 Live Activity Android 无对应且本项目不实现，所以 iOS 端退化为静态文字通知。这一降级在 `产品需求.md` §3 F3 已标注。
 
 `flutter_local_notifications` 包双端都能用，但 Android 端进度条需要 service 保活 — 用 `flutter_background_service` 包装。
 

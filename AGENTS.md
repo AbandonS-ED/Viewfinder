@@ -2,7 +2,7 @@
 
 > 给所有给 Viewfinder 项目帮忙的 AI 看的规矩。一句话：**听人话，按规矩办，做小做精**。
 >
-> 架构与需求背景见 [`docs/arc.md`](./docs/arc.md) 和 [`docs/prd.md`](./docs/prd.md)。当前状态见 [`docs/project.md`](./docs/project.md)。Phase 拆解见 [`docs/Viewfinder方案.md`](./docs/Viewfinder方案.md)。
+> 架构与需求背景见 [`docs/架构.md`](./docs/架构.md) 和 [`docs/产品需求.md`](./docs/产品需求.md)。当前状态见 [`docs/项目状态.md`](./docs/项目状态.md)。Phase 拆解见 [`docs/Viewfinder方案.md`](./docs/Viewfinder方案.md)。
 
 ---
 
@@ -222,9 +222,9 @@ reference/
 
 ## 11. 关联文档
 
-- 做什么：[`docs/prd.md`](./docs/prd.md)
-- 怎么搭：[`docs/arc.md`](./docs/arc.md)
-- 现在在哪：[`docs/project.md`](./docs/project.md)
+- 做什么：[`docs/产品需求.md`](./docs/产品需求.md)
+- 怎么搭：[`docs/架构.md`](./docs/架构.md)
+- 现在在哪：[`docs/项目状态.md`](./docs/项目状态.md)
 - 实施细节：[`docs/Viewfinder方案.md`](./docs/Viewfinder方案.md)
 - 参考样板：`reference/`（Phase 1 后开始填充）
 
