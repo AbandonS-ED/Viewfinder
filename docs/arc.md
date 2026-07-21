@@ -128,7 +128,7 @@ lib/
 
 ### 5.3 异步模型
 
-- `PtpipSocket` 是 `expect/actual` 拆出的接口
+- `PtpipSocket` 是 abstract class，定义接口；IoPtpipSocket / FakePtpipSocket 是两种实现
   - **iOS**：`dart:io.Socket` 直接 BSD socket
   - **Android**：`dart:io.Socket` (同)
   - **测试**：fake 实现 (内存 buffer / loopback)

@@ -119,8 +119,8 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   │   ├── session_lifecycle.dart      # OpenSession / CloseSession
 │   │   │   ├── asset_traversal.dart        # GetObjectHandles / GetObjectInfo
 │   │   │   └── transfers.dart              # GetObject / 数据流
-│   ├── camera_transport.dart           # 品牌抽象 (对应 CameraTransport)
-│   └── experimental_nikon_transport.dart
+│   │   ├── camera_transport.dart           # 品牌抽象 (对应 CameraTransport)
+│   │   └── experimental_nikon_transport.dart
 │   │
 │   ├── services/                    # 应用级服务
 │   │   ├── preferences_store.dart   # shared_preferences 包装
@@ -167,8 +167,10 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   └── transfers_test.dart               # fake socket server
 │   ├── services/
 │   │   ├── preferences_store_test.dart
+│   │   ├── download_store_test.dart
 │   │   ├── download_queue_test.dart
-│   │   └── download_throughput_diagnostics_test.dart
+│   │   ├── download_throughput_diagnostics_test.dart
+│   │   └── asset_thumbnail_service_test.dart
 │   └── helpers/
 │       └── fake_ptpip_socket.dart            # 替代 127.0.0.1 测试模式
 │
@@ -301,7 +303,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 - `flutter create viewfinder --org com.yaoyihan --platforms=ios,android`
 - 配置 `pubspec.yaml`：Riverpod / freezed / connectivity_plus / flutter_local_notifications / flutter_background_service / gal
 - 配置 `analysis_options.yaml` (启用 `flutter_lints` + `public_member_api_docs`)
-- 落地 `lib/domain/` 全部 freezed model 文件 (机械翻译原 17 个 Swift 文件)
+- 落地 `lib/domain/` 全部 freezed model 文件 (机械翻译原 15 个 Swift 文件中的 14 个；DownloadActivityAttributes 单独成文件处理)
 - ✅ 验收：`flutter analyze` 零警告；`dart run build_runner build` 生成成功
 
 ### Phase 1 — 协议层 + Dart 协议层单测 (5-7 天) — **最关键**
@@ -445,7 +447,7 @@ iOS 的 Swift 单文件常包含多个类型，且 Service 实现都有对应接
 
 如果你接受这个方案，建议执行顺序：
 
-1. **本周**：跑 `flutter create` 落地工程骨架 → 把 `lib/domain/` 17 个文件全部 freezed 化 → `flutter analyze` 干净
+1. **本周**：跑 `flutter create` 落地工程骨架 → 把 `lib/domain/` 14 个文件全部 freezed 化 → `flutter analyze` 干净
 2. **下周**：Phase 1 协议层开干，先实现 `PTPIPPrimitives` 的 Dart 版 + 单测
 3. **第三周起**：拿到真机 + 真 Nikon 相机，按 Phase 2/3 推进
 

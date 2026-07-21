@@ -74,12 +74,12 @@
 | 1 | 跑 `flutter create viewfinder --org com.yaoyihan --platforms=ios,android` | 本机已装 Flutter SDK | 5 分钟 |
 | 2 | 写 `pubspec.yaml` 依赖 (riverpod / freezed / connectivity_plus / 等) | 步骤 1 | 15 分钟 |
 | 3 | 写 `analysis_options.yaml` (启用 `flutter_lints`) | 步骤 1 | 5 分钟 |
-| 4 | `lib/domain/` 17 个 freezed 文件 (机械翻译原 Swift) | 步骤 2 | 2-3 小时 |
+| 4 | `lib/domain/` 14 个 freezed 文件 (机械翻译原 Swift) | 步骤 2 | 2-3 小时 |
 | 5 | 跑 `dart run build_runner build` 生成 freezed 代码 | 步骤 4 | 1 分钟 |
 | 6 | 跑 `flutter analyze` 确认零警告 | 步骤 5 | 1 分钟 |
 | 7 | Phase 0 验收 commit + push | 步骤 6 | 5 分钟 |
 
-**Phase 0 验收**：`flutter analyze` 零警告；17 个 Domain 文件全部生成；`pubspec.lock` 已提交。
+**Phase 0 验收**：`flutter analyze` 零警告；14 个 lib/domain/ freezed 文件全部生成；`pubspec.lock` 已提交。
 
 ---
 

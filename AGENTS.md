@@ -159,7 +159,7 @@
 例：
 
 ```
-实现 domain 层 17 个 freezed data class
+实现 domain 层 14 个 freezed model
 修复 PTP/IP 握手超时导致 session 假开
 重构 download service 拆 IO 与业务
 ```
