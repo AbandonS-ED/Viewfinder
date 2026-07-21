@@ -53,6 +53,8 @@
 
 **依赖方向**：上层可依赖下层，**下层绝不依赖上层**。Domain 层无任何外部依赖 (除 `dart:core` + `freezed_annotation`)。
 
+**`platform/` 与 `services/` 边界**：`platform/` 只放 MethodChannel 接口定义 + 各端实现（薄壳，原生胶水层）；`services/` 调用 `platform/` 处理业务逻辑（厚壳，业务规则）。两者是**调用关系**，不是平级关系。例：`services/photo_library_export_service.dart` 调用 `platform/photo_library_channel_android.dart` 实现相册写入。
+
 ---
 
 ## 3. 目录结构
@@ -78,7 +80,7 @@ lib/
 
 ## 4. 数据模型 (Domain 层)
 
-14 个 freezed model + 1 个特殊 `DownloadActivityAttributes`，对应原 iOS `Domain/` 目录下 15 个 `.swift` 文件（其中 `DownloadActivityAttributes` 由 app + iOS widget 双 target 共用，纯 Dart 项目无 widget 故独立处理）。
+14 个 freezed model，对应原 iOS `Domain/` 目录下 14 个普通 `.swift` 文件。`DownloadActivityAttributes`（原 iOS widget + app 共用）在本项目中**折叠到 `services/download_progress_notifier.dart` 内部，作为私有 state class**，不再独立成 model。
 
 | Class | 角色 | 关键字段 |
 |---|---|---|
@@ -96,7 +98,7 @@ lib/
 | `LogEntry` | 日志条目 | timestamp, level, message |
 | `AlertContext` | 错误提示上下文 | title, message, severity |
 | `CameraAppError` | 错误枚举 | (networkFailure / protocolError / storageFull / 等) |
-| `DownloadActivityAttributes` *(特殊)* | 进度通知 attributes (原 iOS 供 widget + app 共用) | queueID, totalItemCount, ContentState |
+
 
 **原则**：
 - 所有 class `final` + immutable (`@immutable` 来自 freezed)

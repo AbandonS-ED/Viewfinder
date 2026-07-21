@@ -68,7 +68,7 @@
 |---|---|
 | 多选 | 长按进入选择模式，点击勾选；底部显示已选数量与总大小 |
 | 队列 | 选中的所有照片加入下载队列，**按 JPEG 优先 / 拍摄时间分组保持原顺序** |
-| 后台 | app 进入后台时，下载不中断 (iOS background fetch / Android foreground service) |
+| 后台 | **Android 强制 / iOS 尽力而为**。Android 用 Foreground Service 保证下载不中断；iOS Network.framework 裸 TCP 暂不支持 background session，**Phase 3 待设计**（详见 Viewfinder方案 §3 / §9） |
 | 进度 | 通知中心 (Android) 实时显示百分比 + 已传 / 总计；iOS 仅静态文字通知（**不支持进度条**），用户需打开 app 查看进度 |
 | 取消 | 用户可取消单张或整个队列 |
 | 断线恢复 | Wi-Fi 丢失后已下载的入库完成；未下载的排队等待重连 |

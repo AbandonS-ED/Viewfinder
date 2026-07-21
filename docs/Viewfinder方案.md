@@ -59,6 +59,7 @@
 | 国际化 | `flutter_localizations` + `intl` | 与原项目中文界面一致 |
 | 测试 | `flutter_test` + `mocktail` | 替代 XCTest |
 | Lint | `flutter_lints` (官方) + `very_good_analysis` (可选) | 比原项目多一步 lint |
+| 依赖版本 | **全部锁主版本号** | 例：`flutter_riverpod: ^2.5.0` / `freezed: ^2.4.0` / `flutter_local_notifications: ^17.0.0` / `flutter_background_service: ^5.0.0` / `gal: ^2.2.0` / `connectivity_plus: ^6.0.0` / `mocktail: ^1.0.0` 等。Phase 0 写 pubspec 时统一锁，避免升级引入 breaking change |
 | 格式化 | `dart format` (官方) | 替换 SwiftFormat 缺失 |
 
 ---
@@ -301,6 +302,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 ### Phase 0 — 工程骨架 (1-2 天)
 
 - `flutter create viewfinder --org com.yaoyihan --platforms=ios,android`
+- **Spike (半天)**：调研 `gal` 包对 RAW (.NEF) 写入相册的支持；不支持则写一个 `MediaStore` 原生 channel 备选方案。**结论作为 Phase 3 准入条件**
 - 配置 `pubspec.yaml`：Riverpod / freezed / connectivity_plus / flutter_local_notifications / flutter_background_service / gal
 - 配置 `analysis_options.yaml` (启用 `flutter_lints` + `public_member_api_docs`)
 - 落地 `lib/domain/` 全部 freezed model 文件 (机械翻译原 15 个 Swift 文件中的 14 个；DownloadActivityAttributes 单独成文件处理)
@@ -313,7 +315,10 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 - 实现 `lib/protocol/session/` 三块 (lifecycle / traversal / transfers)
 - 实现 `ExperimentalNikonTransport`
 - 翻写 `Tests/PTPIPSessionAssetTraversalTests.swift` 为 Dart 版 (用 fake socket server)
-- ✅ 验收：协议单测全绿；可用单元测试 demo 验证「伪造 GetObjectHandles 响应 → 解析出正确的 photo list」
+- ✅ 验收：协议单测全绿；至少覆盖以下异常场景 —
+  - 网络超时 / 部分数据包到达 → 容错测试
+  - 大文件传输中断恢复（`GetPartialObject` 重试）→ 边界测试
+  - Nikon 不同机身 opcode 差异（首版至少覆盖 1 款真机，Phase 2 扩展）
 
 **Phase 1 完成后，协议层就稳定了，后续 UI 改不动协议。**
 
@@ -330,14 +335,15 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 - 批量队列：参考 `DownloadAssetPrioritizer` (JPEG 优先)
 - `flutter_local_notifications` 进度条；`flutter_background_service` 保活
 - Wi-Fi 断线检测 + 暂停 / 重试
-- ✅ 验收：批量下载 50 张 RAW+JPEG 混合，进程被杀后通知仍可恢复
+- 本地日志文件写入 + Settings 页提供「导出日志」按钮（连接失败时方便用户反馈 bug）
+- ✅ 验收：批量下载 50 张 RAW+JPEG 混合，进程被杀后通知仍可恢复；日志可导出
 
-### Phase 4 — UI 抛光 + 触觉 + 动效 (3-4 天)
+### Phase 4 — UI 抛光 + 触觉 + 动效 (5-6 天)
 
 - 复刻原 `LensGlowView` / `ShimmerView` / 品牌滚轮标题动画 (用 Flutter `AnimationController`)
 - 触觉：`HapticFeedback.lightImpact()` 等封装到 `SharedComponents`
 - 主题：Claude-style 暖白底 (`#F9F9F8`) + 琥珀金强调色
-- ✅ 验收：iOS / Android 真机视觉效果接近原 iOS 截图
+- ✅ 验收：iOS / Android 真机**功能完整 + 视觉合格**（精细打磨放到 v1.1，原估时 3-4 天偏紧）
 
 ### Phase 5 — 多品牌扩展 (可选，预留 1-2 周)
 
@@ -439,7 +445,7 @@ iOS 的 Swift 单文件常包含多个类型，且 Service 实现都有对应接
 | `AppPreferencesStoring` (接口) | `Services/AppPreferencesStoring.swift` | `lib/services/preferences_storing.dart` (abstract class) |
 | `DownloadStoring` (接口) | `Services/DownloadStoring.swift` | `lib/services/download_storing.dart` (abstract class) |
 | `AssetThumbnailServing` (接口) | `Services/AssetThumbnailServing.swift` | `lib/services/asset_thumbnail_serving.dart` (abstract class) |
-| `DownloadActivityAttributes` (特殊) | `Domain/DownloadActivityAttributes.swift` | `lib/services/download_progress_attributes.dart` (iOS widget 不再需要，独立成文件) |
+| `DownloadActivityAttributes` (特殊) | `Domain/DownloadActivityAttributes.swift` | **折叠**到 `lib/services/download_progress_notifier.dart` 内部私有 state class（无 widget 后无需独立文件） |
 
 ---
 
