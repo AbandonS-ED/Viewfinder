@@ -305,7 +305,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 - **Spike (半天)**：调研 `gal` 包对 RAW (.NEF) 写入相册的支持；不支持则写一个 `MediaStore` 原生 channel 备选方案。**结论作为 Phase 3 准入条件**
 - 配置 `pubspec.yaml`：Riverpod / freezed / connectivity_plus / flutter_local_notifications / flutter_background_service / gal
 - 配置 `analysis_options.yaml` (启用 `flutter_lints` + `public_member_api_docs`)
-- 落地 `lib/domain/` 全部 freezed model 文件 (机械翻译原 15 个 Swift 文件中的 14 个；DownloadActivityAttributes 单独成文件处理)
+- 落地 `lib/domain/` 14 个 freezed model 文件 (机械翻译原 iOS `Domain/` 下的 14 个普通 Swift 文件)
 - ✅ 验收：`flutter analyze` 零警告；`dart run build_runner build` 生成成功
 
 ### Phase 1 — 协议层 + Dart 协议层单测 (5-7 天) — **最关键**

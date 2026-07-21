@@ -64,7 +64,7 @@
 ```
 lib/
 ├── main.dart, app.dart
-├── domain/         ← 14 个 freezed model + 1 个特殊 (DownloadActivityAttributes)
+├── domain/         ← 14 个 freezed model (DownloadActivityAttributes 已折叠到 services/download_progress_notifier.dart)
 ├── protocol/       ← PTP/IP 实现
 │   ├── primitives/      ← 命令/响应编解码
 │   ├── transport/       ← socket 长连接
