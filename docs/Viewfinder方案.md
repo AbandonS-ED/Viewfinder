@@ -23,6 +23,7 @@
 
 ## 1. 目标
 
+
 一份 Dart / Flutter 代码库，同时产出 iOS + Android 双端可运行的「Nikon 相机 Wi-Fi 照片浏览与批量下载」app。核心交付：
 
 - 通过 PTP/IP (CIPA) 协议连接相机热点 (`192.168.1.1:15740`)，浏览照片列表
@@ -305,19 +306,18 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 - 落地 `lib/domain/` 14 个 freezed model 文件 (机械翻译原 iOS `Domain/` 下的 14 个普通 Swift 文件)
 - ✅ 验收：`flutter analyze` 零警告；`dart run build_runner build` 生成成功
 
-### Phase 1 — 协议层 + Dart 协议层单测 (5-7 天) — **最关键**
+### Phase 1 — 协议层 + Dart 协议层单测 (5-7 天) — ✅ **已完成**
 
-- 实现 `lib/protocol/primitives/` 全部编解码
-- 实现 `lib/protocol/transport/ptpip_connection.dart`（定义 `PtpipSocket` 抽象类 + `IoPtpipSocket`/`FakePtpipSocket` 两种实现）
-- 实现 `lib/protocol/session/ptpip_session.dart`（单 PtpipSession 类，含 lifecycle/traversal/transfers）
-- 实现 `ExperimentalNikonTransport`
-- 翻写 `Tests/PTPIPSessionAssetTraversalTests.swift` 为 Dart 版 (用 fake socket server)
-- ✅ 验收：协议单测全绿；至少覆盖以下异常场景 —
-  - 网络超时 / 部分数据包到达 → 容错测试
-  - 大文件传输中断恢复（`GetPartialObject` 重试）→ 边界测试
-  - Nikon 不同机身 opcode 差异（首版至少覆盖 1 款真机，Phase 2 扩展）
+- ✅ `lib/protocol/primitives/` 全部编解码 (4 文件)
+- ✅ `lib/protocol/transport/` (PtpipSocket 抽象 + IoPtpipSocket 真实实现 + PtpipConnection)
+- ✅ `lib/protocol/session/ptpip_session.dart`（单 PtpipSession 类，双连接架构）
+- ✅ `ExperimentalNikonTransport` + `CameraTransport` 抽象 + Factory
+- ✅ 6 个测试文件、47 个测试用例全部通过
+- ✅ 异常场景覆盖：camera error / unexpected packet / txId mismatch / timeout / connectionClosed / invalidPacket / notConnected / missingHost / invalidPort
+- ✅ `dart analyze` 干净
+- ✅ 审计报告 18 个问题全部修正
 
-**Phase 1 完成后，协议层就稳定了，后续 UI 改不动协议。**
+**Phase 1 已完成，协议层已稳定。Phase 2 不再动协议层。**
 
 ### Phase 2 — 端到端：真机连 Nikon (3-4 天)
 

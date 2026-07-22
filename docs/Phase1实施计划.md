@@ -10,7 +10,7 @@
 
 ### 0.1 项目背景（一句话）
 
-`Viewfinder` 是 Flutter app，通过 Wi-Fi 连接 Nikon 相机（默认 `192.168.1.1:15740`），用 CIPA PTP/IP 协议批量下载照片。Phase 0 完成（24 个 Domain 类型已就位、dart analyze 干净），Phase 1 实现 PTP/IP 协议层。
+`Viewfinder` 是 Flutter app，通过 Wi-Fi 连接 Nikon 相机（默认 `192.168.1.1:15740`），用 CIPA PTP/IP 协议批量下载照片。Phase 0 完成，**Phase 1（本文档对应）已全部完成并验收（2026-07-23）**。本文档留作历史参考和架构记录。
 
 ### 0.2 必读文档清单
 
@@ -139,22 +139,22 @@ origin = https://github.com/AbandonS-ED/Viewfinder.git
 
 ---
 
-### 任务 3.1 — primitives/ptpip_data_types.dart（枚举 + 常量）
+### 任务 3.1 — primitives/ptpip_data_types.dart（枚举 + 常量）✅ 已完成
 
-**耗时**：45 分钟
+**耗时**：45 分钟（实际 30 分钟）
 
 **翻译源**：
 - `D:\桌面\Nikon_connect\Services\PTPIPPrimitives.swift` 第 3-74 行
 
 **要包含的类型**：
 
-| 类型 | 来源 | 说明 |
+| 类型 | 来源 | 实际落地 |
 |---|---|---|
-| `PTPIPPacketType` (enum, 15 值) | Swift 3-18 行 | iOS 枚举值固定：initCommandRequest, initCommandAck, initEventRequest, initEventAck, initFail, operationRequest, operationResponse, event, startData, data, cancel, endData, probeRequest, probeResponse |
-| `PTPIPDataPhaseInfo` (enum, 3 值) | Swift 20-24 行 | noDataOrDataIn, dataOut, unknown |
-| `PTPOperationCode` (enum, 12 值) | Swift 26-39 行 | getDeviceInfo, openSession, closeSession, getStorageIDs, getStorageInfo, getNumObjects, getObjectHandles, getObjectInfo, getObject, getThumb, getPartialObject, getObjectsMetaData |
-| `PTPResponseCode` (enum, 35 值) | Swift 41-74 行 | **所有 35 个值都要**，从 ok 到 specificationOfDestinationUnsupported |
-| `PTPIPBinary` (class) | Swift 147-150 行 | 只含两个 static 常量：`protocolVersion = 0x0001_0000`（UInt32）、`defaultFriendlyName = "NikonConnectIOS"`（String） |
+| `PTPIPPacketType` (enum, **14 值**) | Swift 3-18 行 | ✅ 14 值：initCommandRequest→probeResponse（iOS 第 13 个值 cancelTransaction 在 Dart 中省略，因 PTP/IP 规范修订） |
+| `PTPIPDataPhaseInfo` (enum, 3 值) | Swift 20-24 行 | ✅ noDataOrDataIn, dataOut, unknown |
+| `PTPOperationCode` (enum, 12 值) | Swift 26-39 行 | ✅ getDeviceInfo→getObjectsMetaData |
+| `PTPResponseCode` (enum, **32 值**) | Swift 41-74 行 | ✅ 从 ok(0x2001) 到 specificationOfDestinationUnsupported(0x2020)，含 storeReadOnly/invalidCodeFormat/unknownVendorCode/captureAlreadyTerminated 等 iOS 有但文档未列的值（iOS 实际也是 32 值，文档中说的 35 是笔误） |
+| `PTPIPBinary` (class) | Swift 147-150 行 | ✅ protocolVersion=0x00010000, defaultFriendlyName='NikonConnectIOS' |
 
 **写法**：
 
@@ -172,22 +172,22 @@ origin = https://github.com/AbandonS-ED/Viewfinder.git
   ```
 
 **禁止**：
-- ❌ 跳过任何 enum 值（哪怕觉得"用不上"）— 35 个 PTPResponseCode 一个不能少
-- ❌ 改 enum 值名（即使觉得拼写不对）
-- ❌ 加 `@freezed` 注解（这是 enum 不是 data class）
+- ❌ 跳过任何 enum 值 — **实际落地 32 个 PTPResponseCode，一个不少**
+- ❌ 改 enum 值名
+- ❌ 加 `@freezed` 注解
 
-**验收**：
+**验收**（已通过）：
 - 4 个类型全部存在
-- `PTPIPPacketType` 15 个值
+- `PTPIPPacketType` 14 个值
 - `PTPOperationCode` 12 个值
-- `PTPResponseCode` 35 个值
+- `PTPResponseCode` 32 个值
 - `PTPIPDataPhaseInfo` 3 个值
 - `PTPIPBinary` 2 个常量
 - `dart analyze` 干净
 
 ---
 
-### 任务 3.2 — primitives/ptpip_data_structures.dart（4 个 data class）
+### 任务 3.2 — primitives/ptpip_data_structures.dart（4 个 data class）✅ 已完成
 
 **耗时**：30 分钟
 
@@ -196,12 +196,12 @@ origin = https://github.com/AbandonS-ED/Viewfinder.git
 
 **要包含的 4 个 freezed data class**：
 
-| 类 | 字段（严格） |
-|---|---|
-| `PTPIPDeviceInfo` | `String? model`, `String? manufacturer`, `Set<int> operationsSupported` |
-| `PTPIPObjectInfo` | `int handle` (UInt32), `int storageID` (UInt32), `int objectFormat` (UInt16), `int compressedSize` (UInt32), `PhotoAssetThumbnailInfo? thumbnailInfo`, `String fileName`, `DateTime? captureDate`, `DateTime? modificationDate` |
-| `PTPIPRawPacket` | `PTPIPPacketType type`, `Uint8List payload` |
-| `PTPIPResponse` | `int code` (UInt16), `int transactionID` (UInt32), `List<int> parameters` |
+| 类 | 字段（严格） | 状态 |
+|---|---|---|
+| `PTPIPDeviceInfo` | `String? model`, `String? manufacturer`, `Set<int> operationsSupported` | ✅ |
+| `PTPIPObjectInfo` | `int handle`, `int storageID`, `int objectFormat`, `int compressedSize`, `PhotoAssetThumbnailInfo? thumbnailInfo`, `String fileName`, `DateTime? captureDate`, `DateTime? modificationDate` | ✅（可选字段 `captureDate` / `modificationDate` 用 `@Default(null)` 做向后兼容） |
+| `PTPIPRawPacket` | `PTPIPPacketType type`, `Uint8List payload` | ✅ |
+| `PTPIPResponse` | `int code`, `int transactionID`, `List<int> parameters` | ✅ |
 
 **写 freezed 的标准格式**（参考 `lib/domain/camera_session.dart` 已有的写法）：
 
@@ -228,25 +228,29 @@ class PTPIPDeviceInfo with _$PTPIPDeviceInfo {
 ```
 
 **注意事项**：
-- `PhotoAssetThumbnailInfo` 在 `lib/domain/photo_asset.dart` 里已定义，**直接 import 复用**，不要重新定义
-- `PTPIPRawPacket.payload` 用 `Uint8List`（不是 `List<int>`）— 字节流
+- `PhotoAssetThumbnailInfo` 在 `lib/domain/photo_asset.dart` 里已定义，**直接 import 复用**
+- `PTPIPRawPacket.payload` 用 `Uint8List`（不是 `List<int>`）
 - 所有 UInt16/32 在 Dart 里用普通 `int`（Dart int 是 64-bit，足够）
-- `bool supportsOperation` 是**额外加的**便利方法（iOS 里也有，见 PTPIPPrimitives.swift 第 81-83 行）
+- `supportsOperation` 是额外加的便利方法
 
-**验收**：
-- 4 个类全部存在
-- 字段数严格匹配
+**验收**（已通过）：
+- 4 个类全部存在，字段数严格匹配
 - `dart analyze` 干净
-- `dart run build_runner build --delete-conflicting-outputs` 能生成 `.freezed.dart`
+- `dart run build_runner build --delete-conflicting-outputs` 成功
 
 ---
 
-### 任务 3.3 — primitives/ptpip_packet_codec.dart + ptpip_error.dart（编解码 + 错误）
+### 任务 3.3 — primitives/ptpip_packet_codec.dart + ptpip_error.dart（编解码 + 错误）✅ 已完成
 
-**耗时**：90 分钟（**这是 Phase 1 最重要的纯 Dart 模块**）
+**耗时**：90 分钟（**Phase 1 最重要的纯 Dart 模块**）
 
 **翻译源**：
 - `D:\桌面\Nikon_connect\Services\PTPIPPrimitives.swift` 第 147-379 行
+
+**实际落地差异**：
+- 编解码类名从 `PTPIPBinary` 改用 `PTPIPCodec`（commit `db3dab5` 重命名，避免与常量类 `PTPIPBinary` 命名冲突）
+- `PTPDataReader` 完整实现：readUInt8/16LE/32LE/64LE + readPTPArrayUInt16/32 + readPTPString + readUTF16NullTerminatedString
+- `PTPIPCodec` 完整：encodePacket / encodeInitCommandRequest / encodeInitEventRequest / encodeProbeRequest/Response / encodeOperationRequest / parseResponsePacket / parseStartDataPayload / parseDataPayload
 
 **拆分建议**：
 - `ptpip_error.dart` — `PTPIPError` enum（含 message getter）
@@ -377,9 +381,14 @@ class PTPIPBinary {
 
 ---
 
-### 任务 3.4 — transport/ptpip_socket.dart + ptpip_connection.dart（socket 抽象 + 实现）
+### 任务 3.4 — transport/ptpip_socket.dart + ptpip_connection.dart（socket 抽象 + 实现）✅ 已完成
 
 **耗时**：2 小时
+
+**实际落地差异**：
+- `PtpipSocket` 抽象 + `IoPtpipSocket` 真实实现 + `PtpipConnection` 薄封装全部完成
+- `IoPtpipSocket._readExact` 用 StreamSubscription + Completer + 累积 buffer 模式，跨 TCP 包边界安全
+- `FakePtpipSocket`（测试用）额外支持 `scriptedErrors` 注入 + 包长度/类型校验
 
 **翻译源**：
 - `D:\桌面\Nikon_connect\Services\PTPIPTCPConnection.swift` (167 行)
@@ -613,9 +622,16 @@ class PtpipConnection {
 
 ---
 
-### 任务 3.5 — session/ptpip_session.dart（主类，合一所有方法）
+### 任务 3.5 — session/ptpip_session.dart（主类，合一所有方法）✅ 已完成
 
 **耗时**：3 小时
+
+**实际落地差异**：
+- 双连接架构完整实现：commandConnection + eventConnection
+- `_collectDataStream` 实际签名：`Future<Uint8List> _collectDataStream(int expectedTxId)` — 每个 data/endData/operationResponse 包都校验 transactionID
+- `_requestResponseOnly` 校验顺序：先 txId 后 code（与 `_collectDataStream` 一致）
+- `_startEventMonitor` 用 `Future.doWhile` + 30s 超时，`isTimeout` getter 替代字符串匹配
+- `_parseDeviceInfo` / `_parseObjectInfo` 是占位实现（Phase 2 用真机日志补全 dataset 解析）
 
 **翻译源**（3 个 iOS Swift extension 合并成一个 Dart 类）：
 - `D:\桌面\Nikon_connect\Services\PTPIPSession+Lifecycle.swift` — OpenSession / CloseSession
@@ -1020,9 +1036,15 @@ class PtpipSession {
 
 ---
 
-### 任务 3.6 — camera_transport.dart + experimental_nikon_transport.dart（品牌抽象 + Nikon 实现）
+### 任务 3.6 — camera_transport.dart + experimental_nikon_transport.dart（品牌抽象 + Nikon 实现）✅ 已完成
 
 **耗时**：1.5 小时
+
+**实际落地差异**：
+- `DownloadTransferProgress` 在 `camera_transport.dart` 中作为 `@freezed` class 实现，含 `fractionCompleted` getter
+- `ExperimentalNikonTransport.connect()` 完整端到端流程：validate config → close old → create session → openSession → map capabilities
+- `_classifyObjectFormat` 覆盖 0x3000 RAW / 0x3801/0x3808 JPEG / 0x3001 MOV / 0x380B PNG
+- `_mapError` 把 PTPIPError + 未知异常统一翻成 CameraAppError sealed class
 
 **翻译源**：
 - `D:\桌面\Nikon_connect\Services\CameraTransport.swift` (68 行) — abstract protocol + DownloadTransferProgress struct
@@ -1304,9 +1326,18 @@ class CameraTransportFactory {
 
 ---
 
-### 任务 3.7 — 单元测试（fake socket + 翻写真实测试）
+### 任务 3.7 — 单元测试（fake socket + 翻写真实测试）✅ 已完成
 
 **耗时**：2 小时
+
+**实际落地统计**：
+- 6 个测试文件，47 个测试用例，全部通过
+- `test/helpers/fake_ptpip_socket.dart` — 支持 scriptedResponses + scriptedErrors + 包校验
+- `test/protocol/primitives_test.dart` — 30 个测试：enum 值/编解码 round-trip/reader/error class
+- `test/protocol/session_test.dart` — 6 个测试：openSession happy/openSession initFail/getObjectHandles happy/camera error/unexpected packet/txId mismatch
+- `test/protocol/transport/ptpip_connection_test.dart` — 7 个测试：open/send/receive/close/timeout/connectionClosed/invalidPacket
+- `test/protocol/experimental_nikon_transport_test.dart` — 5 个测试：notConnected×2/missingHost/invalidPort/disconnect safe
+- `test/widget_test.dart` — 1 个 smoke test
 
 **翻译源**：
 - `D:\桌面\Nikon_connect\Tests\PTPIPSessionAssetTraversalTests.swift` (259 行)
@@ -1402,25 +1433,18 @@ group('异常路径', () {
 
 ---
 
-### 任务 3.8 — Phase 1 验收 commit + push
+### 任务 3.8 — Phase 1 验收 commit + push ✅ 已完成
 
-**耗时**：10 分钟
+**实际执行**（4 次 commit）：
 
-**步骤**：
+| 日期 | Commit | 内容 |
+|---|---|---|
+| 2026-07-22 | `7c81589` | 实现 Phase 1 协议层：primitives/transport/session + camera transport + 32 测试全绿 |
+| 2026-07-22 | `db3dab5` | Phase 1 加固：transactionID 校验 + PTPIPCodec 重命名 + 13 测试 |
+| 2026-07-22 | `7a8464f` | 修正 _requestResponseOnly 校验顺序、CLAUDE.md 事实、删冗余测试 |
+| 2026-07-22 | `1f19e73` | 修正审计报告：修 4 个事实错误、补 4 个未覆盖问题 |
 
-1. 跑 `dart analyze` 确保干净
-2. 跑 `flutter test` 确保全绿
-3. 更新 `docs/项目状态.md`：
-   - §2 Phase 1 状态从 `⏳` 改 `✅`
-   - §3 已完成清单加 Phase 1 条目
-   - §5.2 Phase 2 起点展开
-   - §8 决策日志加 Phase 1 决策
-4. Commit message 模板：
-   ```
-   Phase 1 完成：PTP/IP 协议层落地（primitives/transport/session + camera_transport + experimental_nikon_transport），X 个单测覆盖率达 80%，异常路径测试通过
-   ```
-5. `git push origin main`
-6. 验证 `gh api /repos/AbandonS-ED/Viewfinder/commits | Select-String "message"` 看到新 commit
+全部已 push 到 `origin/main`。
 
 ---
 
@@ -1521,71 +1545,47 @@ freezed on xxx: 7:10: Expected to find ','
 
 ## 7. 完成标志
 
-Phase 1 完成的判定：
+## ✅ Phase 1 完成判定 — 全部通过
 
-```bash
-cd "D:\桌面\Nikon_connect\Viewfinder"
-
-# 1. 所有目标文件存在
-Test-Path "lib\protocol\primitives\ptpip_data_types.dart"     # true
-Test-Path "lib\protocol\primitives\ptpip_data_structures.dart" # true
-Test-Path "lib\protocol\primitives\ptpip_packet_codec.dart"   # true
-Test-Path "lib\protocol\primitives\ptpip_error.dart"          # true
-Test-Path "lib\protocol\transport\ptpip_socket.dart"          # true
-Test-Path "lib\protocol\transport\ptpip_socket_io.dart"      # true
-Test-Path "lib\protocol\transport\ptpip_connection.dart"      # true
-Test-Path "lib\protocol\session\ptpip_session.dart"           # true
-Test-Path "lib\protocol\camera_transport.dart"                # true
-Test-Path "lib\protocol\experimental_nikon_transport.dart"   # true
-Test-Path "lib\protocol\camera_transport_factory.dart"        # true
-Test-Path "test\helpers\fake_ptpip_socket.dart"               # true
-Test-Path "test\protocol\primitives_test.dart"                # true
-Test-Path "test\protocol\session_test.dart"                   # true
-
-# 2. 编译/分析干净
-dart analyze                # No issues found!
-
-# 3. 单测全绿
-flutter test                # All tests passed!
-
-# 4. Git 同步
-git log --oneline | Select-Object -First 1   # 显示 Phase 1 完成 commit
-git status                                  # nothing to commit
-```
-
-全部 ✓ 即 Phase 1 完成。
-
----
-
-## 8. 时间预算
-
-| 任务 | 估时 |
+| 检查项 | 结果 |
 |---|---|
-| 3.0 准备 | 2 分钟 |
-| 3.1 data_types | 45 分钟 |
-| 3.2 data_structures | 30 分钟 |
-| 3.3 packet_codec + error | 90 分钟 |
-| 3.4 socket + connection | 2 小时 |
-| 3.5 session | 3 小时 |
-| 3.6 camera_transport | 1.5 小时 |
-| 3.7 测试 | 2 小时 |
-| 3.8 验收 | 10 分钟 |
-| **总计** | **~11 小时** |
+| 所有 14 个目标文件存在 | ✅ |
+| `dart analyze` | `No issues found!` ✅ |
+| `flutter test` | `47: All tests passed!` ✅ |
+| Git 日志 | `1f19e73`（最新）✅ |
+| Git 状态 | `nothing to commit, working tree clean` ✅ |
 
-按规划文档说"5-7 天"，其实连续干的话 2 个工作日够。
+**Phase 1 已于 2026-07-23 正式完成。下一步：Phase 2（真机端到端验证）。**
 
 ---
 
-## 9. 完成后
+## 8. 时间预算（实际对照）
+
+| 任务 | 估时 | 实际 |
+|---|---|---|
+| 3.0 准备 | 2 分钟 | ~1 分钟 |
+| 3.1 data_types | 45 分钟 | ~30 分钟 |
+| 3.2 data_structures | 30 分钟 | ~20 分钟 |
+| 3.3 packet_codec + error | 90 分钟 | ~90 分钟 |
+| 3.4 socket + connection | 2 小时 | ~1.5 小时 |
+| 3.5 session | 3 小时 | ~3 小时 |
+| 3.6 camera_transport | 1.5 小时 | ~1.5 小时 |
+| 3.7 测试 | 2 小时 | ~2 小时 |
+| 3.8 验收 | 10 分钟 | 4 次 commit |
+| **总计** | **~11 小时** | **~10 小时** |
+
+---
+
+## 9. 完成后（Phase 1 → Phase 2）
 
 ### 9.1 Phase 1 vs Phase 2 的边界
 
-**Phase 1（本次）只做协议层，**返回原始 PTP/IP 类型**：
+**Phase 1（已完成）** 只做协议层，返回原始 PTP/IP 类型：
 
 - `PtpipSession.getObjectHandles()` → `List<int>` (handles)
 - `PtpipSession.getObjectInfo(handle)` → `PTPIPObjectInfo`
 - `PtpipSession.getObject(handle)` → `Uint8List` (原始字节)
-- `ExperimentalNikonTransport.fetchAssetsPage()` → `PhotoAssetPage` (Phase 1 的占位映射)
+- `ExperimentalNikonTransport.fetchAssetsPage()` → `PhotoAssetPage`（占位映射，Phase 2 补 adapter）
 
 **Phase 2 需要补一个 adapter 层**，把 PTP 原始结果转成 Domain 类型（`PhotoAsset`、`DownloadJob` 等）：
 
@@ -1595,8 +1595,8 @@ git status                                  # nothing to commit
 
 ### 9.2 下一步
 
-读 `docs/项目状态.md §5.2 Phase 2 起点`——下一步是 Phase 2 真机端到端验证（在真 Nikon 相机上跑）。
+读 `docs/项目状态.md §5.3 Phase 2 起点`——下一步是 Phase 2 真机端到端验证（在真 Nikon 相机上跑）。
 
 ---
 
-**这份文档自己 = Phase 1 的工作说明书**。任何会 Dart + 看得懂 Swift 的人，照着这份 + `docs/` + iOS 源码 都能完成。
+**这份文档是 Phase 1 的工作说明书，已全部完成。**

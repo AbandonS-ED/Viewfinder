@@ -21,12 +21,12 @@
 ## 进度
 
 | Phase | 内容 | 状态 |
-|---|---|---|
+|---|---|---|---|
 | — | 文档宪法 (产品需求 / 架构 / 项目状态) | ✅ 已完成 |
 | — | 仓库初始化 (git + GitHub) | ✅ 已完成 |
 | — | 环境配置 (Flutter SDK / Android Studio / 国内镜像) | ✅ 已完成 |
-| 0 | 工程骨架 (`flutter create` + pubspec + Domain freezed) | 🚧 进行中（30%） |
-| 1 | PTP/IP 协议层 + Dart 单测 | ⏳ 未开始 |
+| 0 | 工程骨架 (`flutter create` + pubspec + Domain freezed) | ✅ 已完成 |
+| 1 | PTP/IP 协议层 + Dart 单测 (47 测试全绿) | ✅ 已完成 |
 | 2 | 端到端真机连 Nikon (浏览) | ⏳ 未开始 |
 | 3 | 下载 + 进度通知 | ⏳ 未开始 |
 | 4 | UI 抛光 + 触觉 + 动效 | ⏳ 未开始 |

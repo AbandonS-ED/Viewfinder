@@ -50,9 +50,9 @@ flutter build apk --debug
 ## 当前阶段与下一步
 
 | Phase | 内容 | 状态 |
-|---|---|---|
+|---|---|---|---|
 | 0 | 工程骨架 + 14 个 Domain freezed model | ✅ 已完成 |
-| 1 | PTP/IP 协议层 + Dart 单测 | 🚧 进行中（primitives/socket/connection/session/Nikon transport 已落地，单测覆盖率仍不足） |
+| 1 | PTP/IP 协议层 + Dart 单测 | ✅ 已完成（47 测试全绿，`dart analyze` 干净） |
 | 2 | 真机连 Nikon 端到端验证 | ⏳ 未开始 |
 | 3 | 下载 + 进度通知 | ⏳ 未开始 |
 | 4 | UI 抛光 + 触觉 + 动效 | ⏳ 未开始 |
@@ -90,9 +90,9 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 
 - `lib/protocol/primitives/`
   - `ptpip_data_types.dart`：`PTPIPPacketType` (14 值) / `PTPOperationCode` (12 值) / `PTPResponseCode` (32 值) / `PTPIPDataPhaseInfo` (3 值) / `PTPIPBinary` 常量类。
-  - `ptpip_data_structures.dart`：4 个 freezed data class (`PTPIPRawPacket` / `PTPIPDeviceInfo` / `PTPIPObjectInfo` / `PTPIPDataPayloadInfo`)。
+  - `ptpip_data_structures.dart`：4 个 freezed data class (`PTPIPRawPacket` / `PTPIPDeviceInfo` / `PTPIPObjectInfo` / `PTPIPResponse`)。
   - `ptpip_error.dart`：`sealed class PTPIPError` —— 10 个 factory：`invalidPacketLength` / `unsupportedPacketType` / `unexpectedPacket` / `connectionClosed` / `invalidProtocolVersion` / `invalidTransaction` / `unexpectedResponse` / `malformedPayload` / `sessionUnavailable` / `timeout`。
-  - `ptpip_packet_codec.dart`：所有 `PTPIPCodec.encode*` / `parse*` 函数，小端序，跟 iOS `PTPIPPrimitives.swift` 1:1 对位。`protocolVersion = 0x0001_0000`，`defaultFriendlyName = "NikonConnectIOS"`（保留原字符串，不要改）。
+  - `ptpip_packet_codec.dart`：`PTPDataReader` 二进制读取器 + `PTPIPCodec` 编解码类。所有 `encode*` / `parse*` 函数小端序，跟 iOS `PTPIPPrimitives.swift` 1:1 对位。`protocolVersion = 0x0001_0000`，`defaultFriendlyName = "NikonConnectIOS"`（保留原字符串，不要改）。
 - `lib/protocol/transport/`
   - `ptpip_socket.dart`：**abstract class** `PtpipSocket`（接口边界，所有 socket 实现都走这里）。
   - `ptpip_socket_io.dart`：`IoPtpipSocket`，基于 `dart:io.Socket`，双端共用。
@@ -119,7 +119,7 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 ### Protocol 层不变量（必须保留）
 
 1. **命令通道与事件通道** 双 TCP，命令 / 事件互不干扰。事件循环用 `Future.doWhile` + `probeRequest → probeResponse` 保活，30s 超时。
-2. **事务 ID 单调递增**，`openSession()` 后强制 `_nextTransactionID = 1`；`_requestResponseOnly` 校验响应事务 ID 与请求一致。
+2. **事务 ID 单调递增**，`openSession()` 后强制 `_nextTransactionID = 1`；`_requestResponseOnly` 和 `_collectDataStream` 都校验响应事务 ID 与请求一致，校验顺序为先 txId 后 code。
 3. **响应码校验**：每个 `_request*` 内部都检查 `code == PTPResponseCode.ok`，非 OK 直接抛 `PTPIPError.unexpectedResponse(code)`。
 4. **缩略图缺图不抛**：`getThumbnail` 捕 `noThumbnailPresent` / `operationNotSupported` 返回 `null`。
 5. **错误不向上混**：`ExperimentalNikonTransport._mapError` 把 `PTPIPError` 与未知异常统一翻成 `CameraAppError`，业务层只看到 sealed `CameraAppError`。
@@ -167,9 +167,8 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 ## 测试规则
 
 - 测试目录 `test/` 镜像 `lib/`。协议层 `test/protocol/`，helpers `test/helpers/`。
-- 协议层单测覆盖率目标 ≥ 80%。当前已有 `test/protocol/primitives_test.dart` 和 `test/protocol/session_test.dart` 两个文件，相对于 4 个 primitives + session + transport/socket + Nikon transport 的覆盖面还很薄，**Phase 1 后续要补**：
-  - `transport/ptpip_socket_io_test.dart` —— 真实 localhost loopback
-  - `experimental_nikon_transport_test.dart` —— 用 fake socket 跑完整 connect → listAssets → getThumbnail → getObject 路径
+- 协议层单测覆盖率目标 ≥ 80%。当前已有 6 个测试文件（`test/protocol/primitives_test.dart`、`session_test.dart`、`transport/ptpip_connection_test.dart`、`experimental_nikon_transport_test.dart` + `helpers/fake_ptpip_socket.dart`），共 47 个测试用例全部通过。相对于 4 个 primitives + session + transport/socket + Nikon transport 的覆盖面，**Phase 2 仍需补**：
+  - `IoPtpipSocket` loopback 集成测试
   - 异常场景：网络超时 / 部分数据包到达 / 大文件中断恢复（`GetPartialObject` 重试路径）/ Nikon 不同机身 opcode 差异
 - 不要 mock 整个相机（用 fake socket server）；不要测私有方法（通过公开 API 测）；不要写脆弱的 snapshot test。
 - `dart analyze` 干净 + `flutter test` 全绿，是 commit 前的最低门槛。
