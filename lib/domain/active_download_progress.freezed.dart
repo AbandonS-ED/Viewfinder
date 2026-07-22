@@ -17,14 +17,20 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$ActiveDownloadProgress {
-  String get currentFileName => throw _privateConstructorUsedError;
+  String get fileName => throw _privateConstructorUsedError;
   int get currentItemNumber => throw _privateConstructorUsedError;
   int get totalItemCount => throw _privateConstructorUsedError;
   int get bytesTransferred => throw _privateConstructorUsedError;
   int get totalBytes => throw _privateConstructorUsedError;
-  double get fractionCompleted => throw _privateConstructorUsedError;
-  String get status => throw _privateConstructorUsedError;
-  String get message => throw _privateConstructorUsedError;
+
+  /// 续传次数
+  int get resumedCount => throw _privateConstructorUsedError;
+
+  /// 当前已下载偏移
+  int get currentOffset => throw _privateConstructorUsedError;
+
+  /// 分块大小
+  int get chunkSize => throw _privateConstructorUsedError;
 
   /// Create a copy of ActiveDownloadProgress
   /// with the given fields replaced by the non-null parameter values.
@@ -41,14 +47,14 @@ abstract class $ActiveDownloadProgressCopyWith<$Res> {
   ) = _$ActiveDownloadProgressCopyWithImpl<$Res, ActiveDownloadProgress>;
   @useResult
   $Res call({
-    String currentFileName,
+    String fileName,
     int currentItemNumber,
     int totalItemCount,
     int bytesTransferred,
     int totalBytes,
-    double fractionCompleted,
-    String status,
-    String message,
+    int resumedCount,
+    int currentOffset,
+    int chunkSize,
   });
 }
 
@@ -70,20 +76,20 @@ class _$ActiveDownloadProgressCopyWithImpl<
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? currentFileName = null,
+    Object? fileName = null,
     Object? currentItemNumber = null,
     Object? totalItemCount = null,
     Object? bytesTransferred = null,
     Object? totalBytes = null,
-    Object? fractionCompleted = null,
-    Object? status = null,
-    Object? message = null,
+    Object? resumedCount = null,
+    Object? currentOffset = null,
+    Object? chunkSize = null,
   }) {
     return _then(
       _value.copyWith(
-            currentFileName: null == currentFileName
-                ? _value.currentFileName
-                : currentFileName // ignore: cast_nullable_to_non_nullable
+            fileName: null == fileName
+                ? _value.fileName
+                : fileName // ignore: cast_nullable_to_non_nullable
                       as String,
             currentItemNumber: null == currentItemNumber
                 ? _value.currentItemNumber
@@ -101,18 +107,18 @@ class _$ActiveDownloadProgressCopyWithImpl<
                 ? _value.totalBytes
                 : totalBytes // ignore: cast_nullable_to_non_nullable
                       as int,
-            fractionCompleted: null == fractionCompleted
-                ? _value.fractionCompleted
-                : fractionCompleted // ignore: cast_nullable_to_non_nullable
-                      as double,
-            status: null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                      as String,
-            message: null == message
-                ? _value.message
-                : message // ignore: cast_nullable_to_non_nullable
-                      as String,
+            resumedCount: null == resumedCount
+                ? _value.resumedCount
+                : resumedCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            currentOffset: null == currentOffset
+                ? _value.currentOffset
+                : currentOffset // ignore: cast_nullable_to_non_nullable
+                      as int,
+            chunkSize: null == chunkSize
+                ? _value.chunkSize
+                : chunkSize // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -129,14 +135,14 @@ abstract class _$$ActiveDownloadProgressImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String currentFileName,
+    String fileName,
     int currentItemNumber,
     int totalItemCount,
     int bytesTransferred,
     int totalBytes,
-    double fractionCompleted,
-    String status,
-    String message,
+    int resumedCount,
+    int currentOffset,
+    int chunkSize,
   });
 }
 
@@ -155,20 +161,20 @@ class __$$ActiveDownloadProgressImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? currentFileName = null,
+    Object? fileName = null,
     Object? currentItemNumber = null,
     Object? totalItemCount = null,
     Object? bytesTransferred = null,
     Object? totalBytes = null,
-    Object? fractionCompleted = null,
-    Object? status = null,
-    Object? message = null,
+    Object? resumedCount = null,
+    Object? currentOffset = null,
+    Object? chunkSize = null,
   }) {
     return _then(
       _$ActiveDownloadProgressImpl(
-        currentFileName: null == currentFileName
-            ? _value.currentFileName
-            : currentFileName // ignore: cast_nullable_to_non_nullable
+        fileName: null == fileName
+            ? _value.fileName
+            : fileName // ignore: cast_nullable_to_non_nullable
                   as String,
         currentItemNumber: null == currentItemNumber
             ? _value.currentItemNumber
@@ -186,18 +192,18 @@ class __$$ActiveDownloadProgressImplCopyWithImpl<$Res>
             ? _value.totalBytes
             : totalBytes // ignore: cast_nullable_to_non_nullable
                   as int,
-        fractionCompleted: null == fractionCompleted
-            ? _value.fractionCompleted
-            : fractionCompleted // ignore: cast_nullable_to_non_nullable
-                  as double,
-        status: null == status
-            ? _value.status
-            : status // ignore: cast_nullable_to_non_nullable
-                  as String,
-        message: null == message
-            ? _value.message
-            : message // ignore: cast_nullable_to_non_nullable
-                  as String,
+        resumedCount: null == resumedCount
+            ? _value.resumedCount
+            : resumedCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        currentOffset: null == currentOffset
+            ? _value.currentOffset
+            : currentOffset // ignore: cast_nullable_to_non_nullable
+                  as int,
+        chunkSize: null == chunkSize
+            ? _value.chunkSize
+            : chunkSize // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -207,18 +213,18 @@ class __$$ActiveDownloadProgressImplCopyWithImpl<$Res>
 
 class _$ActiveDownloadProgressImpl extends _ActiveDownloadProgress {
   const _$ActiveDownloadProgressImpl({
-    required this.currentFileName,
+    required this.fileName,
     this.currentItemNumber = 0,
     this.totalItemCount = 0,
     this.bytesTransferred = 0,
     this.totalBytes = 0,
-    this.fractionCompleted = 0.0,
-    this.status = '',
-    this.message = '',
+    this.resumedCount = 0,
+    this.currentOffset = 0,
+    this.chunkSize = 0,
   }) : super._();
 
   @override
-  final String currentFileName;
+  final String fileName;
   @override
   @JsonKey()
   final int currentItemNumber;
@@ -231,19 +237,25 @@ class _$ActiveDownloadProgressImpl extends _ActiveDownloadProgress {
   @override
   @JsonKey()
   final int totalBytes;
+
+  /// 续传次数
   @override
   @JsonKey()
-  final double fractionCompleted;
+  final int resumedCount;
+
+  /// 当前已下载偏移
   @override
   @JsonKey()
-  final String status;
+  final int currentOffset;
+
+  /// 分块大小
   @override
   @JsonKey()
-  final String message;
+  final int chunkSize;
 
   @override
   String toString() {
-    return 'ActiveDownloadProgress(currentFileName: $currentFileName, currentItemNumber: $currentItemNumber, totalItemCount: $totalItemCount, bytesTransferred: $bytesTransferred, totalBytes: $totalBytes, fractionCompleted: $fractionCompleted, status: $status, message: $message)';
+    return 'ActiveDownloadProgress(fileName: $fileName, currentItemNumber: $currentItemNumber, totalItemCount: $totalItemCount, bytesTransferred: $bytesTransferred, totalBytes: $totalBytes, resumedCount: $resumedCount, currentOffset: $currentOffset, chunkSize: $chunkSize)';
   }
 
   @override
@@ -251,8 +263,8 @@ class _$ActiveDownloadProgressImpl extends _ActiveDownloadProgress {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ActiveDownloadProgressImpl &&
-            (identical(other.currentFileName, currentFileName) ||
-                other.currentFileName == currentFileName) &&
+            (identical(other.fileName, fileName) ||
+                other.fileName == fileName) &&
             (identical(other.currentItemNumber, currentItemNumber) ||
                 other.currentItemNumber == currentItemNumber) &&
             (identical(other.totalItemCount, totalItemCount) ||
@@ -261,23 +273,25 @@ class _$ActiveDownloadProgressImpl extends _ActiveDownloadProgress {
                 other.bytesTransferred == bytesTransferred) &&
             (identical(other.totalBytes, totalBytes) ||
                 other.totalBytes == totalBytes) &&
-            (identical(other.fractionCompleted, fractionCompleted) ||
-                other.fractionCompleted == fractionCompleted) &&
-            (identical(other.status, status) || other.status == status) &&
-            (identical(other.message, message) || other.message == message));
+            (identical(other.resumedCount, resumedCount) ||
+                other.resumedCount == resumedCount) &&
+            (identical(other.currentOffset, currentOffset) ||
+                other.currentOffset == currentOffset) &&
+            (identical(other.chunkSize, chunkSize) ||
+                other.chunkSize == chunkSize));
   }
 
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    currentFileName,
+    fileName,
     currentItemNumber,
     totalItemCount,
     bytesTransferred,
     totalBytes,
-    fractionCompleted,
-    status,
-    message,
+    resumedCount,
+    currentOffset,
+    chunkSize,
   );
 
   /// Create a copy of ActiveDownloadProgress
@@ -295,19 +309,19 @@ class _$ActiveDownloadProgressImpl extends _ActiveDownloadProgress {
 
 abstract class _ActiveDownloadProgress extends ActiveDownloadProgress {
   const factory _ActiveDownloadProgress({
-    required final String currentFileName,
+    required final String fileName,
     final int currentItemNumber,
     final int totalItemCount,
     final int bytesTransferred,
     final int totalBytes,
-    final double fractionCompleted,
-    final String status,
-    final String message,
+    final int resumedCount,
+    final int currentOffset,
+    final int chunkSize,
   }) = _$ActiveDownloadProgressImpl;
   const _ActiveDownloadProgress._() : super._();
 
   @override
-  String get currentFileName;
+  String get fileName;
   @override
   int get currentItemNumber;
   @override
@@ -316,12 +330,18 @@ abstract class _ActiveDownloadProgress extends ActiveDownloadProgress {
   int get bytesTransferred;
   @override
   int get totalBytes;
+
+  /// 续传次数
   @override
-  double get fractionCompleted;
+  int get resumedCount;
+
+  /// 当前已下载偏移
   @override
-  String get status;
+  int get currentOffset;
+
+  /// 分块大小
   @override
-  String get message;
+  int get chunkSize;
 
   /// Create a copy of ActiveDownloadProgress
   /// with the given fields replaced by the non-null parameter values.

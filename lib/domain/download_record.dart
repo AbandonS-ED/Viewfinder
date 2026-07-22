@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'photo_asset.dart';
 
 part 'download_record.freezed.dart';
 
@@ -7,14 +6,21 @@ part 'download_record.freezed.dart';
 @freezed
 class DownloadRecord with _$DownloadRecord {
   const factory DownloadRecord({
-    /// 相机对象 handle
-    required String remoteIdentifier,
+    /// 唯一标识
+    @Default('') String id,
+
+    /// 相机端对象 handle
+    required String sourceAssetIdentifier,
+
     required String fileName,
-    required PhotoAssetKind kind,
+
+    /// 本地保存路径 (iOS 用 URL 类型；Phase 0 用 String 简化)
+    required String savedURL,
+
     @Default(0) int byteSize,
-    required DateTime captureDate,
+
     required DateTime completedAt,
-    required String localPath,
+
     @Default(false) bool exportedToPhotoLibrary,
   }) = _DownloadRecord;
 }

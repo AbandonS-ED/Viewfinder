@@ -17,6 +17,9 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$DownloadJob {
+  /// 唯一标识 (Phase 0 用空字符串占位)
+  String get id => throw _privateConstructorUsedError;
+
   /// 相机对象 handle
   String get remoteIdentifier => throw _privateConstructorUsedError;
   String get fileName => throw _privateConstructorUsedError;
@@ -27,8 +30,16 @@ mixin _$DownloadJob {
   DownloadJobStatus get status => throw _privateConstructorUsedError;
   int get bytesTransferred => throw _privateConstructorUsedError;
   int get totalBytes => throw _privateConstructorUsedError;
+
+  /// 当前已下载偏移 (用于续传)
+  int get currentOffset => throw _privateConstructorUsedError;
+
+  /// 续传次数
+  int get resumedCount => throw _privateConstructorUsedError;
+  DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get startedAt => throw _privateConstructorUsedError;
   DateTime? get completedAt => throw _privateConstructorUsedError;
+  DateTime get updatedAt => throw _privateConstructorUsedError;
   String? get errorMessage => throw _privateConstructorUsedError;
 
   /// Create a copy of DownloadJob
@@ -46,6 +57,7 @@ abstract class $DownloadJobCopyWith<$Res> {
   ) = _$DownloadJobCopyWithImpl<$Res, DownloadJob>;
   @useResult
   $Res call({
+    String id,
     String remoteIdentifier,
     String fileName,
     PhotoAssetKind kind,
@@ -55,8 +67,12 @@ abstract class $DownloadJobCopyWith<$Res> {
     DownloadJobStatus status,
     int bytesTransferred,
     int totalBytes,
+    int currentOffset,
+    int resumedCount,
+    DateTime createdAt,
     DateTime? startedAt,
     DateTime? completedAt,
+    DateTime updatedAt,
     String? errorMessage,
   });
 }
@@ -76,21 +92,30 @@ class _$DownloadJobCopyWithImpl<$Res, $Val extends DownloadJob>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? remoteIdentifier = null,
     Object? fileName = null,
-    Object? kind = freezed,
+    Object? kind = null,
     Object? byteSize = null,
     Object? captureDate = null,
     Object? autoExportToPhotoLibrary = null,
     Object? status = null,
     Object? bytesTransferred = null,
     Object? totalBytes = null,
+    Object? currentOffset = null,
+    Object? resumedCount = null,
+    Object? createdAt = null,
     Object? startedAt = freezed,
     Object? completedAt = freezed,
+    Object? updatedAt = null,
     Object? errorMessage = freezed,
   }) {
     return _then(
       _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
             remoteIdentifier: null == remoteIdentifier
                 ? _value.remoteIdentifier
                 : remoteIdentifier // ignore: cast_nullable_to_non_nullable
@@ -99,7 +124,7 @@ class _$DownloadJobCopyWithImpl<$Res, $Val extends DownloadJob>
                 ? _value.fileName
                 : fileName // ignore: cast_nullable_to_non_nullable
                       as String,
-            kind: freezed == kind
+            kind: null == kind
                 ? _value.kind
                 : kind // ignore: cast_nullable_to_non_nullable
                       as PhotoAssetKind,
@@ -127,6 +152,18 @@ class _$DownloadJobCopyWithImpl<$Res, $Val extends DownloadJob>
                 ? _value.totalBytes
                 : totalBytes // ignore: cast_nullable_to_non_nullable
                       as int,
+            currentOffset: null == currentOffset
+                ? _value.currentOffset
+                : currentOffset // ignore: cast_nullable_to_non_nullable
+                      as int,
+            resumedCount: null == resumedCount
+                ? _value.resumedCount
+                : resumedCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
             startedAt: freezed == startedAt
                 ? _value.startedAt
                 : startedAt // ignore: cast_nullable_to_non_nullable
@@ -135,6 +172,10 @@ class _$DownloadJobCopyWithImpl<$Res, $Val extends DownloadJob>
                 ? _value.completedAt
                 : completedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            updatedAt: null == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime,
             errorMessage: freezed == errorMessage
                 ? _value.errorMessage
                 : errorMessage // ignore: cast_nullable_to_non_nullable
@@ -155,6 +196,7 @@ abstract class _$$DownloadJobImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
+    String id,
     String remoteIdentifier,
     String fileName,
     PhotoAssetKind kind,
@@ -164,8 +206,12 @@ abstract class _$$DownloadJobImplCopyWith<$Res>
     DownloadJobStatus status,
     int bytesTransferred,
     int totalBytes,
+    int currentOffset,
+    int resumedCount,
+    DateTime createdAt,
     DateTime? startedAt,
     DateTime? completedAt,
+    DateTime updatedAt,
     String? errorMessage,
   });
 }
@@ -184,21 +230,30 @@ class __$$DownloadJobImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? remoteIdentifier = null,
     Object? fileName = null,
-    Object? kind = freezed,
+    Object? kind = null,
     Object? byteSize = null,
     Object? captureDate = null,
     Object? autoExportToPhotoLibrary = null,
     Object? status = null,
     Object? bytesTransferred = null,
     Object? totalBytes = null,
+    Object? currentOffset = null,
+    Object? resumedCount = null,
+    Object? createdAt = null,
     Object? startedAt = freezed,
     Object? completedAt = freezed,
+    Object? updatedAt = null,
     Object? errorMessage = freezed,
   }) {
     return _then(
       _$DownloadJobImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
         remoteIdentifier: null == remoteIdentifier
             ? _value.remoteIdentifier
             : remoteIdentifier // ignore: cast_nullable_to_non_nullable
@@ -207,7 +262,7 @@ class __$$DownloadJobImplCopyWithImpl<$Res>
             ? _value.fileName
             : fileName // ignore: cast_nullable_to_non_nullable
                   as String,
-        kind: freezed == kind
+        kind: null == kind
             ? _value.kind
             : kind // ignore: cast_nullable_to_non_nullable
                   as PhotoAssetKind,
@@ -235,6 +290,18 @@ class __$$DownloadJobImplCopyWithImpl<$Res>
             ? _value.totalBytes
             : totalBytes // ignore: cast_nullable_to_non_nullable
                   as int,
+        currentOffset: null == currentOffset
+            ? _value.currentOffset
+            : currentOffset // ignore: cast_nullable_to_non_nullable
+                  as int,
+        resumedCount: null == resumedCount
+            ? _value.resumedCount
+            : resumedCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
         startedAt: freezed == startedAt
             ? _value.startedAt
             : startedAt // ignore: cast_nullable_to_non_nullable
@@ -243,6 +310,10 @@ class __$$DownloadJobImplCopyWithImpl<$Res>
             ? _value.completedAt
             : completedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        updatedAt: null == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime,
         errorMessage: freezed == errorMessage
             ? _value.errorMessage
             : errorMessage // ignore: cast_nullable_to_non_nullable
@@ -256,6 +327,7 @@ class __$$DownloadJobImplCopyWithImpl<$Res>
 
 class _$DownloadJobImpl extends _DownloadJob {
   const _$DownloadJobImpl({
+    this.id = '',
     required this.remoteIdentifier,
     required this.fileName,
     required this.kind,
@@ -265,10 +337,19 @@ class _$DownloadJobImpl extends _DownloadJob {
     this.status = DownloadJobStatus.queued,
     this.bytesTransferred = 0,
     this.totalBytes = 0,
+    this.currentOffset = 0,
+    this.resumedCount = 0,
+    required this.createdAt,
     this.startedAt,
     this.completedAt,
+    required this.updatedAt,
     this.errorMessage,
   }) : super._();
+
+  /// 唯一标识 (Phase 0 用空字符串占位)
+  @override
+  @JsonKey()
+  final String id;
 
   /// 相机对象 handle
   @override
@@ -294,16 +375,30 @@ class _$DownloadJobImpl extends _DownloadJob {
   @override
   @JsonKey()
   final int totalBytes;
+
+  /// 当前已下载偏移 (用于续传)
+  @override
+  @JsonKey()
+  final int currentOffset;
+
+  /// 续传次数
+  @override
+  @JsonKey()
+  final int resumedCount;
+  @override
+  final DateTime createdAt;
   @override
   final DateTime? startedAt;
   @override
   final DateTime? completedAt;
   @override
+  final DateTime updatedAt;
+  @override
   final String? errorMessage;
 
   @override
   String toString() {
-    return 'DownloadJob(remoteIdentifier: $remoteIdentifier, fileName: $fileName, kind: $kind, byteSize: $byteSize, captureDate: $captureDate, autoExportToPhotoLibrary: $autoExportToPhotoLibrary, status: $status, bytesTransferred: $bytesTransferred, totalBytes: $totalBytes, startedAt: $startedAt, completedAt: $completedAt, errorMessage: $errorMessage)';
+    return 'DownloadJob(id: $id, remoteIdentifier: $remoteIdentifier, fileName: $fileName, kind: $kind, byteSize: $byteSize, captureDate: $captureDate, autoExportToPhotoLibrary: $autoExportToPhotoLibrary, status: $status, bytesTransferred: $bytesTransferred, totalBytes: $totalBytes, currentOffset: $currentOffset, resumedCount: $resumedCount, createdAt: $createdAt, startedAt: $startedAt, completedAt: $completedAt, updatedAt: $updatedAt, errorMessage: $errorMessage)';
   }
 
   @override
@@ -311,11 +406,12 @@ class _$DownloadJobImpl extends _DownloadJob {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$DownloadJobImpl &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.remoteIdentifier, remoteIdentifier) ||
                 other.remoteIdentifier == remoteIdentifier) &&
             (identical(other.fileName, fileName) ||
                 other.fileName == fileName) &&
-            const DeepCollectionEquality().equals(other.kind, kind) &&
+            (identical(other.kind, kind) || other.kind == kind) &&
             (identical(other.byteSize, byteSize) ||
                 other.byteSize == byteSize) &&
             (identical(other.captureDate, captureDate) ||
@@ -330,10 +426,18 @@ class _$DownloadJobImpl extends _DownloadJob {
                 other.bytesTransferred == bytesTransferred) &&
             (identical(other.totalBytes, totalBytes) ||
                 other.totalBytes == totalBytes) &&
+            (identical(other.currentOffset, currentOffset) ||
+                other.currentOffset == currentOffset) &&
+            (identical(other.resumedCount, resumedCount) ||
+                other.resumedCount == resumedCount) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
             (identical(other.startedAt, startedAt) ||
                 other.startedAt == startedAt) &&
             (identical(other.completedAt, completedAt) ||
                 other.completedAt == completedAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt) &&
             (identical(other.errorMessage, errorMessage) ||
                 other.errorMessage == errorMessage));
   }
@@ -341,17 +445,22 @@ class _$DownloadJobImpl extends _DownloadJob {
   @override
   int get hashCode => Object.hash(
     runtimeType,
+    id,
     remoteIdentifier,
     fileName,
-    const DeepCollectionEquality().hash(kind),
+    kind,
     byteSize,
     captureDate,
     autoExportToPhotoLibrary,
     status,
     bytesTransferred,
     totalBytes,
+    currentOffset,
+    resumedCount,
+    createdAt,
     startedAt,
     completedAt,
+    updatedAt,
     errorMessage,
   );
 
@@ -366,6 +475,7 @@ class _$DownloadJobImpl extends _DownloadJob {
 
 abstract class _DownloadJob extends DownloadJob {
   const factory _DownloadJob({
+    final String id,
     required final String remoteIdentifier,
     required final String fileName,
     required final PhotoAssetKind kind,
@@ -375,11 +485,19 @@ abstract class _DownloadJob extends DownloadJob {
     final DownloadJobStatus status,
     final int bytesTransferred,
     final int totalBytes,
+    final int currentOffset,
+    final int resumedCount,
+    required final DateTime createdAt,
     final DateTime? startedAt,
     final DateTime? completedAt,
+    required final DateTime updatedAt,
     final String? errorMessage,
   }) = _$DownloadJobImpl;
   const _DownloadJob._() : super._();
+
+  /// 唯一标识 (Phase 0 用空字符串占位)
+  @override
+  String get id;
 
   /// 相机对象 handle
   @override
@@ -400,10 +518,22 @@ abstract class _DownloadJob extends DownloadJob {
   int get bytesTransferred;
   @override
   int get totalBytes;
+
+  /// 当前已下载偏移 (用于续传)
+  @override
+  int get currentOffset;
+
+  /// 续传次数
+  @override
+  int get resumedCount;
+  @override
+  DateTime get createdAt;
   @override
   DateTime? get startedAt;
   @override
   DateTime? get completedAt;
+  @override
+  DateTime get updatedAt;
   @override
   String? get errorMessage;
 

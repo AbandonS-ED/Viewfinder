@@ -136,12 +136,13 @@ class __$$DownloadQueueStateImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$DownloadQueueStateImpl implements _DownloadQueueState {
+class _$DownloadQueueStateImpl extends _DownloadQueueState {
   const _$DownloadQueueStateImpl({
     final List<DownloadJob> jobs = const <DownloadJob>[],
     this.activeJobID,
     this.status = DownloadQueueStatus.idle,
-  }) : _jobs = jobs;
+  }) : _jobs = jobs,
+       super._();
 
   final List<DownloadJob> _jobs;
   @override
@@ -194,12 +195,13 @@ class _$DownloadQueueStateImpl implements _DownloadQueueState {
       );
 }
 
-abstract class _DownloadQueueState implements DownloadQueueState {
+abstract class _DownloadQueueState extends DownloadQueueState {
   const factory _DownloadQueueState({
     final List<DownloadJob> jobs,
     final String? activeJobID,
     final DownloadQueueStatus status,
   }) = _$DownloadQueueStateImpl;
+  const _DownloadQueueState._() : super._();
 
   @override
   List<DownloadJob> get jobs;

@@ -1,16 +1,19 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'photo_asset.dart';
 
-part 'photo_asset_merge.freezed.dart';
-
-/// RAW + JPEG 配对 (相机同时间拍 RAW+JPEG，合并显示)
-@freezed
-class PhotoAssetMerge with _$PhotoAssetMerge {
-  const factory PhotoAssetMerge({
-    /// 主照片 (一般 JPEG，因为小)
-    required PhotoAsset primary,
-
-    /// 配对照片 (一般 RAW)
-    PhotoAsset? paired,
-  }) = _PhotoAssetMerge;
+/// 照片列表合并工具 (对齐 iOS PhotoAssetMerge.preservingCameraOrder)
+class PhotoAssetMerge {
+  /// 合并新旧照片列表，去重保持相机顺序
+  /// - [resetTraversal]=true: 用 incoming 替换 existing
+  /// - [resetTraversal]=false: 把 incoming 追加到 existing 末尾
+  static List<PhotoAsset> preservingCameraOrder({
+    required List<PhotoAsset> existing,
+    required List<PhotoAsset> incoming,
+    required bool resetTraversal,
+  }) {
+    final merged = resetTraversal ? incoming : (existing + incoming);
+    final seen = <String>{};
+    return merged
+        .where((asset) => seen.add(asset.remoteIdentifier))
+        .toList(growable: false);
+  }
 }

@@ -17,8 +17,9 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$LogEntry {
+  /// 唯一标识
+  String get id => throw _privateConstructorUsedError;
   DateTime get timestamp => throw _privateConstructorUsedError;
-  LogLevel get level => throw _privateConstructorUsedError;
   String get message => throw _privateConstructorUsedError;
 
   /// Create a copy of LogEntry
@@ -33,7 +34,7 @@ abstract class $LogEntryCopyWith<$Res> {
   factory $LogEntryCopyWith(LogEntry value, $Res Function(LogEntry) then) =
       _$LogEntryCopyWithImpl<$Res, LogEntry>;
   @useResult
-  $Res call({DateTime timestamp, LogLevel level, String message});
+  $Res call({String id, DateTime timestamp, String message});
 }
 
 /// @nodoc
@@ -51,20 +52,20 @@ class _$LogEntryCopyWithImpl<$Res, $Val extends LogEntry>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? timestamp = null,
-    Object? level = null,
     Object? message = null,
   }) {
     return _then(
       _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
             timestamp: null == timestamp
                 ? _value.timestamp
                 : timestamp // ignore: cast_nullable_to_non_nullable
                       as DateTime,
-            level: null == level
-                ? _value.level
-                : level // ignore: cast_nullable_to_non_nullable
-                      as LogLevel,
             message: null == message
                 ? _value.message
                 : message // ignore: cast_nullable_to_non_nullable
@@ -84,7 +85,7 @@ abstract class _$$LogEntryImplCopyWith<$Res>
   ) = __$$LogEntryImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({DateTime timestamp, LogLevel level, String message});
+  $Res call({String id, DateTime timestamp, String message});
 }
 
 /// @nodoc
@@ -101,20 +102,20 @@ class __$$LogEntryImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? timestamp = null,
-    Object? level = null,
     Object? message = null,
   }) {
     return _then(
       _$LogEntryImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
         timestamp: null == timestamp
             ? _value.timestamp
             : timestamp // ignore: cast_nullable_to_non_nullable
                   as DateTime,
-        level: null == level
-            ? _value.level
-            : level // ignore: cast_nullable_to_non_nullable
-                  as LogLevel,
         message: null == message
             ? _value.message
             : message // ignore: cast_nullable_to_non_nullable
@@ -128,22 +129,23 @@ class __$$LogEntryImplCopyWithImpl<$Res>
 
 class _$LogEntryImpl implements _LogEntry {
   const _$LogEntryImpl({
+    this.id = '',
     required this.timestamp,
-    this.level = LogLevel.info,
     required this.message,
   });
 
-  @override
-  final DateTime timestamp;
+  /// 唯一标识
   @override
   @JsonKey()
-  final LogLevel level;
+  final String id;
+  @override
+  final DateTime timestamp;
   @override
   final String message;
 
   @override
   String toString() {
-    return 'LogEntry(timestamp: $timestamp, level: $level, message: $message)';
+    return 'LogEntry(id: $id, timestamp: $timestamp, message: $message)';
   }
 
   @override
@@ -151,14 +153,14 @@ class _$LogEntryImpl implements _LogEntry {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$LogEntryImpl &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.timestamp, timestamp) ||
                 other.timestamp == timestamp) &&
-            (identical(other.level, level) || other.level == level) &&
             (identical(other.message, message) || other.message == message));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, timestamp, level, message);
+  int get hashCode => Object.hash(runtimeType, id, timestamp, message);
 
   /// Create a copy of LogEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -171,15 +173,16 @@ class _$LogEntryImpl implements _LogEntry {
 
 abstract class _LogEntry implements LogEntry {
   const factory _LogEntry({
+    final String id,
     required final DateTime timestamp,
-    final LogLevel level,
     required final String message,
   }) = _$LogEntryImpl;
 
+  /// 唯一标识
+  @override
+  String get id;
   @override
   DateTime get timestamp;
-  @override
-  LogLevel get level;
   @override
   String get message;
 

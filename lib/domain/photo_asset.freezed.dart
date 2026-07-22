@@ -17,6 +17,9 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$PhotoAsset {
+  /// 唯一标识 (Phase 0 用空字符串占位)
+  String get id => throw _privateConstructorUsedError;
+
   /// 相机返回的对象 handle (UInt32, 序列化为字符串)
   String get remoteIdentifier => throw _privateConstructorUsedError;
   String get fileName => throw _privateConstructorUsedError;
@@ -41,6 +44,7 @@ abstract class $PhotoAssetCopyWith<$Res> {
   ) = _$PhotoAssetCopyWithImpl<$Res, PhotoAsset>;
   @useResult
   $Res call({
+    String id,
     String remoteIdentifier,
     String fileName,
     PhotoAssetKind kind,
@@ -67,6 +71,7 @@ class _$PhotoAssetCopyWithImpl<$Res, $Val extends PhotoAsset>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? remoteIdentifier = null,
     Object? fileName = null,
     Object? kind = null,
@@ -76,6 +81,10 @@ class _$PhotoAssetCopyWithImpl<$Res, $Val extends PhotoAsset>
   }) {
     return _then(
       _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
             remoteIdentifier: null == remoteIdentifier
                 ? _value.remoteIdentifier
                 : remoteIdentifier // ignore: cast_nullable_to_non_nullable
@@ -132,6 +141,7 @@ abstract class _$$PhotoAssetImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
+    String id,
     String remoteIdentifier,
     String fileName,
     PhotoAssetKind kind,
@@ -158,6 +168,7 @@ class __$$PhotoAssetImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = null,
     Object? remoteIdentifier = null,
     Object? fileName = null,
     Object? kind = null,
@@ -167,6 +178,10 @@ class __$$PhotoAssetImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$PhotoAssetImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
         remoteIdentifier: null == remoteIdentifier
             ? _value.remoteIdentifier
             : remoteIdentifier // ignore: cast_nullable_to_non_nullable
@@ -200,6 +215,7 @@ class __$$PhotoAssetImplCopyWithImpl<$Res>
 
 class _$PhotoAssetImpl implements _PhotoAsset {
   const _$PhotoAssetImpl({
+    this.id = '',
     required this.remoteIdentifier,
     required this.fileName,
     required this.kind,
@@ -207,6 +223,11 @@ class _$PhotoAssetImpl implements _PhotoAsset {
     required this.captureDate,
     this.thumbnailInfo,
   });
+
+  /// 唯一标识 (Phase 0 用空字符串占位)
+  @override
+  @JsonKey()
+  final String id;
 
   /// 相机返回的对象 handle (UInt32, 序列化为字符串)
   @override
@@ -225,7 +246,7 @@ class _$PhotoAssetImpl implements _PhotoAsset {
 
   @override
   String toString() {
-    return 'PhotoAsset(remoteIdentifier: $remoteIdentifier, fileName: $fileName, kind: $kind, byteSize: $byteSize, captureDate: $captureDate, thumbnailInfo: $thumbnailInfo)';
+    return 'PhotoAsset(id: $id, remoteIdentifier: $remoteIdentifier, fileName: $fileName, kind: $kind, byteSize: $byteSize, captureDate: $captureDate, thumbnailInfo: $thumbnailInfo)';
   }
 
   @override
@@ -233,6 +254,7 @@ class _$PhotoAssetImpl implements _PhotoAsset {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$PhotoAssetImpl &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.remoteIdentifier, remoteIdentifier) ||
                 other.remoteIdentifier == remoteIdentifier) &&
             (identical(other.fileName, fileName) ||
@@ -249,6 +271,7 @@ class _$PhotoAssetImpl implements _PhotoAsset {
   @override
   int get hashCode => Object.hash(
     runtimeType,
+    id,
     remoteIdentifier,
     fileName,
     kind,
@@ -268,6 +291,7 @@ class _$PhotoAssetImpl implements _PhotoAsset {
 
 abstract class _PhotoAsset implements PhotoAsset {
   const factory _PhotoAsset({
+    final String id,
     required final String remoteIdentifier,
     required final String fileName,
     required final PhotoAssetKind kind,
@@ -275,6 +299,10 @@ abstract class _PhotoAsset implements PhotoAsset {
     required final DateTime captureDate,
     final PhotoAssetThumbnailInfo? thumbnailInfo,
   }) = _$PhotoAssetImpl;
+
+  /// 唯一标识 (Phase 0 用空字符串占位)
+  @override
+  String get id;
 
   /// 相机返回的对象 handle (UInt32, 序列化为字符串)
   @override

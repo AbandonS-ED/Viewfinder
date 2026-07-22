@@ -6,16 +6,11 @@ part 'log_entry.freezed.dart';
 @freezed
 class LogEntry with _$LogEntry {
   const factory LogEntry({
+    /// 唯一标识
+    @Default('') String id,
+
     required DateTime timestamp,
-    @Default(LogLevel.info) LogLevel level,
+
     required String message,
   }) = _LogEntry;
-}
-
-/// 日志级别
-enum LogLevel {
-  debug,
-  info,
-  warning,
-  error;
 }

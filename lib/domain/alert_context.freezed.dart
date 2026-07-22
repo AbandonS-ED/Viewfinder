@@ -17,9 +17,10 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$AlertContext {
+  /// 唯一标识
+  String get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String get message => throw _privateConstructorUsedError;
-  AlertSeverity get severity => throw _privateConstructorUsedError;
 
   /// Create a copy of AlertContext
   /// with the given fields replaced by the non-null parameter values.
@@ -35,7 +36,7 @@ abstract class $AlertContextCopyWith<$Res> {
     $Res Function(AlertContext) then,
   ) = _$AlertContextCopyWithImpl<$Res, AlertContext>;
   @useResult
-  $Res call({String title, String message, AlertSeverity severity});
+  $Res call({String id, String title, String message});
 }
 
 /// @nodoc
@@ -52,13 +53,13 @@ class _$AlertContextCopyWithImpl<$Res, $Val extends AlertContext>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? title = null,
-    Object? message = null,
-    Object? severity = null,
-  }) {
+  $Res call({Object? id = null, Object? title = null, Object? message = null}) {
     return _then(
       _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
             title: null == title
                 ? _value.title
                 : title // ignore: cast_nullable_to_non_nullable
@@ -67,10 +68,6 @@ class _$AlertContextCopyWithImpl<$Res, $Val extends AlertContext>
                 ? _value.message
                 : message // ignore: cast_nullable_to_non_nullable
                       as String,
-            severity: null == severity
-                ? _value.severity
-                : severity // ignore: cast_nullable_to_non_nullable
-                      as AlertSeverity,
           )
           as $Val,
     );
@@ -86,7 +83,7 @@ abstract class _$$AlertContextImplCopyWith<$Res>
   ) = __$$AlertContextImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String title, String message, AlertSeverity severity});
+  $Res call({String id, String title, String message});
 }
 
 /// @nodoc
@@ -102,13 +99,13 @@ class __$$AlertContextImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({
-    Object? title = null,
-    Object? message = null,
-    Object? severity = null,
-  }) {
+  $Res call({Object? id = null, Object? title = null, Object? message = null}) {
     return _then(
       _$AlertContextImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
         title: null == title
             ? _value.title
             : title // ignore: cast_nullable_to_non_nullable
@@ -117,10 +114,6 @@ class __$$AlertContextImplCopyWithImpl<$Res>
             ? _value.message
             : message // ignore: cast_nullable_to_non_nullable
                   as String,
-        severity: null == severity
-            ? _value.severity
-            : severity // ignore: cast_nullable_to_non_nullable
-                  as AlertSeverity,
       ),
     );
   }
@@ -130,22 +123,23 @@ class __$$AlertContextImplCopyWithImpl<$Res>
 
 class _$AlertContextImpl implements _AlertContext {
   const _$AlertContextImpl({
+    this.id = '',
     required this.title,
     required this.message,
-    this.severity = AlertSeverity.info,
   });
 
+  /// 唯一标识
+  @override
+  @JsonKey()
+  final String id;
   @override
   final String title;
   @override
   final String message;
-  @override
-  @JsonKey()
-  final AlertSeverity severity;
 
   @override
   String toString() {
-    return 'AlertContext(title: $title, message: $message, severity: $severity)';
+    return 'AlertContext(id: $id, title: $title, message: $message)';
   }
 
   @override
@@ -153,14 +147,13 @@ class _$AlertContextImpl implements _AlertContext {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$AlertContextImpl &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
-            (identical(other.message, message) || other.message == message) &&
-            (identical(other.severity, severity) ||
-                other.severity == severity));
+            (identical(other.message, message) || other.message == message));
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, title, message, severity);
+  int get hashCode => Object.hash(runtimeType, id, title, message);
 
   /// Create a copy of AlertContext
   /// with the given fields replaced by the non-null parameter values.
@@ -173,17 +166,18 @@ class _$AlertContextImpl implements _AlertContext {
 
 abstract class _AlertContext implements AlertContext {
   const factory _AlertContext({
+    final String id,
     required final String title,
     required final String message,
-    final AlertSeverity severity,
   }) = _$AlertContextImpl;
 
+  /// 唯一标识
+  @override
+  String get id;
   @override
   String get title;
   @override
   String get message;
-  @override
-  AlertSeverity get severity;
 
   /// Create a copy of AlertContext
   /// with the given fields replaced by the non-null parameter values.

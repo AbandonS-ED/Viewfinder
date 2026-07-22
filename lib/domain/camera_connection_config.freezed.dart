@@ -75,7 +75,7 @@ class _$CameraConnectionConfigCopyWithImpl<
   $Res call({
     Object? host = null,
     Object? port = null,
-    Object? transportMode = freezed,
+    Object? transportMode = null,
     Object? autoExportToPhotoLibrary = null,
     Object? prioritizeJPEGDownloads = null,
   }) {
@@ -89,7 +89,7 @@ class _$CameraConnectionConfigCopyWithImpl<
                 ? _value.port
                 : port // ignore: cast_nullable_to_non_nullable
                       as int,
-            transportMode: freezed == transportMode
+            transportMode: null == transportMode
                 ? _value.transportMode
                 : transportMode // ignore: cast_nullable_to_non_nullable
                       as CameraTransportMode,
@@ -142,7 +142,7 @@ class __$$CameraConnectionConfigImplCopyWithImpl<$Res>
   $Res call({
     Object? host = null,
     Object? port = null,
-    Object? transportMode = freezed,
+    Object? transportMode = null,
     Object? autoExportToPhotoLibrary = null,
     Object? prioritizeJPEGDownloads = null,
   }) {
@@ -156,7 +156,7 @@ class __$$CameraConnectionConfigImplCopyWithImpl<$Res>
             ? _value.port
             : port // ignore: cast_nullable_to_non_nullable
                   as int,
-        transportMode: freezed == transportMode
+        transportMode: null == transportMode
             ? _value.transportMode
             : transportMode // ignore: cast_nullable_to_non_nullable
                   as CameraTransportMode,
@@ -221,10 +221,8 @@ class _$CameraConnectionConfigImpl extends _CameraConnectionConfig {
             other is _$CameraConnectionConfigImpl &&
             (identical(other.host, host) || other.host == host) &&
             (identical(other.port, port) || other.port == port) &&
-            const DeepCollectionEquality().equals(
-              other.transportMode,
-              transportMode,
-            ) &&
+            (identical(other.transportMode, transportMode) ||
+                other.transportMode == transportMode) &&
             (identical(
                   other.autoExportToPhotoLibrary,
                   autoExportToPhotoLibrary,
@@ -242,7 +240,7 @@ class _$CameraConnectionConfigImpl extends _CameraConnectionConfig {
     runtimeType,
     host,
     port,
-    const DeepCollectionEquality().hash(transportMode),
+    transportMode,
     autoExportToPhotoLibrary,
     prioritizeJPEGDownloads,
   );

@@ -17,14 +17,17 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$DownloadRecord {
-  /// 相机对象 handle
-  String get remoteIdentifier => throw _privateConstructorUsedError;
+  /// 唯一标识
+  String get id => throw _privateConstructorUsedError;
+
+  /// 相机端对象 handle
+  String get sourceAssetIdentifier => throw _privateConstructorUsedError;
   String get fileName => throw _privateConstructorUsedError;
-  PhotoAssetKind get kind => throw _privateConstructorUsedError;
+
+  /// 本地保存路径 (iOS 用 URL 类型；Phase 0 用 String 简化)
+  String get savedURL => throw _privateConstructorUsedError;
   int get byteSize => throw _privateConstructorUsedError;
-  DateTime get captureDate => throw _privateConstructorUsedError;
   DateTime get completedAt => throw _privateConstructorUsedError;
-  String get localPath => throw _privateConstructorUsedError;
   bool get exportedToPhotoLibrary => throw _privateConstructorUsedError;
 
   /// Create a copy of DownloadRecord
@@ -42,13 +45,12 @@ abstract class $DownloadRecordCopyWith<$Res> {
   ) = _$DownloadRecordCopyWithImpl<$Res, DownloadRecord>;
   @useResult
   $Res call({
-    String remoteIdentifier,
+    String id,
+    String sourceAssetIdentifier,
     String fileName,
-    PhotoAssetKind kind,
+    String savedURL,
     int byteSize,
-    DateTime captureDate,
     DateTime completedAt,
-    String localPath,
     bool exportedToPhotoLibrary,
   });
 }
@@ -68,45 +70,40 @@ class _$DownloadRecordCopyWithImpl<$Res, $Val extends DownloadRecord>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? remoteIdentifier = null,
+    Object? id = null,
+    Object? sourceAssetIdentifier = null,
     Object? fileName = null,
-    Object? kind = freezed,
+    Object? savedURL = null,
     Object? byteSize = null,
-    Object? captureDate = null,
     Object? completedAt = null,
-    Object? localPath = null,
     Object? exportedToPhotoLibrary = null,
   }) {
     return _then(
       _value.copyWith(
-            remoteIdentifier: null == remoteIdentifier
-                ? _value.remoteIdentifier
-                : remoteIdentifier // ignore: cast_nullable_to_non_nullable
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            sourceAssetIdentifier: null == sourceAssetIdentifier
+                ? _value.sourceAssetIdentifier
+                : sourceAssetIdentifier // ignore: cast_nullable_to_non_nullable
                       as String,
             fileName: null == fileName
                 ? _value.fileName
                 : fileName // ignore: cast_nullable_to_non_nullable
                       as String,
-            kind: freezed == kind
-                ? _value.kind
-                : kind // ignore: cast_nullable_to_non_nullable
-                      as PhotoAssetKind,
+            savedURL: null == savedURL
+                ? _value.savedURL
+                : savedURL // ignore: cast_nullable_to_non_nullable
+                      as String,
             byteSize: null == byteSize
                 ? _value.byteSize
                 : byteSize // ignore: cast_nullable_to_non_nullable
                       as int,
-            captureDate: null == captureDate
-                ? _value.captureDate
-                : captureDate // ignore: cast_nullable_to_non_nullable
-                      as DateTime,
             completedAt: null == completedAt
                 ? _value.completedAt
                 : completedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime,
-            localPath: null == localPath
-                ? _value.localPath
-                : localPath // ignore: cast_nullable_to_non_nullable
-                      as String,
             exportedToPhotoLibrary: null == exportedToPhotoLibrary
                 ? _value.exportedToPhotoLibrary
                 : exportedToPhotoLibrary // ignore: cast_nullable_to_non_nullable
@@ -127,13 +124,12 @@ abstract class _$$DownloadRecordImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String remoteIdentifier,
+    String id,
+    String sourceAssetIdentifier,
     String fileName,
-    PhotoAssetKind kind,
+    String savedURL,
     int byteSize,
-    DateTime captureDate,
     DateTime completedAt,
-    String localPath,
     bool exportedToPhotoLibrary,
   });
 }
@@ -152,45 +148,40 @@ class __$$DownloadRecordImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? remoteIdentifier = null,
+    Object? id = null,
+    Object? sourceAssetIdentifier = null,
     Object? fileName = null,
-    Object? kind = freezed,
+    Object? savedURL = null,
     Object? byteSize = null,
-    Object? captureDate = null,
     Object? completedAt = null,
-    Object? localPath = null,
     Object? exportedToPhotoLibrary = null,
   }) {
     return _then(
       _$DownloadRecordImpl(
-        remoteIdentifier: null == remoteIdentifier
-            ? _value.remoteIdentifier
-            : remoteIdentifier // ignore: cast_nullable_to_non_nullable
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        sourceAssetIdentifier: null == sourceAssetIdentifier
+            ? _value.sourceAssetIdentifier
+            : sourceAssetIdentifier // ignore: cast_nullable_to_non_nullable
                   as String,
         fileName: null == fileName
             ? _value.fileName
             : fileName // ignore: cast_nullable_to_non_nullable
                   as String,
-        kind: freezed == kind
-            ? _value.kind
-            : kind // ignore: cast_nullable_to_non_nullable
-                  as PhotoAssetKind,
+        savedURL: null == savedURL
+            ? _value.savedURL
+            : savedURL // ignore: cast_nullable_to_non_nullable
+                  as String,
         byteSize: null == byteSize
             ? _value.byteSize
             : byteSize // ignore: cast_nullable_to_non_nullable
                   as int,
-        captureDate: null == captureDate
-            ? _value.captureDate
-            : captureDate // ignore: cast_nullable_to_non_nullable
-                  as DateTime,
         completedAt: null == completedAt
             ? _value.completedAt
             : completedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
-        localPath: null == localPath
-            ? _value.localPath
-            : localPath // ignore: cast_nullable_to_non_nullable
-                  as String,
         exportedToPhotoLibrary: null == exportedToPhotoLibrary
             ? _value.exportedToPhotoLibrary
             : exportedToPhotoLibrary // ignore: cast_nullable_to_non_nullable
@@ -204,39 +195,41 @@ class __$$DownloadRecordImplCopyWithImpl<$Res>
 
 class _$DownloadRecordImpl implements _DownloadRecord {
   const _$DownloadRecordImpl({
-    required this.remoteIdentifier,
+    this.id = '',
+    required this.sourceAssetIdentifier,
     required this.fileName,
-    required this.kind,
+    required this.savedURL,
     this.byteSize = 0,
-    required this.captureDate,
     required this.completedAt,
-    required this.localPath,
     this.exportedToPhotoLibrary = false,
   });
 
-  /// 相机对象 handle
+  /// 唯一标识
   @override
-  final String remoteIdentifier;
+  @JsonKey()
+  final String id;
+
+  /// 相机端对象 handle
+  @override
+  final String sourceAssetIdentifier;
   @override
   final String fileName;
+
+  /// 本地保存路径 (iOS 用 URL 类型；Phase 0 用 String 简化)
   @override
-  final PhotoAssetKind kind;
+  final String savedURL;
   @override
   @JsonKey()
   final int byteSize;
   @override
-  final DateTime captureDate;
-  @override
   final DateTime completedAt;
-  @override
-  final String localPath;
   @override
   @JsonKey()
   final bool exportedToPhotoLibrary;
 
   @override
   String toString() {
-    return 'DownloadRecord(remoteIdentifier: $remoteIdentifier, fileName: $fileName, kind: $kind, byteSize: $byteSize, captureDate: $captureDate, completedAt: $completedAt, localPath: $localPath, exportedToPhotoLibrary: $exportedToPhotoLibrary)';
+    return 'DownloadRecord(id: $id, sourceAssetIdentifier: $sourceAssetIdentifier, fileName: $fileName, savedURL: $savedURL, byteSize: $byteSize, completedAt: $completedAt, exportedToPhotoLibrary: $exportedToPhotoLibrary)';
   }
 
   @override
@@ -244,19 +237,17 @@ class _$DownloadRecordImpl implements _DownloadRecord {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$DownloadRecordImpl &&
-            (identical(other.remoteIdentifier, remoteIdentifier) ||
-                other.remoteIdentifier == remoteIdentifier) &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.sourceAssetIdentifier, sourceAssetIdentifier) ||
+                other.sourceAssetIdentifier == sourceAssetIdentifier) &&
             (identical(other.fileName, fileName) ||
                 other.fileName == fileName) &&
-            const DeepCollectionEquality().equals(other.kind, kind) &&
+            (identical(other.savedURL, savedURL) ||
+                other.savedURL == savedURL) &&
             (identical(other.byteSize, byteSize) ||
                 other.byteSize == byteSize) &&
-            (identical(other.captureDate, captureDate) ||
-                other.captureDate == captureDate) &&
             (identical(other.completedAt, completedAt) ||
                 other.completedAt == completedAt) &&
-            (identical(other.localPath, localPath) ||
-                other.localPath == localPath) &&
             (identical(other.exportedToPhotoLibrary, exportedToPhotoLibrary) ||
                 other.exportedToPhotoLibrary == exportedToPhotoLibrary));
   }
@@ -264,13 +255,12 @@ class _$DownloadRecordImpl implements _DownloadRecord {
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    remoteIdentifier,
+    id,
+    sourceAssetIdentifier,
     fileName,
-    const DeepCollectionEquality().hash(kind),
+    savedURL,
     byteSize,
-    captureDate,
     completedAt,
-    localPath,
     exportedToPhotoLibrary,
   );
 
@@ -288,31 +278,32 @@ class _$DownloadRecordImpl implements _DownloadRecord {
 
 abstract class _DownloadRecord implements DownloadRecord {
   const factory _DownloadRecord({
-    required final String remoteIdentifier,
+    final String id,
+    required final String sourceAssetIdentifier,
     required final String fileName,
-    required final PhotoAssetKind kind,
+    required final String savedURL,
     final int byteSize,
-    required final DateTime captureDate,
     required final DateTime completedAt,
-    required final String localPath,
     final bool exportedToPhotoLibrary,
   }) = _$DownloadRecordImpl;
 
-  /// 相机对象 handle
+  /// 唯一标识
   @override
-  String get remoteIdentifier;
+  String get id;
+
+  /// 相机端对象 handle
+  @override
+  String get sourceAssetIdentifier;
   @override
   String get fileName;
+
+  /// 本地保存路径 (iOS 用 URL 类型；Phase 0 用 String 简化)
   @override
-  PhotoAssetKind get kind;
+  String get savedURL;
   @override
   int get byteSize;
   @override
-  DateTime get captureDate;
-  @override
   DateTime get completedAt;
-  @override
-  String get localPath;
   @override
   bool get exportedToPhotoLibrary;
 
