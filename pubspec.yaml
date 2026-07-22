@@ -35,6 +35,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # Viewfinder 项目核心依赖 (Phase 0 锁定主版本)
+  flutter_riverpod: ^2.5.0       # 状态管理
+  freezed_annotation: ^2.4.0     # @freezed 注解
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,6 +49,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+  # freezed 代码生成工具 (build_runner 跑这两个生成 .freezed.dart)
+  build_runner: ^2.4.0
+  freezed: ^2.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
