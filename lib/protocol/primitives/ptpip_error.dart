@@ -6,6 +6,8 @@ sealed class PTPIPError {
 
   int? get responseCode => null;
 
+  bool get isTimeout => false;
+
   const factory PTPIPError.invalidPacketLength() = _InvalidPacketLength;
   const factory PTPIPError.unsupportedPacketType(int value) = _UnsupportedPacketType;
   const factory PTPIPError.unexpectedPacket({
@@ -94,6 +96,8 @@ class _SessionUnavailable extends PTPIPError {
 class _Timeout extends PTPIPError {
   const _Timeout(this.detail);
   final String detail;
+  @override
+  bool get isTimeout => true;
   @override
   String get message => '等待相机响应超时：$detail';
 }

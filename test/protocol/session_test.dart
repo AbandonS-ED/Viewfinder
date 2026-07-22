@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:viewfinder/protocol/primitives/ptpip_data_types.dart';
-import 'package:viewfinder/protocol/primitives/ptpip_data_structures.dart';
 import 'package:viewfinder/protocol/primitives/ptpip_packet_codec.dart';
 import 'package:viewfinder/protocol/primitives/ptpip_error.dart';
 import 'package:viewfinder/protocol/transport/ptpip_connection.dart';
@@ -13,7 +12,7 @@ Uint8List _encodeResponsePayload({
   required PTPIPPacketType type,
   required Uint8List payload,
 }) {
-  return PTPIPBinaryX.encodePacket(type: type, payload: payload);
+  return PTPIPCodec.encodePacket(type: type, payload: payload);
 }
 
 Uint8List _okResponse(int transactionID) {
@@ -55,9 +54,7 @@ void main() {
         0x00, 0x00, // StandardVersion
         0x00, 0x00, 0x00, 0x00, // VendorExtensionID
         0x00, 0x00, // VendorExtensionVersion
-        0x01, 0x00, 0x00, 0x00, 0x00, 0x00, // VendorExtensionDesc (PTP string: empty?)
-        // Actually, VendorExtensionDesc is a PTP string: count byte + chars*2
-        0x00, // empty string
+        0x00, // VendorExtensionDesc (empty PTP string: count=0)
         0x00, 0x00, // FunctionalMode
         0x00, 0x00, 0x00, 0x00, // OperationsSupported array - empty
         0x00, 0x00, 0x00, 0x00, // EventsSupported array - empty
@@ -100,26 +97,26 @@ void main() {
       ByteData.sublistView(handlesPayload).setUint32(4, 0x00001001, Endian.little);
       ByteData.sublistView(handlesPayload).setUint32(8, 0x00001002, Endian.little);
       final handlesStartDataPayload = Uint8List(12);
-      ByteData.sublistView(handlesStartDataPayload).setUint32(0, 3, Endian.little); // transactionID
+      ByteData.sublistView(handlesStartDataPayload).setUint32(0, 1, Endian.little); // transactionID
       ByteData.sublistView(handlesStartDataPayload).setUint64(4, handlesPayload.length, Endian.little);
       final handlesStartData = _encodeResponsePayload(
         type: PTPIPPacketType.startData,
         payload: handlesStartDataPayload,
       );
       final handlesDataPayload = Uint8List(4 + handlesPayload.length);
-      ByteData.sublistView(handlesDataPayload).setUint32(0, 3, Endian.little); // transactionID
+      ByteData.sublistView(handlesDataPayload).setUint32(0, 1, Endian.little); // transactionID
       handlesDataPayload.setRange(4, handlesDataPayload.length, handlesPayload);
       final handlesData = _encodeResponsePayload(
         type: PTPIPPacketType.data,
         payload: handlesDataPayload,
       );
       final handlesEndDataPayload = Uint8List(4);
-      ByteData.sublistView(handlesEndDataPayload).setUint32(0, 3, Endian.little);
+      ByteData.sublistView(handlesEndDataPayload).setUint32(0, 1, Endian.little);
       final handlesEndData = _encodeResponsePayload(
         type: PTPIPPacketType.endData,
         payload: handlesEndDataPayload,
       );
-      final handlesOk = _okResponse(3);
+      final handlesOk = _okResponse(1);
 
       final cmdFake = FakePtpipSocket(scriptedResponses: [
         // openSession: initCommandAck
@@ -197,5 +194,123 @@ void main() {
         throwsA(isA<PTPIPError>()),
       );
     }, timeout: const Timeout(Duration(seconds: 5)));
+
+    Uint8List fullDeviceInfoPayload() {
+      return Uint8List.fromList([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00,
+      ]);
+    }
+
+    Uint8List deviceInfoStart(int transactionID, Uint8List payload) {
+      final ds = Uint8List(12);
+      ByteData.sublistView(ds).setUint32(0, transactionID, Endian.little);
+      ByteData.sublistView(ds).setUint64(4, payload.length, Endian.little);
+      return _encodeResponsePayload(type: PTPIPPacketType.startData, payload: ds);
+    }
+
+    Uint8List deviceInfoData(int transactionID, Uint8List payload) {
+      final dd = Uint8List(4 + payload.length);
+      ByteData.sublistView(dd).setUint32(0, transactionID, Endian.little);
+      dd.setRange(4, dd.length, payload);
+      return _encodeResponsePayload(type: PTPIPPacketType.data, payload: dd);
+    }
+
+    Uint8List deviceInfoEnd(int transactionID) {
+      final de = Uint8List(4);
+      ByteData.sublistView(de).setUint32(0, transactionID, Endian.little);
+      return _encodeResponsePayload(type: PTPIPPacketType.endData, payload: de);
+    }
+
+    Uint8List initCmdAck() {
+      final p = Uint8List(24);
+      ByteData.sublistView(p).setUint32(0, 1, Endian.little);
+      ByteData.sublistView(p).setUint32(20, 0x00010000, Endian.little);
+      return _encodeResponsePayload(type: PTPIPPacketType.initCommandAck, payload: p);
+    }
+
+    Uint8List initEventAck() =>
+      _encodeResponsePayload(type: PTPIPPacketType.initEventAck, payload: Uint8List(0));
+
+    test('getObjectHandles throws on camera error response', () async {
+      final body = fullDeviceInfoPayload();
+      final cmdFake = FakePtpipSocket(scriptedResponses: [
+        initCmdAck(),
+        deviceInfoStart(1, body), deviceInfoData(1, body), deviceInfoEnd(1), _okResponse(1),
+        _okResponse(2),
+        _encodeResponsePayload(
+          type: PTPIPPacketType.operationResponse,
+          payload: Uint8List.fromList([0x02, 0x20, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]),
+        ),
+      ]);
+      final evtFake = FakePtpipSocket(scriptedResponses: [initEventAck()]);
+
+      final session = PtpipSession(
+        host: '127.0.0.1', port: 15740,
+        commandConnection: PtpipConnection(host: '127.0.0.1', port: 15740, socket: cmdFake),
+        eventConnection: PtpipConnection(host: '127.0.0.1', port: 15740, socket: evtFake),
+      );
+
+      await session.openSession();
+      expect(
+        () => session.getObjectHandles(),
+        throwsA(isA<PTPIPError>()),
+      );
+    });
+
+    test('getObjectHandles throws on unexpected packet type', () async {
+      final body = fullDeviceInfoPayload();
+      final cmdFake = FakePtpipSocket(scriptedResponses: [
+        initCmdAck(),
+        deviceInfoStart(1, body), deviceInfoData(1, body), deviceInfoEnd(1), _okResponse(1),
+        _okResponse(2),
+        _encodeResponsePayload(type: PTPIPPacketType.cancel, payload: Uint8List(0)),
+      ]);
+      final evtFake = FakePtpipSocket(scriptedResponses: [initEventAck()]);
+
+      final session = PtpipSession(
+        host: '127.0.0.1', port: 15740,
+        commandConnection: PtpipConnection(host: '127.0.0.1', port: 15740, socket: cmdFake),
+        eventConnection: PtpipConnection(host: '127.0.0.1', port: 15740, socket: evtFake),
+      );
+
+      await session.openSession();
+      expect(
+        () => session.getObjectHandles(),
+        throwsA(isA<PTPIPError>()),
+      );
+    });
+
+    test('getObjectHandles throws on transaction ID mismatch', () async {
+      final body = fullDeviceInfoPayload();
+      final wrongTxStart = Uint8List(12);
+      ByteData.sublistView(wrongTxStart).setUint32(0, 99, Endian.little);
+      ByteData.sublistView(wrongTxStart).setUint64(4, 4, Endian.little);
+      final wrongStartData = _encodeResponsePayload(
+        type: PTPIPPacketType.startData, payload: wrongTxStart);
+      final cmdFake = FakePtpipSocket(scriptedResponses: [
+        initCmdAck(),
+        deviceInfoStart(1, body), deviceInfoData(1, body), deviceInfoEnd(1), _okResponse(1),
+        _okResponse(2),
+        wrongStartData,
+      ]);
+      final evtFake = FakePtpipSocket(scriptedResponses: [initEventAck()]);
+
+      final session = PtpipSession(
+        host: '127.0.0.1', port: 15740,
+        commandConnection: PtpipConnection(host: '127.0.0.1', port: 15740, socket: cmdFake),
+        eventConnection: PtpipConnection(host: '127.0.0.1', port: 15740, socket: evtFake),
+      );
+
+      await session.openSession();
+      expect(
+        () => session.getObjectHandles(),
+        throwsA(isA<PTPIPError>()),
+      );
+    });
   });
 }

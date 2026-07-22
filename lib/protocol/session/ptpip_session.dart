@@ -32,7 +32,7 @@ class PtpipSession {
     await _commandConnection.open();
     final guid = Uint8List(16);
     await _commandConnection.send(
-      PTPIPBinaryX.encodeInitCommandRequest(
+      PTPIPCodec.encodeInitCommandRequest(
         guid: guid,
         friendlyName: PTPIPBinary.defaultFriendlyName,
       ),
@@ -48,7 +48,7 @@ class PtpipSession {
 
     await _eventConnection.open();
     await _eventConnection.send(
-      PTPIPBinaryX.encodeInitEventRequest(connectionNumber),
+      PTPIPCodec.encodeInitEventRequest(connectionNumber),
     );
     final eventAck = await _eventConnection.receivePacket();
     if (eventAck.type != PTPIPPacketType.initEventAck) {
@@ -133,10 +133,14 @@ class PtpipSession {
 
   // ============ Internal helpers ============
 
-  Future<Uint8List> _collectDataStream() async {
+  Future<Uint8List> _collectDataStream(int expectedTxId) async {
     final first = await _commandConnection.receivePacket();
     if (first.type == PTPIPPacketType.operationResponse) {
-      final resp = PTPIPBinaryX.parseResponsePacket(first);
+      final resp = PTPIPCodec.parseResponsePacket(first);
+      if (resp.transactionID != expectedTxId) {
+        throw PTPIPError.invalidTransaction(
+          expected: expectedTxId, actual: resp.transactionID);
+      }
       if (resp.code != PTPResponseCode.ok.rawValue) {
         throw PTPIPError.unexpectedResponse(resp.code);
       }
@@ -148,26 +152,46 @@ class PtpipSession {
         actual: first.type,
       );
     }
-    final _ = PTPIPBinaryX.parseStartDataPayload(first.payload);
+    final startInfo = PTPIPCodec.parseStartDataPayload(first.payload);
+    if (startInfo.transactionID != expectedTxId) {
+      throw PTPIPError.invalidTransaction(
+        expected: expectedTxId, actual: startInfo.transactionID);
+    }
     final buffer = BytesBuilder(copy: false);
 
     while (true) {
       final packet = await _commandConnection.receivePacket();
       switch (packet.type) {
         case PTPIPPacketType.data:
-          final dataInfo = PTPIPBinaryX.parseDataPayload(packet.payload);
+          final dataInfo = PTPIPCodec.parseDataPayload(packet.payload);
+          if (dataInfo.transactionID != expectedTxId) {
+            throw PTPIPError.invalidTransaction(
+              expected: expectedTxId, actual: dataInfo.transactionID);
+          }
           buffer.add(dataInfo.bytes);
         case PTPIPPacketType.endData:
-          final dataInfo = PTPIPBinaryX.parseDataPayload(packet.payload);
+          final dataInfo = PTPIPCodec.parseDataPayload(packet.payload);
+          if (dataInfo.transactionID != expectedTxId) {
+            throw PTPIPError.invalidTransaction(
+              expected: expectedTxId, actual: dataInfo.transactionID);
+          }
           buffer.add(dataInfo.bytes);
           final finalResp = await _commandConnection.receivePacket();
-          final parsed = PTPIPBinaryX.parseResponsePacket(finalResp);
+          final parsed = PTPIPCodec.parseResponsePacket(finalResp);
+          if (parsed.transactionID != expectedTxId) {
+            throw PTPIPError.invalidTransaction(
+              expected: expectedTxId, actual: parsed.transactionID);
+          }
           if (parsed.code != PTPResponseCode.ok.rawValue) {
             throw PTPIPError.unexpectedResponse(parsed.code);
           }
           return buffer.toBytes();
         case PTPIPPacketType.operationResponse:
-          final parsed = PTPIPBinaryX.parseResponsePacket(packet);
+          final parsed = PTPIPCodec.parseResponsePacket(packet);
+          if (parsed.transactionID != expectedTxId) {
+            throw PTPIPError.invalidTransaction(
+              expected: expectedTxId, actual: parsed.transactionID);
+          }
           if (parsed.code != PTPResponseCode.ok.rawValue) {
             throw PTPIPError.unexpectedResponse(parsed.code);
           }
@@ -189,15 +213,16 @@ class PtpipSession {
     required PTPOperationCode operation,
     required List<int> parameters,
   }) async {
+    final txId = _nextTransactionID++;
     await _commandConnection.send(
-      PTPIPBinaryX.encodeOperationRequest(
+      PTPIPCodec.encodeOperationRequest(
         operation: operation,
-        transactionID: _nextTransactionID++,
+        transactionID: txId,
         parameters: parameters,
         dataPhase: PTPIPDataPhaseInfo.noDataOrDataIn,
       ),
     );
-    return await _collectDataStream();
+    return await _collectDataStream(txId);
   }
 
   Future<void> _requestResponseOnly({
@@ -206,7 +231,7 @@ class PtpipSession {
   }) async {
     final txId = _nextTransactionID++;
     await _commandConnection.send(
-      PTPIPBinaryX.encodeOperationRequest(
+      PTPIPCodec.encodeOperationRequest(
         operation: operation,
         transactionID: txId,
         parameters: parameters,
@@ -214,7 +239,7 @@ class PtpipSession {
       ),
     );
     final resp = await _commandConnection.receivePacket();
-    final parsed = PTPIPBinaryX.parseResponsePacket(resp);
+    final parsed = PTPIPCodec.parseResponsePacket(resp);
     if (parsed.code != PTPResponseCode.ok.rawValue) {
       throw PTPIPError.unexpectedResponse(parsed.code);
     }
@@ -234,13 +259,13 @@ class PtpipSession {
         );
         switch (packet.type) {
           case PTPIPPacketType.probeRequest:
-            await _eventConnection.send(PTPIPBinaryX.encodeProbeResponse());
+            await _eventConnection.send(PTPIPCodec.encodeProbeResponse());
           case PTPIPPacketType.probeResponse:
           case PTPIPPacketType.event:
           default:
         }
       } on PTPIPError catch (e) {
-        if (e.message.contains('timeout')) return _eventMonitorRunning;
+        if (e.isTimeout) return _eventMonitorRunning;
         return false;
       } catch (_) {
         return false;

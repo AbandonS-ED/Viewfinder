@@ -114,10 +114,10 @@ void main() {
     });
   });
 
-  group('PTPIPBinaryX encodePacket / decode', () {
+  group('PTPIPCodec encodePacket / decode', () {
     test('encodePacket adds 8-byte header', () {
       final payload = Uint8List.fromList([0x01, 0x02, 0x03]);
-      final packet = PTPIPBinaryX.encodePacket(
+      final packet = PTPIPCodec.encodePacket(
         type: PTPIPPacketType.operationRequest,
         payload: payload,
       );
@@ -130,7 +130,7 @@ void main() {
 
     test('encodeInitCommandRequest produces valid packet', () {
       final guid = Uint8List(16);
-      final packet = PTPIPBinaryX.encodeInitCommandRequest(
+      final packet = PTPIPCodec.encodeInitCommandRequest(
         guid: guid,
         friendlyName: 'Test',
       );
@@ -143,7 +143,7 @@ void main() {
       final payload = Uint8List(0);
       final packet = PTPIPRawPacket(type: PTPIPPacketType.startData, payload: payload);
       expect(
-        () => PTPIPBinaryX.parseResponsePacket(packet),
+        () => PTPIPCodec.parseResponsePacket(packet),
         throwsA(isA<PTPIPError>()),
       );
     });
@@ -154,13 +154,13 @@ void main() {
         0x05, 0x00, 0x00, 0x00, // transactionID = 5
       ]);
       final packet = PTPIPRawPacket(type: PTPIPPacketType.operationResponse, payload: bytes);
-      final response = PTPIPBinaryX.parseResponsePacket(packet);
+      final response = PTPIPCodec.parseResponsePacket(packet);
       expect(response.code, PTPResponseCode.ok.rawValue);
       expect(response.transactionID, 5);
     });
 
     test('encodeOperationRequest packs parameters in order', () {
-      final packet = PTPIPBinaryX.encodeOperationRequest(
+      final packet = PTPIPCodec.encodeOperationRequest(
         operation: PTPOperationCode.getObjectInfo,
         transactionID: 1,
         parameters: [0x00001001],

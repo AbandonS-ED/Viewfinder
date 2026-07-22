@@ -4,11 +4,16 @@ import 'dart:typed_data';
 import 'package:viewfinder/protocol/transport/ptpip_socket.dart';
 import 'package:viewfinder/protocol/primitives/ptpip_data_types.dart';
 import 'package:viewfinder/protocol/primitives/ptpip_data_structures.dart';
+import 'package:viewfinder/protocol/primitives/ptpip_error.dart';
 
 class FakePtpipSocket implements PtpipSocket {
-  FakePtpipSocket({this.scriptedResponses = const []});
+  FakePtpipSocket({
+    this.scriptedResponses = const [],
+    this.scriptedErrors = const [],
+  });
 
   final List<Uint8List> scriptedResponses;
+  final List<Object> scriptedErrors;
   int _responseIndex = 0;
   final List<Uint8List> sentPackets = [];
   bool _connected = false;
@@ -28,13 +33,26 @@ class FakePtpipSocket implements PtpipSocket {
 
   @override
   Future<PTPIPRawPacket> receivePacket({Duration timeout = const Duration(seconds: 10)}) async {
-    if (_responseIndex >= scriptedResponses.length) {
+    final idx = _responseIndex++;
+    if (idx < scriptedErrors.length) {
+      final err = scriptedErrors[idx];
+      if (err is PTPIPError) throw err;
+      if (err is Exception) throw err;
+      throw Exception('$err');
+    }
+    if (idx >= scriptedResponses.length) {
       throw Exception('no more scripted responses');
     }
-    final raw = scriptedResponses[_responseIndex++];
+    final raw = scriptedResponses[idx];
     final length = ByteData.sublistView(raw).getUint32(0, Endian.little);
+    if (length < 8 || length != raw.length) {
+      throw PTPIPError.invalidPacketLength();
+    }
     final typeRaw = ByteData.sublistView(raw).getUint32(4, Endian.little);
-    final type = PTPIPPacketType.values.firstWhere((t) => t.rawValue == typeRaw);
+    final type = PTPIPPacketType.values.firstWhere(
+      (t) => t.rawValue == typeRaw,
+      orElse: () => throw PTPIPError.unsupportedPacketType(typeRaw),
+    );
     final payload = raw.sublist(8);
     return PTPIPRawPacket(type: type, payload: payload);
   }

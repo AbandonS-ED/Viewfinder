@@ -86,7 +86,7 @@ class PTPDataReader {
     final characterCount = readUInt8();
     if (characterCount == 0) return '';
     final raw = readBytes(characterCount * 2);
-    return PTPIPBinaryX.decodeUTF16NullTerminated(raw);
+    return PTPIPCodec.decodeUTF16NullTerminated(raw);
   }
 
   String readUTF16NullTerminatedString() {
@@ -96,15 +96,15 @@ class PTPDataReader {
       if (codeUnit == 0) {
         final length = _offset - startOffset;
         final raw = _data.sublist(startOffset, startOffset + length);
-        return PTPIPBinaryX.decodeUTF16NullTerminated(raw);
+        return PTPIPCodec.decodeUTF16NullTerminated(raw);
       }
     }
     throw const PTPIPError.malformedPayload('UTF-16 字符串缺少终止符。');
   }
 }
 
-class PTPIPBinaryX {
-  PTPIPBinaryX._();
+class PTPIPCodec {
+  PTPIPCodec._();
 
   static Uint8List encodePacket({
     required PTPIPPacketType type,
