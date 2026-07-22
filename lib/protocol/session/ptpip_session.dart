@@ -240,11 +240,11 @@ class PtpipSession {
     );
     final resp = await _commandConnection.receivePacket();
     final parsed = PTPIPCodec.parseResponsePacket(resp);
-    if (parsed.code != PTPResponseCode.ok.rawValue) {
-      throw PTPIPError.unexpectedResponse(parsed.code);
-    }
     if (parsed.transactionID != txId) {
       throw PTPIPError.invalidTransaction(expected: txId, actual: parsed.transactionID);
+    }
+    if (parsed.code != PTPResponseCode.ok.rawValue) {
+      throw PTPIPError.unexpectedResponse(parsed.code);
     }
   }
 

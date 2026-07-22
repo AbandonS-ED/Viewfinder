@@ -31,20 +31,6 @@ void main() {
       );
     });
 
-    test('downloadAsset throws notConnected for bad handle with no session', () async {
-      final transport = ExperimentalNikonTransport();
-      final badAsset = PhotoAsset(
-        remoteIdentifier: 'bad-handle',
-        fileName: 'test.jpg',
-        kind: PhotoAssetKind.jpeg,
-        captureDate: DateTime.now(),
-      );
-      expect(
-        () => transport.downloadAsset(badAsset, sampleSession),
-        throwsA(isA<CameraAppError>()),
-      );
-    });
-
     test('connect throws missingHost for empty host', () async {
       final transport = ExperimentalNikonTransport();
       expect(

@@ -307,9 +307,11 @@ void main() {
       );
 
       await session.openSession();
-      expect(
-        () => session.getObjectHandles(),
-        throwsA(isA<PTPIPError>()),
+      await expectLater(
+        session.getObjectHandles(),
+        throwsA(predicate<PTPIPError>(
+          (e) => e.message.contains('事务号') && e.message.contains('99'),
+        )),
       );
     });
   });

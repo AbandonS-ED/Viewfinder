@@ -89,9 +89,9 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 ### Protocol 层（已落地，可读）
 
 - `lib/protocol/primitives/`
-  - `ptpip_data_types.dart`：`PTPIPPacketType` (15 值) / `PTPOperationCode` (12 值) / `PTPResponseCode` (35 值，一个不能少) / `PTPIPDataPhaseInfo` (3 值) / `PTPIPBinary` 常量类。
+  - `ptpip_data_types.dart`：`PTPIPPacketType` (14 值) / `PTPOperationCode` (12 值) / `PTPResponseCode` (32 值) / `PTPIPDataPhaseInfo` (3 值) / `PTPIPBinary` 常量类。
   - `ptpip_data_structures.dart`：4 个 freezed data class (`PTPIPRawPacket` / `PTPIPDeviceInfo` / `PTPIPObjectInfo` / `PTPIPDataPayloadInfo`)。
-  - `ptpip_error.dart`：`sealed class PTPIPError` —— `unexpectedPacket` / `unexpectedResponse` / `invalidTransaction` / `timeout` / `socketClosed`。
+  - `ptpip_error.dart`：`sealed class PTPIPError` —— 10 个 factory：`invalidPacketLength` / `unsupportedPacketType` / `unexpectedPacket` / `connectionClosed` / `invalidProtocolVersion` / `invalidTransaction` / `unexpectedResponse` / `malformedPayload` / `sessionUnavailable` / `timeout`。
   - `ptpip_packet_codec.dart`：所有 `PTPIPCodec.encode*` / `parse*` 函数，小端序，跟 iOS `PTPIPPrimitives.swift` 1:1 对位。`protocolVersion = 0x0001_0000`，`defaultFriendlyName = "NikonConnectIOS"`（保留原字符串，不要改）。
 - `lib/protocol/transport/`
   - `ptpip_socket.dart`：**abstract class** `PtpipSocket`（接口边界，所有 socket 实现都走这里）。
