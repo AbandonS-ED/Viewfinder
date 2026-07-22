@@ -102,6 +102,22 @@ origin = https://github.com/AbandonS-ED/Viewfinder.git
 
 ## 3. 任务清单（8 个原子任务，按顺序执行）
 
+### 任务依赖图
+
+执行前先看清依赖关系。**严格按编号顺序做**，因为每个任务的产出是下一个任务的输入。
+
+| 任务 | 前置任务 | 产出 |
+|---|---|---|
+| 3.0 准备 | — | 5 个空目录 |
+| 3.1 data_types | 3.0 | 4 个 enum + 1 个常量类 |
+| 3.2 data_structures | 3.1 | 4 个 freezed data class |
+| 3.3 packet_codec + error | 3.1, 3.2 | 编解码 + 错误 sealed class |
+| 3.4 socket + connection | 3.3 | PtpipSocket 抽象 + IoPtpipSocket + PtpipConnection |
+| 3.5 session | 3.4 | PtpipSession 主类（含 lifecycle/traversal/transfers） |
+| 3.6 camera_transport | 3.5 | CameraTransport 抽象 + ExperimentalNikonTransport + Factory |
+| 3.7 测试 | 3.1, 3.3, 3.4, 3.5 | 单元测试 + 异常路径测试 |
+| 3.8 验收 | 3.7 | commit + push |
+
 ### 任务 3.0 — 准备：环境变量 + 目录创建
 
 **耗时**：2 分钟
@@ -411,13 +427,18 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'ptpip_socket.dart';
+import '../primitives/ptpip_error.dart';
 
+/// PTP/IP socket 真实实现 (对齐 Swift PTPIPTCPConnection.receivePacket)
 class IoPtpipSocket implements PtpipSocket {
   IoPtpipSocket({required this.host, required this.port});
 
   final String host;
   final int port;
   Socket? _socket;
+
+  /// 累积未消费的字节 (TCP 是字节流，包边界不对齐)
+  final List<int> _buffer = [];
 
   bool get isConnected => _socket != null;
 
@@ -438,32 +459,103 @@ class IoPtpipSocket implements PtpipSocket {
   Future<Uint8List> receivePacket({Duration timeout = const Duration(seconds: 10)}) async {
     final s = _socket;
     if (s == null) throw StateError('not connected');
-    // 读 8 字节 header，然后读 payload
+
+    // 1. 读 8 字节 header
     final header = await _readExact(8, timeout);
+    // header[0..4] = length (UInt32 LE), header[4..8] = type (UInt32 LE)
     final length = ByteData.sublistView(header).getUint32(0, Endian.little);
-    final type = ByteData.sublistView(header).getUint32(4, Endian.little);
     if (length < 8) throw PTPIPError.invalidPacketLength();
+
+    // 2. 读 (length - 8) 字节 payload
     final payloadLen = length - 8;
-    final payload = payloadLen > 0 ? await _readExact(payloadLen, timeout) : Uint8List(0);
-    // 返回拼接后的 packet (header + payload)
+    final payload = payloadLen > 0
+        ? await _readExact(payloadLen, timeout)
+        : Uint8List(0);
+
+    // 3. 拼接成完整 packet 返回
     final result = Uint8List(length);
     result.setAll(0, header);
     result.setAll(8, payload);
     return result;
   }
 
+  /// 读取正好 count 字节 (跨 TCP 包边界)
+  /// 算法：用累积 buffer + Stream 监听，buffer 够就返回，不够就等
   Future<Uint8List> _readExact(int count, Duration timeout) async {
-    // 用 Stream<Uint8List>.take + toList 实现，或者手动 buffer
-    // ... 实现见 iOS PTPIPTCPConnection.receiveExact
+    if (count == 0) return Uint8List(0);
+    final s = _socket;
+    if (s == null) throw StateError('not connected');
+
+    // 累积 buffer 已够，直接返回
+    if (_buffer.length >= count) {
+      final take = Uint8List.fromList(_buffer.sublist(0, count));
+      _buffer.removeRange(0, count);
+      return take;
+    }
+
+    // 否则订阅 socket stream，等数据填满
+    final completer = Completer<Uint8List>();
+    StreamSubscription<Uint8List>? subscription;
+
+    void checkBuffer() {
+      if (completer.isCompleted) return;
+      if (_buffer.length >= count) {
+        final take = Uint8List.fromList(_buffer.sublist(0, count));
+        _buffer.removeRange(0, count);
+        completer.complete(take);
+      }
+    }
+
+    subscription = s.listen(
+      (chunk) {
+        _buffer.addAll(chunk);
+        checkBuffer();
+      },
+      onError: (Object e) {
+        if (!completer.isCompleted) {
+          completer.completeError(PTPIPError.connectionClosed);
+        }
+      },
+      onDone: () {
+        if (!completer.isCompleted) {
+          completer.completeError(PTPIPError.connectionClosed);
+        }
+      },
+      cancelOnError: true,
+    );
+
+    try {
+      return await completer.future.timeout(
+        timeout,
+        onTimeout: () {
+          if (!completer.isCompleted) {
+            completer.completeError(
+              PTPIPError.timeout('read $count bytes within ${timeout.inSeconds}s'),
+            );
+          }
+          throw PTPIPError.timeout('read $count bytes within ${timeout.inSeconds}s');
+        },
+      );
+    } finally {
+      await subscription?.cancel();
+    }
   }
 
   @override
   Future<void> close() async {
     await _socket?.close();
     _socket = null;
+    _buffer.clear();
   }
 }
 ```
+
+**关键实现细节**：
+- **累积 buffer**：TCP 是字节流，一个 PTP 包可能跨多个 TCP 包到达（或者多个 PTP 包塞在一个 TCP 包里）。`_buffer` 缓存未消费的字节，下次 `receivePacket` 先用 buffer 再去 stream 读
+- **Stream 监听模式**：`Socket.listen()` 注册回调，chunk 到达时检查 buffer 是否够；够就 complete Completer，不够就继续等
+- **超时机制**：用 `Future.timeout()` 给整个读过程加 deadline，超时抛 `PTPIPError.timeout`
+- **断连处理**：socket 关闭 (`onDone`) 或出错 (`onError`) 都立即 complete error 为 `PTPIPError.connectionClosed`
+- **避免资源泄漏**：`try/finally` 确保 `subscription.cancel()` 一定执行
 
 **需要 PTPIPError 类型**——从任务 3.3a 导入。
 
@@ -514,90 +606,310 @@ class PtpipConnection {
 
 ---
 
-### 任务 3.5 — session/ 三个文件（lifecycle / asset_traversal / transfers）
+### 任务 3.5 — session/ptpip_session.dart（主类，合一所有方法）
 
-**耗时**：3 小时（按 iOS 文件 1:1 翻译）
+**耗时**：3 小时
 
-**翻译源**：
+**翻译源**（3 个 iOS Swift extension 合并成一个 Dart 类）：
 - `D:\桌面\Nikon_connect\Services\PTPIPSession+Lifecycle.swift` — OpenSession / CloseSession
 - `D:\桌面\Nikon_connect\Services\PTPIPSession+AssetTraversal.swift` — GetObjectHandles / GetObjectInfo
 - `D:\桌面\Nikon_connect\Services\PTPIPSession+Transfers.swift` — GetObject / GetThumb / GetPartialObject
 
-**结构**：
+**设计决策**：iOS 的 Swift extension 模式（`extension PTPIPSession { ... }`）在 Dart 里没等价物。**不要拆成 3 个 class**——opcode / transactionID / PtpipConnection 实例状态在 3 个 class 间共享会引入循环依赖。**直接合并成 1 个 `PtpipSession` 主类**，按职能分组方法。
+
+**文件**：`lib/protocol/session/ptpip_session.dart`（单一文件）
+
+**完整模板**：
 
 ```dart
-// session_lifecycle.dart
-class PtpipSessionLifecycle {
-  PtpipSessionLifecycle(this._connection, this._transactionID);
-  final PtpipConnection _connection;
-  int _transactionID;
+import 'dart:async';
+import 'dart:typed_data';
 
-  Future<PTPIPDeviceInfo> openSession() async { ... }
-  Future<void> closeSession() async { ... }
-}
+import '../primitives/ptpip_data_types.dart';
+import '../primitives/ptpip_data_structures.dart';
+import '../transport/ptpip_connection.dart';
 
-// asset_traversal.dart
-class PtpipAssetTraversal {
-  PtpipAssetTraversal(this._connection, this._transactionID, this._codec);
-  // GetObjectHandles, GetObjectInfo, etc.
-  Future<List<int>> getObjectHandles(int storageID) async { ... }
-  Future<PTPIPObjectInfo> getObjectInfo(int handle) async { ... }
-}
-
-// transfers.dart
-class PtpipTransfers {
-  PtpipTransfers(this._connection, this._transactionID, this._codec);
-  // GetObject, GetThumb, GetPartialObject
-  Future<Uint8List> getObject(int handle) async { ... }
-  Future<Uint8List?> getThumbnail(int handle) async { ... }
-  Future<Uint8List> getPartialObject({
-    required int handle,
-    required int offset,
-    required int maxByteCount,
-  }) async { ... }
-}
-```
-
-**关键点**：
-- 这些文件是 iOS 的 Swift extension，按 Dart 风格转为独立 class
-- 每个 class 接收 PtpipConnection + transactionID + PTPIPBinary 作为依赖
-- opcode/transactionID 在文件间共享 — 用一个外层 `PtpipSession` 类管理状态
-
-**更简单的方案**：直接把 iOS 三个 extension 的方法合到一个 `PtpipSession` 类里（避免三个独立 class 的样板）。**推荐方案**：
-
-```dart
-// session/ptpip_session.dart
+/// PTP/IP 会话主类 (合并 iOS 三个 Swift extension 的方法)
 class PtpipSession {
   PtpipSession({required this.host, required this.port});
-  
+
   final String host;
   final int port;
   late final PtpipConnection _connection;
   int _nextTransactionID = 1;
-  
-  // Lifecycle
-  Future<PTPIPDeviceInfo> openSession() async { ... }
-  Future<void> closeSession() async { ... }
-  
-  // Asset Traversal
-  Future<List<int>> getObjectHandles(int storageID) async { ... }
-  Future<PTPIPObjectInfo> getObjectInfo(int handle) async { ... }
-  
-  // Transfers
-  Future<Uint8List> getObject(int handle) async { ... }
-  Future<Uint8List?> getThumbnail(int handle) async { ... }
-  
-  // ... 其他从 iOS 翻译
+
+  // ============ Lifecycle (对齐 PTPIPSession+Lifecycle.swift) ============
+
+  /// TCP 连接 + InitCommandRequest + InitEventRequest + OpenSession
+  /// 返回相机返回的设备信息
+  Future<PTPIPDeviceInfo> openSession() async {
+    _connection = PtpipConnection(host: host, port: port);
+    await _connection.open();
+
+    // 1. 发送 InitCommandRequest
+    final guid = Uint8List(16);  // Phase 0 占位；Phase 1+ 改成真 GUID
+    await _sendCommand(
+      type: PTPIPPacketType.initCommandRequest,
+      payload: PTPIPBinary.encodeInitCommandRequest(
+        guid: guid,
+        friendlyName: PTPIPBinary.defaultFriendlyName,
+      ),
+    );
+    // 2. 接收 InitCommandAck
+    await _receiveCommand(
+      expectedType: PTPIPPacketType.initCommandAck,
+    );
+
+    // 3. 发送 InitEventRequest
+    final connectionNumber = 1;
+    await _sendCommand(
+      type: PTPIPPacketType.initEventRequest,
+      payload: PTPIPBinary.encodeInitEventRequest(connectionNumber),
+    );
+    // 4. 接收 InitEventAck
+    await _receiveCommand(
+      expectedType: PTPIPPacketType.initEventAck,
+    );
+
+    // 5. 发送 OpenSession
+    final deviceInfo = await _sendOperationRequest(
+      operation: PTPOperationCode.openSession,
+      parameters: [1],  // session ID
+    );
+
+    // deviceInfo 是 PTPIPGetDeviceInfo 的响应
+    return deviceInfo;
+  }
+
+  /// CloseSession + 断开 TCP
+  Future<void> closeSession() async {
+    try {
+      await _sendOperationRequest(
+        operation: PTPOperationCode.closeSession,
+        parameters: [1],  // session ID
+      );
+    } finally {
+      await _connection.close();
+    }
+  }
+
+  // ============ Asset Traversal (对齐 PTPIPSession+AssetTraversal.swift) ============
+
+  /// GetStorageIDs + GetObjectHandles
+  Future<List<int>> getObjectHandles({int storageID = 1}) async {
+    // 1. GetStorageIDs
+    final storageIds = await _sendOperationRequest(
+      operation: PTPOperationCode.getStorageIDs,
+      parameters: [],
+    );
+    // 解析 storageIds (UInt32 数组)，用第一个 (或传入的 storageID)
+
+    // 2. GetObjectHandles
+    final handles = await _sendOperationRequest(
+      operation: PTPOperationCode.getObjectHandles,
+      parameters: [storageID, 0xFFFFFFFF, 0],  // storageID, format=all, handle=0
+    );
+    return handles;  // List<int> (UInt32 数组)
+  }
+
+  /// GetObjectInfo
+  Future<PTPIPObjectInfo> getObjectInfo(int handle) async {
+    final params = await _sendOperationRequest(
+      operation: PTPOperationCode.getObjectInfo,
+      parameters: [handle, 0],  // handle, storageID=0 (any)
+    );
+    return _parseObjectInfo(params);  // 从 parameters 数组解析
+  }
+
+  // ============ Transfers (对齐 PTPIPSession+Transfers.swift) ============
+
+  /// GetObject (单次获取整张大文件)
+  Future<Uint8List> getObject(int handle) async {
+    // 1. GetObjectInfo 获取文件大小
+    final info = await getObjectInfo(handle);
+    final totalSize = info.compressedSize;
+
+    // 2. GetObject (data phase = dataOut)
+    await _sendOperationRequest(
+      operation: PTPOperationCode.getObject,
+      parameters: [handle, 0, totalSize],  // handle, storageID=0, maxSize
+      dataPhase: PTPIPDataPhaseInfo.dataOut,
+    );
+
+    // 3. 接收 StartData
+    final startData = await _receiveCommand(expectedType: PTPIPPacketType.startData);
+    final startInfo = PTPIPBinary.parseStartDataPayload(startData.payload);
+    final actualTotal = startInfo.totalLength;
+
+    // 4. 接收 Data 包 (可能多个)
+    final buffer = BytesBuilder(copy: false);
+    while (buffer.length < actualTotal) {
+      final dataPacket = await _receiveCommand(expectedType: PTPIPPacketType.data);
+      final dataInfo = PTPIPBinary.parseDataPayload(dataPacket.payload);
+      buffer.add(dataInfo.bytes);
+    }
+
+    // 5. 接收 EndData
+    await _receiveCommand(expectedType: PTPIPPacketType.endData);
+
+    return buffer.toBytes();
+  }
+
+  /// GetThumb
+  Future<Uint8List?> getThumbnail(int handle) async {
+    try {
+      await _sendOperationRequest(
+        operation: PTPOperationCode.getThumb,
+        parameters: [handle, 0],
+        dataPhase: PTPIPDataPhaseInfo.dataOut,
+      );
+      final startData = await _receiveCommand(expectedType: PTPIPPacketType.startData);
+      final startInfo = PTPIPBinary.parseStartDataPayload(startData.payload);
+      final totalLen = startInfo.totalLength;
+
+      final buffer = BytesBuilder(copy: false);
+      while (buffer.length < totalLen) {
+        final dataPacket = await _receiveCommand(expectedType: PTPIPPacketType.data);
+        final dataInfo = PTPIPBinary.parseDataPayload(dataPacket.payload);
+        buffer.add(dataInfo.bytes);
+      }
+      await _receiveCommand(expectedType: PTPIPPacketType.endData);
+      return buffer.toBytes();
+    } on PTPIPError catch (e) {
+      if (e is PTPIPError && e.message.contains('No thumbnail')) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  /// GetPartialObject (用于断点续传)
+  Future<Uint8List> getPartialObject({
+    required int handle,
+    required int offset,
+    required int maxByteCount,
+  }) async {
+    await _sendOperationRequest(
+      operation: PTPOperationCode.getPartialObject,
+      parameters: [handle, offset, maxByteCount],
+      dataPhase: PTPIPDataPhaseInfo.dataOut,
+    );
+    final startData = await _receiveCommand(expectedType: PTPIPPacketType.startData);
+    final startInfo = PTPIPBinary.parseStartDataPayload(startData.payload);
+
+    final buffer = BytesBuilder(copy: false);
+    while (buffer.length < startInfo.totalLength) {
+      final dataPacket = await _receiveCommand(expectedType: PTPIPPacketType.data);
+      final dataInfo = PTPIPBinary.parseDataPayload(dataPacket.payload);
+      buffer.add(dataInfo.bytes);
+    }
+    await _receiveCommand(expectedType: PTPIPPacketType.endData);
+    return buffer.toBytes();
+  }
+
+  // ============ 内部辅助方法 ============
+
+  /// 发送 + 接收一个普通命令 (无 data phase)
+  Future<Uint8List> _sendCommand({
+    required PTPIPPacketType type,
+    required Uint8List payload,
+  }) async {
+    final packet = PTPIPBinary.encodePacket(type: type, payload: payload);
+    await _connection.send(packet);
+    final response = await _connection.receivePacket();
+    return response.sublist(8);  // 去掉 8 字节 header，返回 payload
+  }
+
+  /// 接收指定类型的包，校验类型
+  Future<PTPIPRawPacket> _receiveCommand({
+    required PTPIPPacketType expectedType,
+  }) async {
+    final raw = await _connection.receivePacket();
+    // raw[4..8] 是 packet type (小端 UInt32)
+    final type = ByteData.sublistView(raw).getUint32(4, Endian.little);
+    if (type != expectedType.rawValue) {
+      throw PTPIPError.unexpectedPacket(
+        expected: [expectedType],
+        actual: PTPIPPacketType.values.firstWhere(
+          (t) => t.rawValue == type,
+          orElse: () => throw PTPIPError.unsupportedPacketType(type),
+        ),
+      );
+    }
+    return PTPIPRawPacket(
+      type: PTPIPPacketType.values.firstWhere((t) => t.rawValue == type),
+      payload: raw.sublist(8),
+    );
+  }
+
+  /// 发送 OperationRequest + 接收 OperationResponse + 校验 OK
+  Future<List<int>> _sendOperationRequest({
+    required PTPOperationCode operation,
+    required List<int> parameters,
+    PTPIPDataPhaseInfo dataPhase = PTPIPDataPhaseInfo.noDataOrDataIn,
+  }) async {
+    final txId = _nextTransactionID++;
+    await _sendCommand(
+      type: PTPIPPacketType.operationRequest,
+      payload: PTPIPBinary.encodeOperationRequest(
+        operation: operation,
+        transactionID: txId,
+        parameters: parameters,
+        dataPhase: dataPhase,
+      ),
+    );
+
+    final response = await _receiveCommand(expectedType: PTPIPPacketType.operationResponse);
+    final parsed = PTPIPBinary.parseResponsePacket(response);
+
+    if (parsed.code != PTPResponseCode.ok.rawValue) {
+      throw PTPIPError.unexpectedResponse(parsed.code);
+    }
+    if (parsed.transactionID != txId) {
+      throw PTPIPError.invalidTransaction(
+        expected: txId,
+        actual: parsed.transactionID,
+      );
+    }
+    return parsed.parameters;
+  }
+
+  /// 从 OperationResponse parameters 解析 GetDeviceInfo
+  PTPIPDeviceInfo _parseGetDeviceInfo(List<int> params) {
+    // PTP GetDeviceInfo 响应是 dataset，按 PTP 规范解析
+    // 具体格式参考 iOS PTPIPPrimitives.swift 和 PTP/IP 规范
+    // Phase 1 占位实现：返回最小可用对象
+    return const PTPIPDeviceInfo(
+      model: null,
+      manufacturer: null,
+      operationsSupported: const {},
+    );
+  }
+
+  /// 从 OperationResponse parameters 解析 GetObjectInfo
+  PTPIPObjectInfo _parseObjectInfo(List<int> params) {
+    // PTP GetObjectInfo 响应是 ObjectInfo dataset
+    // 具体解析逻辑参考 iOS PTPIPSession+AssetTraversal.swift
+    return const PTPIPObjectInfo(
+      handle: 0,
+      storageID: 0,
+      objectFormat: 0,
+      compressedSize: 0,
+      thumbnailInfo: null,
+      fileName: '',
+    );
+  }
 }
 ```
 
-**这个方案更接近 iOS 原貌**。**用这个**。
-
-**文件**：
-- `lib/protocol/session/ptpip_session.dart` — 主类（包含 lifecycle/traversal/transfers 全部方法）
+**关键点**：
+- **不拆 3 个 class**——opcode/transactionID/connection 实例状态会跨边界，拆开会引入循环依赖
+- `_sendOperationRequest` 是核心辅助方法，所有 PTP 操作都走它
+- `_parseGetDeviceInfo` 和 `_parseObjectInfo` 是 PTP dataset 解析的占位实现——Phase 2 需要根据 PTP/IP 规范补完整
+- GetObject/GetThumb/GetPartialObject 都遵循同样的模式：发 Request → 收 StartData → 循环收 Data → 收 EndData
 
 **验收**：
-- `PtpipSession` 类有所有方法（openSession / closeSession / getObjectHandles / getObjectInfo / getObject / getThumbnail 等）
+- `PtpipSession` 类有所有方法（openSession / closeSession / getObjectHandles / getObjectInfo / getObject / getThumbnail / getPartialObject）
 - 每个方法严格对齐 iOS 的 opcode + 参数
 - `dart analyze` 干净
 
@@ -652,7 +964,9 @@ abstract class CameraTransport {
 
 #### 子任务 3.6b — protocol/experimental_nikon_transport.dart
 
-翻译 iOS `ExperimentalNikonTransport.swift`：
+翻译 iOS `ExperimentalNikonTransport.swift` (175 行)。**这是协议层 ↔ Domain 层的桥梁**，必须给出完整 connect 流程，不能只写骨架。
+
+**完整模板**：
 
 ```dart
 import 'dart:async';
@@ -660,27 +974,214 @@ import 'dart:async';
 import '../domain/camera_connection_config.dart';
 import '../domain/camera_session.dart';
 import '../domain/photo_asset.dart';
-// ... 其他 domain 导入
+import 'camera_transport.dart';
+import 'session/ptpip_session.dart';
+import 'download_throughput_transfer_mode.dart';  // 与 Domain 复用同名 enum
 
+/// Nikon 相机传输实现 (对齐 Swift ExperimentalNikonTransport)
 class ExperimentalNikonTransport implements CameraTransport {
   PtpipSession? _session;
   List<String> _pendingDiagnostics = [];
 
   @override
   Future<CameraSession> connect({required CameraConnectionConfig config}) async {
-    // 实现：调 PtpipSession.openSession() 等
-    // ...
+    // 1. 验证 config
+    final host = config.normalizedHost;
+    if (host.isEmpty) {
+      throw const CameraAppErrorMissingHost();
+    }
+    if (config.port < 1 || config.port > 65535) {
+      throw const CameraAppErrorInvalidPort();
+    }
+
+    // 2. 关闭已存在的 session (防重入)
+    if (_session != null) {
+      await _session!.closeSession();
+      _session = null;
+    }
+
+    // 3. 创建新 PTP/IP 会话
+    final session = PtpipSession(host: host, port: config.port);
+
+    try {
+      // 4. 打开 PTP/IP 会话 (TCP + InitCommand + InitEvent + OpenSession)
+      //    返回的 PTPIPDeviceInfo 是 PTP/IP 层原始结果
+      final deviceInfo = await session.openSession();
+      _session = session;
+
+      // 5. 构造 Domain CameraSession (Phase 1 占位映射，Phase 2 会更精细)
+      //    cameraName 默认 'Nikon Camera'，无设备名信息时 fallback
+      //    capabilities 根据 operationsSupported 推断
+      final capabilities = <CameraCapability>{
+        if (deviceInfo.operationsSupported.contains(PTPOperationCode.getObjectHandles.rawValue))
+          CameraCapability.connectionProbe,
+        if (deviceInfo.operationsSupported.contains(PTPOperationCode.getObjectInfo.rawValue))
+          CameraCapability.listAssets,
+        if (deviceInfo.operationsSupported.contains(PTPOperationCode.getObject.rawValue))
+          CameraCapability.downloadAssets,
+      };
+
+      return CameraSession(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),  // Phase 0 占位
+        cameraName: deviceInfo.model ?? 'Nikon Camera',
+        connectedHost: host,
+        port: config.port,
+        connectedAt: DateTime.now(),
+        capabilities: capabilities,
+      );
+    } catch (e) {
+      // 6. 失败清理
+      await session.closeSession();
+      _session = null;
+      // 包成 CameraAppError
+      if (e is CameraAppError) rethrow;
+      throw CameraAppError.networkProbeFailed(e.toString());
+    }
+  }
+
+  @override
+  Future<PhotoAssetPage> fetchAssetsPage({
+    required CameraSession session,
+    required bool resetTraversal,
+    required int limit,
+  }) async {
+    final s = _session;
+    if (s == null) throw const CameraAppErrorNotConnected();
+
+    try {
+      // Phase 1 占位：直接 GetObjectHandles 全部，return 整个 page
+      // Phase 2 会加分页逻辑
+      final handles = await s.getObjectHandles(storageID: 1);
+
+      final assets = <PhotoAsset>[];
+      for (final handle in handles.take(limit)) {
+        try {
+          final info = await s.getObjectInfo(handle);
+          // 从 PTPIPObjectInfo 构造 Domain PhotoAsset
+          // Phase 1 占位映射：handle 转字符串，fileName 等后续字段填占位
+          assets.add(PhotoAsset(
+            id: handle.toString(),  // Phase 0 用 handle 字符串当 id
+            remoteIdentifier: handle.toString(),
+            fileName: info.fileName.isNotEmpty ? info.fileName : 'DSC_$handle',
+            kind: _classifyObjectFormat(info.objectFormat),
+            byteSize: info.compressedSize,
+            captureDate: info.captureDate ?? DateTime.now(),
+            thumbnailInfo: info.thumbnailInfo,
+          ));
+        } on PTPIPError {
+          // 单张照片失败不致命，跳过
+        }
+      }
+
+      return PhotoAssetPage(assets: assets, hasMore: handles.length > limit);
+    } catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  @override
+  Future<Uint8List> downloadAsset(PhotoAsset asset, CameraSession session) async {
+    final s = _session;
+    if (s == null) throw const CameraAppErrorNotConnected();
+
+    final handle = int.tryParse(asset.remoteIdentifier);
+    if (handle == null) {
+      throw CameraAppError.unsupportedOperation('bad handle: ${asset.remoteIdentifier}');
+    }
+
+    try {
+      return await s.getObject(handle);
+    } catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  @override
+  Future<Uint8List?> downloadThumbnail(PhotoAsset asset, CameraSession session) async {
+    final s = _session;
+    if (s == null) throw const CameraAppErrorNotConnected();
+
+    final handle = int.tryParse(asset.remoteIdentifier);
+    if (handle == null) return null;
+
+    try {
+      return await s.getThumbnail(handle);
+    } on PTPIPError catch (e) {
+      // 没缩略图不算错
+      if (e is PTPIPErrorUnsupportedPacketType ||
+          e is PTPIPErrorUnexpectedResponse) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String> downloadAssetToTemporaryFile(
+    PhotoAsset asset,
+    CameraSession session,
+  ) async {
+    final bytes = await downloadAsset(asset, session);
+    final tempDir = Directory.systemTemp.createTempSync();
+    final file = File('${tempDir.path}/${asset.fileName}');
+    await file.writeAsBytes(bytes);
+    return file.path;
+  }
+
+  @override
+  Future<DownloadThroughputTransferMode> downloadTransferMode(
+    PhotoAsset asset,
+    CameraSession session,
+  ) async {
+    return DownloadThroughputTransferMode.unknown;
+  }
+
+  @override
+  Future<List<String>> consumeDiagnostics() async {
+    final messages = List<String>.from(_pendingDiagnostics);
+    _pendingDiagnostics.clear();
+    return messages;
   }
 
   @override
   Future<void> disconnect(CameraSession session) async {
-    await _session?.closeSession();
-    _session = null;
+    final s = _session;
+    if (s != null) {
+      await s.closeSession();
+      _session = null;
+    }
   }
 
-  // ... 其他方法
+  // ============ 辅助方法 ============
+
+  /// PTP objectFormat → Domain PhotoAssetKind
+  PhotoAssetKind _classifyObjectFormat(int format) {
+    // PTP Object Format Codes (从 iOS PTPIPPrimitives.swift 注释或 PTP 规范查)
+    // 0x3000 = RAW, 0x3801 = JPEG, 0x3001 = MOV, 等
+    // Phase 1 占位：粗略分类
+    if (format == 0x3001) return PhotoAssetKind.movie;
+    if (format == 0x3801 || format == 0x3802) return PhotoAssetKind.jpeg;
+    return PhotoAssetKind.raw;
+  }
+
+  CameraAppError _mapError(Object e) {
+    if (e is CameraAppError) return e;
+    if (e is PTPIPError) return CameraAppError.networkProbeFailed(e.message);
+    return CameraAppError.networkProbeFailed(e.toString());
+  }
 }
 ```
+
+**关键点**：
+- **connect 流程**：validate config → close old session → create new → openSession → construct CameraSession（Domain 类型）
+- **fetchAssetsPage**：Phase 1 占位全量拉，Phase 2 加分页
+- **downloadAsset / downloadThumbnail**：用 `int.tryParse(asset.remoteIdentifier)` 把 Domain 的字符串 handle 还原成 PTP 的 int handle
+- **`_classifyObjectFormat`**：PTP object format code → Domain PhotoAssetKind 的映射（参考 iOS PTPIPSession+AssetTraversal.swift）
+
+**验收**：
+- `ExperimentalNikonTransport` 实现 CameraTransport 所有方法
+- `connect()` 能跑通端到端流程（虽然 `_parseGetDeviceInfo` 是占位）
+- `dart analyze` 干净
 
 #### 子任务 3.6c — protocol/camera_transport_factory.dart
 
@@ -974,6 +1475,23 @@ git status                                  # nothing to commit
 ---
 
 ## 9. 完成后
+
+### 9.1 Phase 1 vs Phase 2 的边界
+
+**Phase 1（本次）只做协议层，**返回原始 PTP/IP 类型**：
+
+- `PtpipSession.getObjectHandles()` → `List<int>` (handles)
+- `PtpipSession.getObjectInfo(handle)` → `PTPIPObjectInfo`
+- `PtpipSession.getObject(handle)` → `Uint8List` (原始字节)
+- `ExperimentalNikonTransport.fetchAssetsPage()` → `PhotoAssetPage` (Phase 1 的占位映射)
+
+**Phase 2 需要补一个 adapter 层**，把 PTP 原始结果转成 Domain 类型（`PhotoAsset`、`DownloadJob` 等）：
+
+- 建议位置：`lib/protocol/adapters/`（Phase 2 新建目录）
+- 建议接口：`PhotoAssetAdapter.fromPtpip(PTPIPObjectInfo, int handle) → PhotoAsset`
+- Phase 1 的 `ExperimentalNikonTransport.fetchAssetsPage()` 是占位实现，**Phase 2 重写**成调 adapter
+
+### 9.2 下一步
 
 读 `docs/项目状态.md §5.2 Phase 2 起点`——下一步是 Phase 2 真机端到端验证（在真 Nikon 相机上跑）。
 
