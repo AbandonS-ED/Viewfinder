@@ -108,21 +108,19 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │
 │   ├── protocol/                    # PTP/IP 协议层 (与 UI 解耦)
 │   │   ├── primitives/              # 编解码 (对应 PTPIPPrimitives.swift)
-│   │   │   ├── ptpip_command.dart
-│   │   │   ├── ptpip_response.dart
-│   │   │   ├── ptpip_data_block.dart
-│   │   │   └── ptpip_object_info.dart
+│   │   │   ├── ptpip_data_types.dart        # 枚举 + 常量
+│   │   │   ├── ptpip_data_structures.dart   # freezed data class
+│   │   │   ├── ptpip_packet_codec.dart      # 编解码器
+│   │   │   └── ptpip_error.dart             # sealed error class
 │   │   ├── transport/               # 长连接 + socket
-│   │   │   ├── ptpip_socket.dart           # abstract class + 实现 (IoPtpipSocket / FakePtpipSocket)
-│   │   │   ├── ptpip_connection.dart       # 心跳 / 重连
-│   │   │   └── connection_state.dart
-│   │   ├── session/                 # 会话层 (对应 PTPIPSession+*.swift)
-│   │   │   ├── ptpip_session.dart          # 主入口
-│   │   │   ├── session_lifecycle.dart      # OpenSession / CloseSession
-│   │   │   ├── asset_traversal.dart        # GetObjectHandles / GetObjectInfo
-│   │   │   └── transfers.dart              # GetObject / 数据流
+│   │   │   ├── ptpip_socket.dart            # abstract 接口
+│   │   │   ├── ptpip_socket_io.dart         # IoPtpipSocket 真实实现 + FakePtpipSocket 测试实现
+│   │   │   └── ptpip_connection.dart        # 高层连接管理（持有一个 socket 实例）
+│   │   ├── session/                 # 会话层 (对应 PTPIPSession+*.swift，single PtpipSession 类)
+│   │   │   └── ptpip_session.dart           # 双连接架构，含 lifecycle/traversal/transfers 全部方法
 │   │   ├── camera_transport.dart           # 品牌抽象 (对应 CameraTransport)
-│   │   └── experimental_nikon_transport.dart
+│   │   ├── experimental_nikon_transport.dart
+│   │   └── camera_transport_factory.dart   # 工厂 (返回 ExperimentalNikonTransport)
 │   │
 │   ├── services/                    # 应用级服务
 │   │   ├── preferences_store.dart   # shared_preferences 包装
@@ -164,9 +162,7 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 ├── test/                            # flutter_test (单测 + widget test)
 │   ├── protocol/
 │   │   ├── primitives_test.dart              # 编解码 round-trip
-│   │   ├── session_lifecycle_test.dart
-│   │   ├── asset_traversal_test.dart
-│   │   └── transfers_test.dart               # fake socket server
+│   │   └── session_test.dart                # 全部 session 测试 + transfers（fake socket）
 │   ├── services/
 │   │   ├── preferences_store_test.dart
 │   │   ├── download_store_test.dart
@@ -206,9 +202,9 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 |---|---|---|
 | 1 | `Services/PTPIPPrimitives.swift` | `lib/protocol/primitives/` |
 | 2 | `Services/PTPIPTCPConnection.swift` | `lib/protocol/transport/ptpip_connection.dart` |
-| 3 | `Services/PTPIPSession+Lifecycle.swift` | `lib/protocol/session/session_lifecycle.dart` |
-| 4 | `Services/PTPIPSession+AssetTraversal.swift` | `lib/protocol/session/asset_traversal.dart` |
-| 5 | `Services/PTPIPSession+Transfers.swift` | `lib/protocol/session/transfers.dart` |
+| 3 | `Services/PTPIPSession+Lifecycle.swift` | `lib/protocol/session/ptpip_session.dart`（合并到单类） |
+| 4 | `Services/PTPIPSession+AssetTraversal.swift` | `lib/protocol/session/ptpip_session.dart`（合并到单类） |
+| 5 | `Services/PTPIPSession+Transfers.swift` | `lib/protocol/session/ptpip_session.dart`（合并到单类） |
 | 6 | `Services/ExperimentalNikonTransport.swift` | `lib/protocol/experimental_nikon_transport.dart` |
 | 7 | `Services/CameraTransport.swift` (协议) | `lib/protocol/camera_transport.dart` (abstract class) |
 | 8 | `Services/CameraTransportFactory.swift` | 同名，工厂函数 |
@@ -313,7 +309,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 
 - 实现 `lib/protocol/primitives/` 全部编解码
 - 实现 `lib/protocol/transport/ptpip_connection.dart`（定义 `PtpipSocket` 抽象类 + `IoPtpipSocket`/`FakePtpipSocket` 两种实现）
-- 实现 `lib/protocol/session/` 三块 (lifecycle / traversal / transfers)
+- 实现 `lib/protocol/session/ptpip_session.dart`（单 PtpipSession 类，含 lifecycle/traversal/transfers）
 - 实现 `ExperimentalNikonTransport`
 - 翻写 `Tests/PTPIPSessionAssetTraversalTests.swift` 为 Dart 版 (用 fake socket server)
 - ✅ 验收：协议单测全绿；至少覆盖以下异常场景 —
@@ -419,9 +415,9 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | `Services/ExperimentalNikonTransport.swift` | `lib/protocol/experimental_nikon_transport.dart` |
 | `Services/PhotoLibraryExportService.swift` | `lib/platform/photo_library_channel_*.dart` |
 | `Services/PTPIPPrimitives.swift` | `lib/protocol/primitives/*.dart` |
-| `Services/PTPIPSession+Lifecycle.swift` | `lib/protocol/session/session_lifecycle.dart` |
-| `Services/PTPIPSession+AssetTraversal.swift` | `lib/protocol/session/asset_traversal.dart` |
-| `Services/PTPIPSession+Transfers.swift` | `lib/protocol/session/transfers.dart` |
+| `Services/PTPIPSession+Lifecycle.swift` | `lib/protocol/session/ptpip_session.dart`（单类） |
+| `Services/PTPIPSession+AssetTraversal.swift` | `lib/protocol/session/ptpip_session.dart`（单类） |
+| `Services/PTPIPSession+Transfers.swift` | `lib/protocol/session/ptpip_session.dart`（单类） |
 | `Services/PTPIPSession.swift` | `lib/protocol/session/ptpip_session.dart` |
 | `Services/PTPIPTCPConnection.swift` | `lib/protocol/transport/ptpip_connection.dart` |
 | `DownloadActivityWidget/*` | ❌ 删除 (跨端不实现 Live Activity) |
