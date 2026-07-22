@@ -50,11 +50,11 @@ flutter build apk --debug
 ## 当前阶段与下一步
 
 | Phase | 内容 | 状态 |
-|---|---|---|---|
+|---|---|---|
 | 0 | 工程骨架 + 14 个 Domain freezed model | ✅ 已完成 |
 | 1 | PTP/IP 协议层 + Dart 单测 | ✅ 已完成（47 测试全绿，`dart analyze` 干净） |
-| 2 | 真机连 Nikon 端到端验证 | ⏳ 未开始 |
-| 3 | 下载 + 进度通知 | ⏳ 未开始 |
+| 2 | **UI 骨架阶段**：Riverpod Provider 拓扑 + 4 个 Tab + Shared 包 + widget smoke test | 🚧 下一步（细节见 `docs/项目状态.md §5.4`） |
+| 3 | 下载 + 进度通知 + 真机端到端验证 | ⏳ 未开始 |
 | 4 | UI 抛光 + 触觉 + 动效 | ⏳ 未开始 |
 | 5 | 多品牌扩展（占位） | ⏳ 未开始 |
 
@@ -125,20 +125,20 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 5. **错误不向上混**：`ExperimentalNikonTransport._mapError` 把 `PTPIPError` 与未知异常统一翻成 `CameraAppError`，业务层只看到 sealed `CameraAppError`。
 6. **fake socket 必须实现 `PtpipSocket` 完整接口**（`connect / send / receivePacket / close / isConnected`），协议单测才能不依赖真机。
 
-### UI / Services / Platform（Phase 1 之后才建）
+### UI / Services / Platform（Phase 2 开始落地）
 
-- 当前 `lib/features/`、`lib/services/`、`lib/platform/` 三个目录**还没有内容**。`lib/main.dart` 是 Phase 0 占位 `ViewfinderApp`，Phase 4 才换成正式 UI。
-- 计划：
-  - `lib/services/`：`preferences_store.dart` (shared_preferences) / `download_store.dart` / `asset_thumbnail_service.dart` / `photo_library_export_service.dart` / `download_progress_notifier.dart` (替代 Live Activity) / `background_download_runner.dart` / `wifi_watcher.dart`。
-  - `lib/platform/`：`photo_library_channel*.dart` (interface + Android + iOS + IO stub)。
-  - `lib/features/`：`connection_setup/` / `photo_browser/` / `downloads/` / `settings/` / `shared/`。
+- Phase 2 之前 `lib/features/`、`lib/services/`、`lib/platform/` 三个目录**还没有内容**。`lib/main.dart` 是 Phase 0 占位 `ViewfinderApp`。
+- Phase 2 起开始建：
+  - `lib/services/`：`preferences_store.dart` (shared_preferences) — Phase 2 落地；其他（`download_store.dart` / `asset_thumbnail_service.dart` / `photo_library_export_service.dart` / `download_progress_notifier.dart` / `background_download_runner.dart` / `wifi_watcher.dart`）Phase 3 起落地。
+  - `lib/platform/`：`photo_library_channel*.dart` (interface + Android + iOS + IO stub) — Phase 3 落地。
+  - `lib/features/`：`connection_setup/` / `photo_browser/` / `downloads/` / `settings/` / `shared/` — Phase 2 全部落地。
 
 ## Riverpod 状态管理
 
-- 原 iOS ViewModel → Flutter Notifier：`ConnectionNotifier extends Notifier<ConnectionState>` / `GalleryNotifier extends AsyncNotifier<List<PhotoAsset>>` / `DownloadManagerNotifier extends Notifier<DownloadQueueState>` / AppShell 拆成多个 `Provider`。
+- 原 iOS ViewModel → Flutter Notifier：`ConnectionNotifier extends Notifier<ConnectionState>` / `GalleryNotifier extends AsyncNotifier<List<PhotoAsset>>` / `DownloadManagerNotifier extends Notifier<DownloadQueueState>` / `PreferencesNotifier extends Notifier<CameraConnectionConfig>`。
 - **协议层不持有 Riverpod**：`PtpipSession` 是 plain Dart 类，Notifier 注入并订阅。`PtpipSocket` 接口允许单测里注入 fake。
 - `StreamProvider` 包 socket 数据事件，`family` modifier 处理多任务下载（按 downloadId 区分）。
-- 详细见 `docs/架构.md` §6。
+- Phase 2 完整的 Provider 拓扑表见 `docs/架构.md` §6。
 
 ## 平台能力与权限矩阵
 
@@ -181,6 +181,7 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 |---|---|
 | 加 / 砍 / 改功能 | `docs/产品需求.md` §3 + §6 |
 | 改技术栈 / 依赖 / 模块边界 | `docs/架构.md` §1 / §3 / §5 |
-| Phase 完成 / 新阻塞 / 关键决策 | `docs/项目状态.md` §2 / §4 / §8 |
+| Phase 完成 / 新阻塞 / 关键决策 | `docs/项目状态.md` §2 / §4 / §8 / §10 |
 | 计划微调 | `docs/Viewfinder方案.md` 对应节 |
 | Phase 1 切片级进度 | `docs/Phase1实施计划.md` §3 |
+| Phase 2 UI 阶段进度 | `docs/项目状态.md` §5.4 |

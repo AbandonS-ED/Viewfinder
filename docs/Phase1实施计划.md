@@ -1595,7 +1595,7 @@ freezed on xxx: 7:10: Expected to find ','
 
 ### 9.2 下一步
 
-读 `docs/项目状态.md §5.3 Phase 2 起点`——下一步是 Phase 2 真机端到端验证（在真 Nikon 相机上跑）。
+读 `docs/项目状态.md §5.4 Phase 2 任务`——下一步是 Phase 2 UI 骨架阶段（搭 Riverpod Provider + 4 个 Tab + Shared 包），真机验证推到 Phase 3。
 
 ---
 

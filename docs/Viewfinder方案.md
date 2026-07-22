@@ -319,21 +319,87 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 
 **Phase 1 已完成，协议层已稳定。Phase 2 不再动协议层。**
 
-### Phase 2 — 端到端：真机连 Nikon (3-4 天)
+### Phase 2 — UI 骨架阶段 (19-21 天) — 🚧 **下一步**
 
-- Android 真机：连相机热点 → 启动 app → 看到照片缩略图列表
-- iOS 真机：同上
-- 这一阶段先不管下载、不管 UI 美观，只验证「连接 + 浏览」通路
-- ✅ 验收：能在真相机上看到照片列表 (1-2 张为限)
+**目标**：搭好 UI 骨架（Riverpod Provider 拓扑 + 4 个 Tab + Shared 包），Phase 3 真机验证时直接填肉。
 
-### Phase 3 — 下载 + 进度通知 (4-5 天)
+**为什么 Phase 2 优先 UI 骨架**：UI 骨架一次写好 Phase 4 只填肉；真机验证推到 Phase 3（与下载/进度通知一起做）。
 
+**交付清单**：
+
+1. Riverpod Provider 拓扑
+   - `preferencesStoreProvider` (Provider)
+   - `transportFactoryProvider` (Provider)
+   - `connectionProvider` (NotifierProvider)
+   - `galleryProvider` (AsyncNotifierProvider)
+   - `downloadManagerProvider` (NotifierProvider)
+   - `preferencesProvider` (NotifierProvider)
+2. App Shell + NavigationBar 4 个 Tab
+3. Connection / Gallery / Downloads / Settings 四页 UI
+4. Shared 包：`app_theme.dart`（暖白 #F9F9F8 + 琥珀金）+ `shared_components.dart`（主按钮 / 卡片 / 空状态）
+5. 4 个 widget smoke test + 17 个 Notifier 单测
+6. `pubspec.yaml` 加 `shared_preferences`
+7. `analysis_options.yaml` 加强（全套 lint）
+8. DI 装配：`main.dart` → `app.dart` → 各 Page
+
+**不在本 Phase 范围**（明确切边）：
+- ❌ 真机连 Nikon 验证（Phase 3）
+- ❌ 下载完整文件（Phase 3）
+- ❌ 进度通知 / Foreground Service（Phase 3）
+- ❌ 触觉 / 动画 / Claude-style 微动效（Phase 4）
+- ❌ iOS 平台代码（Phase 3 一并创建 ios/ 目录）
+
+**任务切片**（16 个原子任务，按依赖顺序）：
+
+| # | 任务 | 估时 |
+|---|---|---|
+| 2.0 | 准备 features/ 目录骨架 | 30 分钟 |
+| 2.1 | pubspec.yaml 加 shared_preferences | 5 分钟 |
+| 2.2 | lib/services/preferences_store.dart | 1 小时 |
+| 2.3 | PreferencesNotifier + 4 单测 | 1.5 小时 |
+| 2.4 | ConnectionNotifier + 5 单测 | 2 小时 |
+| 2.5 | GalleryNotifier + 5 单测 | 2 小时 |
+| 2.6 | DownloadManagerNotifier + 3 单测 | 1.5 小时 |
+| 2.7 | Shared 包 | 2 小时 |
+| 2.8 | Connection 页 UI | 1.5 小时 |
+| 2.9 | Gallery 页 UI | 2 小时 |
+| 2.10 | Downloads 页 UI（占位） | 1 小时 |
+| 2.11 | Settings 页 UI | 1.5 小时 |
+| 2.12 | app.dart + main.dart 装配 | 1 小时 |
+| 2.13 | 4 widget smoke test | 1.5 小时 |
+| 2.14 | analysis_options.yaml 加强 | 30 分钟 |
+| 2.15 | 验收 commit + push | 1 小时 |
+
+**验收标准**：
+1. `flutter build apk --debug` 能装
+2. `dart analyze` 零警告
+3. `flutter test` 全绿（新增 ≥ 21 测试，总数 ≥ 68）
+4. `flutter run` 起 app 4 个 Tab 切换正常
+5. Settings 页能改 host/port 并保存
+
+### Phase 3 — 真机验证 + 下载 + 进度通知 (5-7 天)
+
+**目标**：在 Android 真机上跑通端到端：连接 + 浏览 + 下载 + 进度通知。
+
+**任务**：
+- Android 真机：连相机热点 → 启动 app → 看到照片缩略图列表 → 下载几张 → 通知中心看进度
+- iOS 真机（**前提：借到 macOS**）：同上
+- 补 `_parseDeviceInfo` / `_parseObjectInfo` 完整 dataset 解析（对照 iOS）
 - 单张下载通路：`GetObject` → 写本地 → MediaStore / PhotoLibrary 入库
 - 批量队列：参考 `DownloadAssetPrioritizer` (JPEG 优先)
-- `flutter_local_notifications` 进度条；`flutter_background_service` 保活
+- `flutter_local_notifications` 进度条；`flutter_background_service` 保活（Android）
 - Wi-Fi 断线检测 + 暂停 / 重试
-- 本地日志文件写入 + Settings 页提供「导出日志」按钮（连接失败时方便用户反馈 bug）
-- ✅ 验收：批量下载 50 张 RAW+JPEG 混合，进程被杀后通知仍可恢复；日志可导出
+- 本地日志文件写入 + Settings 页提供「导出日志」按钮
+- 创建 ios/ 目录（macOS 上 `flutter create . --platforms=ios`）
+
+**不在本 Phase 范围**：
+- ❌ UI 抛光 / 触觉 / 动效（Phase 4）
+- ❌ 多品牌（Phase 5）
+
+✅ 验收：
+- Android 真机批量下载 50 张 RAW+JPEG 混合，进程被杀后通知仍可恢复
+- 日志可导出
+- 缩略图无延迟，下载进度实时更新
 
 ### Phase 4 — UI 抛光 + 触觉 + 动效 (5-6 天)
 
