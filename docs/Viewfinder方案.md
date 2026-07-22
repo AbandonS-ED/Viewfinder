@@ -93,6 +93,7 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   ├── camera_connection_config.dart
 │   │   ├── camera_transport_mode.dart
 │   │   ├── camera_session.dart
+│   │   ├── camera_capability.dart    # 独立文件 (freezed 2.5.8 + Dart 3.12 enum getter bug)
 │   │   ├── camera_workflow_state.dart
 │   │   ├── photo_asset.dart
 │   │   ├── photo_asset_merge.dart
