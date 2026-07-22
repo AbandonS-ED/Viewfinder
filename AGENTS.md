@@ -226,6 +226,7 @@ reference/
 - 怎么搭：[`docs/架构.md`](./docs/架构.md)
 - 现在在哪：[`docs/项目状态.md`](./docs/项目状态.md)
 - 实施细节：[`docs/Viewfinder方案.md`](./docs/Viewfinder方案.md)
+- Phase 2 任务：[`docs/Phase2实施计划.md`](./docs/Phase2实施计划.md)
 - 参考样板：`reference/`（Phase 1 后开始填充）
 
 ---

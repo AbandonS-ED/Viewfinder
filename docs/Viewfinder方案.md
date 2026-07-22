@@ -430,6 +430,8 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 
 ---
 
+Phase 2 详细任务切片见 [`Phase2实施计划.md`](Phase2实施计划.md)。
+
 ## 10. 验证策略
 
 每阶段结束跑一组 check：

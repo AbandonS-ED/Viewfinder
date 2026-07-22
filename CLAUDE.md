@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 这是一个 Flutter 跨端 app **Viewfinder (取景器)**，通过相机自带 Wi-Fi 热点和 CIPA PTP/IP 协议浏览、下载尼康相机中的照片。首版只实现 Nikon；Sony/Canon/Fujifilm 留作 Phase 5 占位。
 - 配套参考资料：源 iOS Swift 项目 `D:\桌面\Nikon_connect\` (上级目录)，只作协议参考，不复用代码。
 - 仓库路径含中文（`D:\桌面\Nikon_connect\Viewfinder`），Shell 命令必须加引号。
-- 文档宪法：`README.md`（导航）+ `AGENTS.md`（AI 工作守则）+ `docs/产品需求.md` + `docs/架构.md` + `docs/项目状态.md` + `docs/Viewfinder方案.md` + `docs/Phase1实施计划.md`。进入任何 Phase 前先把对应文档读一遍。
+- 文档宪法：`README.md`（导航）+ `AGENTS.md`（AI 工作守则）+ `docs/产品需求.md` + `docs/架构.md` + `docs/项目状态.md` + `docs/Viewfinder方案.md` + `docs/Phase1实施计划.md` + `docs/Phase2实施计划.md`。进入任何 Phase 前先把对应文档读一遍。
 - 项目成员：GitHub `AbandonS-ED/Viewfinder`，main 分支，远程 `https://github.com/AbandonS-ED/Viewfinder.git`。所有 commit 推到这；**commit / push 由人决定，AI 不要自动化**。
 - `.gitignore` 是 Flutter 标准模板。`.dart_tool/`、`build/`、`.idea/`、`viewfinder.iml` 都在忽略列表内。
 
@@ -53,12 +53,12 @@ flutter build apk --debug
 |---|---|---|
 | 0 | 工程骨架 + 14 个 Domain freezed model | ✅ 已完成 |
 | 1 | PTP/IP 协议层 + Dart 单测 | ✅ 已完成（47 测试全绿，`dart analyze` 干净） |
-| 2 | **UI 骨架阶段**：Riverpod Provider 拓扑 + 4 个 Tab + Shared 包 + widget smoke test | 🚧 下一步（细节见 `docs/项目状态.md §5.4`） |
+| 2 | **UI 骨架阶段**：Riverpod Provider 拓扑 + 4 个 Tab + Amber 主题 + Shared 包 + widget smoke test | 🚧 下一步（细节见 `docs/Phase2实施计划.md`） |
 | 3 | 下载 + 进度通知 + 真机端到端验证 | ⏳ 未开始 |
 | 4 | UI 抛光 + 触觉 + 动效 | ⏳ 未开始 |
 | 5 | 多品牌扩展（占位） | ⏳ 未开始 |
 
-Phase 1 详细切片见 `docs/Phase1实施计划.md` §3（8 个原子任务，按 3.0→3.8 顺序执行）。
+Phase 1 详细切片见 `docs/Phase1实施计划.md` §3。Phase 2 详细切片见 `docs/Phase2实施计划.md` §5。
 
 ## 整体架构
 
@@ -184,4 +184,4 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 | Phase 完成 / 新阻塞 / 关键决策 | `docs/项目状态.md` §2 / §4 / §8 / §10 |
 | 计划微调 | `docs/Viewfinder方案.md` 对应节 |
 | Phase 1 切片级进度 | `docs/Phase1实施计划.md` §3 |
-| Phase 2 UI 阶段进度 | `docs/项目状态.md` §5.4 |
+| Phase 2 UI 阶段进度 | `docs/Phase2实施计划.md` §5 |
