@@ -32,21 +32,55 @@ Phase 0（Domain）+ Phase 1（PTP/IP 协议层）已完成。Phase 2 搭 UI 骨
 
 ### 2.1 色板
 
+对标原 iOS `AppTheme` 14 个色 token + 5 个 workflow 状态色。
+
+#### 2.1.1 主色 / 强调 / 文字 / 边框
+
 | Token | Hex | 用途 |
 |---|---|---|
-| `--bg` | `#F9F9F8` | 全局背景暖白 |
-| `--card` | `#FFFFFF` | 卡片底色 |
-| `--bdr` | `#E8E4DD` | 卡片/列表分隔线 |
-| `--div` | `rgba(0,0,0,0.04)` | 列表项分隔 |
-| `--t1` | `#2D2D2D` | 主文字（近黑） |
-| `--t2` | `#7A756E` | 次要文字 |
+| `--bg` | `#F9F9F8` | 全局背景暖白（原 iOS `canvas`） |
+| `--card` | `#FFFFFF` | 卡片底色（原 iOS `surface`） |
+| `--surface-elevated` | `#FFFFFF` | 浮层底色（Dialog / BottomSheet） |
+| `--surface-muted` | `#F5F5F5` | 次级面板 / MetricTile 底（原 iOS `surfaceMuted`） |
+| `--control-bg` | `#F2F2F3` | 输入框 / 控件底（原 iOS `controlBackground`） |
+| `--bdr` | `rgba(0,0,0,0.07)` | 卡片/列表边框（原 iOS `border`） |
+| `--div` | `rgba(0,0,0,0.04)` | 列表项分隔（原 iOS `subtleFill`） |
+| `--sep` | `rgba(0,0,0,0.08)` | TabBar 阴影 / 工具栏分隔（原 iOS `separator`） |
+| `--shadow` | `rgba(0,0,0,0.05)` | 卡片阴影（原 iOS `shadow`） |
+| `--t1` | `#1A1A1A` | 主文字（近黑，原 iOS `ink`） |
+| `--t2` | `#6B7079` | 次要文字（原 iOS `inkMuted`） |
 | `--tm` | `#B5AFA6` | 时间戳/辅助文字 |
-| `--a` | `#D4A24E` | 强调色琥珀金 |
-| `--a-l` | `#F5E6C8` | 强调色浅底 |
-| `--ok` | `#5B8C5A` | 成功/完成绿 |
-| `--er` | `#C45B4A` | 错误红 |
+| `--a` | `#D4A24E` | 强调色琥珀金（原 iOS `accent`） |
+| `--a-s` | `#E8B84B` | 强调色浓（原 iOS `accentStrong`） |
+| `--a-l` | `#F5E6C8` | 强调色浅底（原 iOS `accentSoft`） |
+| `--info` | `#4069B3` | 信息蓝（原 iOS `info`） |
+| `--ok` | `#5B8C5A` | 成功/完成绿（原 iOS `success`） |
+| `--warn` | `#D47507` | 警告橙（原 iOS `warning`） |
+| `--er` | `#DB262E` | 错误红（原 iOS `danger`） |
 | `--btn` | `#1A1A1A` | 按钮底色（黑） |
 | `--btn-t` | `#FFFFFF` | 按钮文字白 |
+
+#### 2.1.2 Workflow 状态色函数
+
+对标原 iOS `AppTheme.workflowColor(for: CameraWorkflowState)`：
+
+```dart
+/// CameraWorkflowState → 颜色
+/// 原 iOS: waitingForWifi → info / connecting/loadingPhotos/downloading → warning
+///        / connected → success / error → danger
+Color AppTheme.workflowColor(CameraWorkflowState state) {
+  switch (state) {
+    case .waitingForWifi:    return AppTheme.info;
+    case .connecting:        return AppTheme.warn;
+    case .loadingPhotos:     return AppTheme.warn;
+    case .downloading:       return AppTheme.warn;
+    case .connected:         return AppTheme.ok;
+    case .error:             return AppTheme.er;
+  }
+}
+```
+
+**测试覆盖**（写 app_theme.dart 时必加）：6 个 state → 6 色 全测。
 
 ### 2.2 字体
 
@@ -55,6 +89,48 @@ Phase 0（Domain）+ Phase 1（PTP/IP 协议层）已完成。Phase 2 搭 UI 骨
 | 衬线（大标题） | `GoogleFonts.instrumentSerif()` | "Viewfinder"、"相册"、"下载"、"设置" 页面标题 |
 | 默认（正文） | `Theme.of(context).textTheme` (系统) | iOS 苹方 / Android 思源 |
 | 等宽（标签） | `GoogleFonts.dmMono()` | 端口/大小/格式/时间戳标签 |
+
+#### 2.2.1 Typography scale
+
+对标原 iOS `.title3 / .footnote / .body` 等（写 app_theme.dart 时一并实现）：
+
+| 用途 | size / weight |
+|---|---|
+| 大标题（页面 H1） | 26 / regular（Instrument Serif） |
+| 中标题（卡片标题） | 18 / medium |
+| 正文 | 15 / regular |
+| 辅助文字 | 13 / regular |
+| 标签 / 注释 | 11 / medium（DM Mono） |
+| 数值（MetricTile 大字） | 20 / bold |
+
+### 2.3 Spacing & Radius tokens
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--space-xs` | 4 | 紧凑 |
+| `--space-s` | 8 | 标准 |
+| `--space-m` | 12 | 卡片内 |
+| `--space-l` | 16 | 卡片间距 |
+| `--space-xl` | 24 | Section 间距 |
+| `--space-2xl` | 36 | 页面顶部 |
+| `--radius-s` | 8 | 小标签 |
+| `--radius-m` | 12 | 输入框 |
+| `--radius-l` | 18 | 卡片 |
+| `--radius-pill` | 100 | 胶囊按钮 |
+
+### 2.4 共享 widget
+
+`features/shared/` 包（含 widget）：
+
+| Widget | 对标原 iOS | 说明 |
+|---|---|---|
+| `CapsuleButton` | 原 `CapsuleButton` | 主按钮（黑底白字圆角胶囊） |
+| `EmptyState` | 原 `EmptyStateView` | 空状态占位（图标 + 标题 + 副标题） |
+| `ErrorBanner` | 原 `ErrorBanner` | 错误提示横幅 |
+| **`StatusBadge`** | **`StatusBadgeView` 46 行** | 圆点 + 状态 label（占位静态，无 pulsing） |
+| **`MetricTile`** | **`AppTheme.swift` MetricTile 21 行** | 图标 + 数值 + 标签（Settings 统计 / Connection 状态指标） |
+
+**`StatusBadge` 必须有** —— 原 iOS 是独立 widget，Connection 页状态指示 + Diagnostics 显示都用。**`MetricTile` 必须有** —— 原 iOS 写在 AppTheme.swift 末尾，Settings 显示 IP/端口/文件名/字节数等都依赖。
 
 ---
 
@@ -90,6 +166,49 @@ appShellProvider (NotifierProvider<AppShellNotifier, AppShellState>)
 | `downloadManagerProvider` | `NotifierProvider` | connection（弱依赖） | 同上 |
 | `preferencesProvider` | `NotifierProvider` | preferencesStore | `SharedPreferences` mock |
 | `appShellProvider` | `NotifierProvider` | — | 直接构造 AppShellNotifier |
+
+#### 3.1 AppShellState 结构（任务 2.6a）
+
+对标原 iOS `AppShellViewModel` 49 行 4 个公开方法 / 3 个状态字段：
+
+```dart
+@freezed
+class AppShellState with _$AppShellState {
+  const factory AppShellState({
+    /// 全局日志，FIFO 30 条上限（原 iOS `activityLog`）
+    @Default(<LogEntry>[]) List<LogEntry> activityLog,
+    /// 当前显示的 alert（null = 无）
+    AlertContext? alertContext,
+    /// 全局 loading 标题（null = 不显示 overlay）
+    String? globalActivityTitle,
+  }) = _AppShellState;
+  
+  bool get isShowingGlobalActivity => globalActivityTitle != null;
+}
+
+class AppShellNotifier extends Notifier<AppShellState> {
+  @override
+  AppShellState build() => const AppShellState();
+  
+  void setGlobalActivityTitle(String? title) { state = state.copyWith(globalActivityTitle: title); }
+  void showAlert({required String title, required String message}) {
+    state = state.copyWith(alertContext: AlertContext(id: ..., title: title, message: message));
+  }
+  void dismissAlert() { state = state.copyWith(alertContext: null); }
+  void appendLog(String message) {
+    final entry = LogEntry(id: ..., timestamp: DateTime.now(), message: message);
+    final newLog = [entry, ...state.activityLog].take(30).toList();
+    state = state.copyWith(activityLog: newLog);
+  }
+  String handleError(Object error);  // → 中文消息 + appendLog + showAlert
+}
+```
+
+**任务 2.6a 单测覆盖**（4 个）：
+1. `setGlobalActivityTitle / dismissAlert / showAlert` 状态切换
+2. `appendLog` FIFO 30 条上限
+3. `handleError` 写入 log + 显示 alert（普通 Error）
+4. `handleError` 接受 `CameraAppError`，message/recoverySuggestion 拼接
 
 ---
 
@@ -128,13 +247,10 @@ lib/
 │   │   ├── settings_view_model.dart   ← PreferencesNotifier
 │   │   └── widgets/                   ← FormFieldRow / ToggleRow（表单输入复用）
 │   └── shared/
-│       ├── app_theme.dart             ← 暖白 + 琥珀金 + Instrument Serif
-│       ├── shared_components.dart     ← CapsuleButton / EmptyState / ErrorBanner
+│       ├── app_theme.dart             ← 暖白 + 琥珀金 + 14 token + typography + spacing + workflowColor()
+│       ├── shared_components.dart     ← CapsuleButton / EmptyState / ErrorBanner / StatusBadge / MetricTile
 │       ├── formatters.dart            ← byteSize / date 格式化
 │       └── logger.dart                ← 占位 Logger（包 dart:developer log）
-│
-├── utils/
-│   └── logger.dart                    ← 同 shared/logger.dart，重复指向
 ```
 
 **为什么用三件套（Container / Page / ViewModel）**：
@@ -229,6 +345,11 @@ class ViewfinderApp extends StatelessWidget {
 - `ProviderScope` 顶层注入；不用 `autoDispose`（Phase 2 占位 UI 不频繁创建销毁）
 - 6 个 Provider（preferencesStore / transportFactory / connection / gallery / downloadManager / preferences / appShell）在 ProviderScope 内自动 `ref.watch` 解析依赖
 - 单测时用 `ProviderContainer` + `overrideWith` 注入 fake transport（task 2.4-2.6 测试）
+
+**Tab 标签决策**：用 HTML 原型 "连接 / 相册 / 下载 / 设置"
+- iOS 原项目用 "相机 / 照片 / 下载 / 设置"（SwiftUI NavigationStack 时代产物）
+- Phase 2 用更操作化标签 —— "连接"强调动作、"相册"强调产物（跟原 iOS `相机` / `照片` 对位但用词更准确）
+- HTML 原型 amber 主题已经选了这套，Phase 2 一致使用
 
 ---
 
