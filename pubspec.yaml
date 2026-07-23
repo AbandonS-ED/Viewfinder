@@ -39,6 +39,11 @@ dependencies:
   flutter_riverpod: ^2.5.0       # 状态管理
   freezed_annotation: ^2.4.0     # @freezed 注解
 
+  # Phase 2 UI 骨架新增依赖
+  shared_preferences: ^2.3.0     # AppPreferencesStore 持久化
+  google_fonts: ^6.2.1           # Instrument Serif + DM Mono
+  logging: ^1.2.0                # services/logger.dart 占位 Logger
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
