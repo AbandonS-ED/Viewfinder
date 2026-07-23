@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const ViewfinderApp());
-}
+import 'app.dart';
+import 'features/settings/settings_view_model.dart';
+import 'services/logger.dart';
 
-/// 占位 app。Phase 0 仅验证工程能跑起来；真正的 UI 在 Phase 4 写。
-class ViewfinderApp extends StatelessWidget {
-  const ViewfinderApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Viewfinder',
-      home: Scaffold(
-        body: Center(
-          child: Text('Viewfinder (取景器) — Phase 0 工程骨架就位'),
-        ),
-      ),
-    );
-  }
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = true;
+  setupLogging();
+  final sp = await SharedPreferences.getInstance();
+  appLogger.info('Viewfinder 启动');
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sp),
+      ],
+      child: const ViewfinderApp(),
+    ),
+  );
 }

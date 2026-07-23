@@ -46,7 +46,7 @@ class FakePtpipSocket implements PtpipSocket {
     final raw = scriptedResponses[idx];
     final length = ByteData.sublistView(raw).getUint32(0, Endian.little);
     if (length < 8 || length != raw.length) {
-      throw PTPIPError.invalidPacketLength();
+      throw const PTPIPError.invalidPacketLength();
     }
     final typeRaw = ByteData.sublistView(raw).getUint32(4, Endian.little);
     final type = PTPIPPacketType.values.firstWhere(

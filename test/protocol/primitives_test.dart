@@ -175,7 +175,7 @@ void main() {
 
   group('PTPIPError sealed class', () {
     test('invalidPacketLength has correct message', () {
-      final err = const PTPIPError.invalidPacketLength();
+      const err = PTPIPError.invalidPacketLength();
       expect(err.message, contains('数据包长度'));
     });
 
@@ -186,7 +186,7 @@ void main() {
     });
 
     test('timeout has correct message', () {
-      final err = PTPIPError.timeout('failed to read 8 bytes');
+      const err = PTPIPError.timeout('failed to read 8 bytes');
       expect(err.message, contains('超时'));
       expect(err.message, contains('failed'));
     });
@@ -199,7 +199,7 @@ void main() {
 
   group('PTPIPDeviceInfo', () {
     test('supportsOperation checks set membership', () {
-      final info = PTPIPDeviceInfo(
+      const info = PTPIPDeviceInfo(
         model: 'Nikon Z5',
         manufacturer: 'Nikon',
         operationsSupported: {0x1001, 0x1002},
@@ -209,7 +209,7 @@ void main() {
     });
 
     test('supportsOperation returns false for empty set', () {
-      final info = PTPIPDeviceInfo();
+      const info = PTPIPDeviceInfo();
       expect(info.supportsOperation(PTPOperationCode.openSession), isFalse);
     });
   });

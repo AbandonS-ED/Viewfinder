@@ -490,14 +490,14 @@ lib/
 
 | # | 任务 | 估时 | 产出 |
 |---|---|---|---|
-| 2.0 | 创建 features/ 目录骨架（含 widgets/ 子目录） | 15 分钟 | 5 个 feature 目录 + shared/ 目录 |
-| 2.1 | `pubspec.yaml` 加 `shared_preferences ^2.x` + `google_fonts ^6.x` + `logging ^1.x` | 10 分钟 | `flutter pub get` 干净 |
-| 2.2 | `services/preferences_store.dart` | 1 小时 | AppPreferencesStore |
-| 2.3 | `settings_view_model.dart` + 4 单测 | 1.5 小时 | PreferencesNotifier |
-| 2.4 | `connection_view_model.dart` + 5 单测 | 2 小时 | ConnectionNotifier |
-| 2.5 | `gallery_view_model.dart` + 5 单测 | 2 小时 | GalleryNotifier |
-| 2.6 | `download_manager_view_model.dart` + 3 单测 | 1.5 小时 | DownloadManagerNotifier 占位 |
-| 2.6a | `app_shell_view_model.dart` + 4 单测 | 1.5 小时 | AppShellNotifier（全局 alerts/diagnostics） |
+| 2.0 | 创建 features/ 目录骨架（含 widgets/ 子目录） | 15 分钟 | 5 个 feature 目录 + shared/ 目录 | ✅ |
+| 2.1 | `pubspec.yaml` 加 `shared_preferences ^2.x` + `google_fonts ^6.x` + `logging ^1.x` | 10 分钟 | `flutter pub get` 干净 | ✅ |
+| 2.2 | `services/preferences_store.dart` | 1 小时 | AppPreferencesStore | ✅ |
+| 2.3 | `settings_view_model.dart` + 4 单测 | 1.5 小时 | PreferencesNotifier | ✅ |
+| 2.4 | `connection_view_model.dart` + 5 单测 | 2 小时 | ConnectionNotifier | ✅ |
+| 2.5 | `gallery_view_model.dart` + 5 单测 | 2 小时 | GalleryNotifier | ✅ |
+| 2.6 | `download_manager_view_model.dart` + 3 单测 | 1.5 小时 | DownloadManagerNotifier 占位 | ✅ |
+| 2.6a | `app_shell_view_model.dart` + 4 单测 | 1.5 小时 | AppShellNotifier（全局 alerts/diagnostics） | ✅ |
 
 #### 5.2 Notifier 测试用例清单
 
@@ -538,17 +538,17 @@ lib/
 
 | # | 任务 | 估时 | 产出 |
 |---|---|---|---|
-| 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart` + `status_badge.dart`） | 4 小时 | 主题 + 8 widget + 2 formatter（详见 §2.4） |
-| 2.7a | `lib/services/logger.dart`（统一路径，§18 修订） | 30 分钟 | 包 package:logging 占位 Logger |
-| 2.8 | `connection_container.dart` + `connection_page.dart` + widgets/ | 1.5 小时 | 连接页 UI（未连接 + 已连接 readySection） |
-| 2.9 | `gallery_container.dart` + `gallery_page.dart` + widgets/ | 2.5 小时 | 缩略图网格 + 3 态 + 12 mock + filterBar (4 chip 占位) + MetricTile (已加载/已选择 占位) |
-| 2.10 | `downloads_container.dart` + `downloads_page.dart` | 1.5 小时 | 队列页（5 section 占位：overview/queue/active/throughput/records） |
-| 2.11 | `settings_container.dart` + `settings_page.dart` + widgets/ | 1.5 小时 | 设置页（3 section：连接/下载/其他） |
-| 2.12 | `app.dart` + `main.dart` 装配 | 1.5 小时 | ProviderScope + Tab + entry point |
-| 2.13 | 8 widget smoke test（每页 happy + error） | 2.5 小时 | 8 个 smoke test |
-| 2.13a | `lib/services/download_asset_prioritizer.dart`（JPEG 优先排序） | 30 分钟 | 对齐 iOS DownloadAssetPrioritizer enum |
-| 2.14 | `analysis_options.yaml` 加强（具体规则见 §6.6） | 30 分钟 | 全套 lint |
-| 2.15 | 验收 + commit + push + 更新 docs | 1 小时 | git + 项目状态.md |
+| 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart` + `status_badge.dart`） | 4 小时 | 主题 + 9 widget + 3 formatter（详见 §2.4） | ✅ |
+| 2.7a | `lib/services/logger.dart`（统一路径，§18 修订） | 30 分钟 | 包 package:logging 占位 Logger | ✅ |
+| 2.8 | `connection_container.dart` + `connection_page.dart`（+ widgets/ 删空目录） | 1.5 小时 | 连接页 UI（未连接 + 已连接 readySection） | ✅ |
+| 2.9 | `gallery_container.dart` + `gallery_page.dart`（+ widgets/ 删空目录） | 2.5 小时 | 缩略图网格 + 3 态 + 12 mock + filterBar (4 chip 占位) + MetricTile (已加载/已选择 占位) | ✅ |
+| 2.10 | `downloads_container.dart` + `downloads_page.dart` | 1.5 小时 | 队列页（5 section 占位：overview/queue/active/throughput/records） | ✅ |
+| 2.11 | `settings_container.dart` + `settings_page.dart`（+ widgets/ 删空目录） | 1.5 小时 | 设置页（4 section：相机连接/下载行为/当前生效值/支持与版本） | ✅ |
+| 2.12 | `app.dart` + `main.dart` 装配 | 1.5 小时 | ProviderScope + Tab + entry point | ✅ |
+| 2.13 | 8 widget smoke test（每页 happy + error） | 2.5 小时 | 8 个 smoke test | ✅ |
+| 2.13a | `lib/services/download_asset_prioritizer.dart`（JPEG 优先排序） | 30 分钟 | 对齐 iOS DownloadAssetPrioritizer enum | ✅ |
+| 2.14 | `analysis_options.yaml` 加强（具体规则见 §6.6） | 30 分钟 | 全套 lint | ✅ |
+| 2.15 | 验收 + commit + push + 更新 docs | 1 小时 | git + 项目状态.md | ⏳ 待用户决定 commit |
 
 **总估时**：~28 小时纯干活（不含验收；按 4-5h/天 → **约 2.5 周**）
 

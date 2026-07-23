@@ -48,7 +48,7 @@ void main() {
     });
 
     test('receivePacket propagates timeout', () async {
-      final socket = FakePtpipSocket(scriptedErrors: [PTPIPError.timeout('test timeout')]);
+      final socket = FakePtpipSocket(scriptedErrors: [const PTPIPError.timeout('test timeout')]);
       final conn = PtpipConnection(host: '127.0.0.1', port: 15740, socket: socket);
       await conn.open();
       expect(

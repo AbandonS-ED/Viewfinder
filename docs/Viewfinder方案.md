@@ -123,69 +123,84 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   ├── experimental_nikon_transport.dart
 │   │   └── camera_transport_factory.dart   # 工厂 (返回 ExperimentalNikonTransport)
 │   │
-│   ├── services/                    # 应用级服务
-│   │   ├── preferences_store.dart   # shared_preferences 包装
-│   │   ├── download_store.dart      # 本地落盘 + 持久化 JSON
-│   │   ├── asset_thumbnail_service.dart
-│   │   ├── photo_library_export_service.dart  # platform channel
-│   │   ├── download_progress_notifier.dart    # 替代 LiveActivityController
-│   │   ├── background_download_runner.dart    # 后台下载 + foreground service
-│   │   └── wifi_watcher.dart
+│   ├── services/                    # 应用级服务 (Phase 2 已落 3 个，剩余 Phase 3)
+│   │   ├── preferences_store.dart   # ✅ Phase 2 (JSON round-trip + schema 兼容)
+│   │   ├── logger.dart              # ✅ Phase 2 (包装 package:logging)
+│   │   ├── download_asset_prioritizer.dart  # ✅ Phase 2 (JPEG 优先 enum)
+│   │   ├── download_store.dart      # ⏳ Phase 3 (本地落盘 + 持久化 JSON)
+│   │   ├── asset_thumbnail_service.dart      # ⏳ Phase 3 (简化为单 thumbnail derivative)
+│   │   ├── photo_library_export_service.dart  # ⏳ Phase 3 (platform channel)
+│   │   ├── download_progress_notifier.dart    # ⏳ Phase 3 (替代 LiveActivityController)
+│   │   ├── background_download_runner.dart    # ⏳ Phase 3 (后台下载 + foreground service)
+│   │   └── wifi_watcher.dart        # ⏳ Phase 3
 │   │
-│   ├── features/                    # UI 业务模块 (对应原 Features/)
+│   ├── features/                    # UI 业务模块 (Phase 2 落地)
 │   │   ├── connection_setup/
-│   │   │   ├── connection_page.dart          # Screen
-│   │   │   ├── connection_view_model.dart    # Notifier
-│   │   │   └── widgets/                      # LensGlowView 等
+│   │   │   ├── connection_container.dart   # ConsumerWidget 组合根
+│   │   │   ├── connection_page.dart        # Screen (无 ref.watch)
+│   │   │   ├── connection_view_model.dart  # ConnectionNotifier (Notifier)
+│   │   │   └── connection_state.dart       # freezed ConnectionState (9 字段)
 │   │   ├── photo_browser/
-│   │   │   ├── gallery_page.dart
-│   │   │   ├── gallery_view_model.dart
-│   │   │   └── widgets/                      # ShimmerView 等
+│   │   │   ├── gallery_container.dart      # ConsumerWidget 组合根
+│   │   │   ├── gallery_page.dart           # Screen
+│   │   │   ├── gallery_view_model.dart     # GalleryNotifier (AsyncNotifier<GalleryState>)
+│   │   │   └── gallery_state.dart          # freezed GalleryState
 │   │   ├── downloads/
-│   │   │   ├── downloads_page.dart
-│   │   │   ├── download_manager_view_model.dart
-│   │   │   └── widgets/
+│   │   │   ├── downloads_container.dart     # ConsumerWidget
+│   │   │   ├── downloads_page.dart          # 5 section 占位
+│   │   │   └── download_manager_view_model.dart  # DownloadManagerNotifier
 │   │   ├── settings/
-│   │   │   ├── settings_page.dart
-│   │   │   └── settings_view_model.dart
-│   │   └── shared/                  # 共享 widget + 主题
-│   │       ├── app_theme.dart                # 对应 AppTheme.swift
-│   │       ├── status_badge.dart
-│   │       ├── shared_components.dart        # CapsuleButton / HapticWrapper
-│   │       └── formatters.dart
+│   │   │   ├── settings_container.dart     # ConsumerWidget
+│   │   │   ├── settings_page.dart           # 4 section (host/port TextField + 2 Switch + 3 GridRowItem)
+│   │   │   └── settings_view_model.dart     # PreferencesNotifier
+│   │   ├── app_shell/                      # ✅ Phase 2 新增 (统一为单一 Notifier)
+│   │   │   ├── app_shell_state.dart         # freezed AppShellState
+│   │   │   └── app_shell_view_model.dart    # AppShellNotifier (ref.listen connection/gallery)
+│   │   └── shared/                  # 共享 widget + 主题 (Phase 2 落地)
+│   │       ├── app_theme.dart              # 22 色 token + workflowColor() + MetricTile + amberTheme() + GoogleFonts
+│   │       ├── status_badge.dart            # StatusBadge
+│   │       ├── shared_components.dart      # 9 widget (PrimaryActionButton / SecondaryActionButton / CustomCard / SectionHeader / GridRowItem / DownloadProgressDetails / Haptics / ShimmerView / LensGlowView)
+│   │       └── formatters.dart              # fileSize / logTime / captureDate
 │   │
-│   └── platform/                    # 平台 channel (iOS / Android 桥接)
+│   └── platform/                    # ⏳ Phase 3 才创建 (iOS / Android 桥接)
 │       ├── photo_library_channel.dart        # interface
-│       ├── photo_library_channel_io.dart     # dart:io stub (用于测试)
+│       ├── photo_library_channel_io.dart     # dart:io stub
 │       ├── photo_library_channel_android.dart  # MethodChannel 实现
 │       └── photo_library_channel_ios.dart       # MethodChannel 实现
 │
-├── test/                            # flutter_test (单测 + widget test)
-│   ├── protocol/
-│   │   ├── primitives_test.dart              # 编解码 round-trip
-│   │   └── session_test.dart                # 全部 session 测试 + transfers（fake socket）
-│   ├── services/
-│   │   ├── preferences_store_test.dart
-│   │   ├── download_store_test.dart
-│   │   ├── download_queue_test.dart
-│   │   ├── download_throughput_diagnostics_test.dart
-│   │   └── asset_thumbnail_service_test.dart
-│   └── helpers/
-│       └── fake_ptpip_socket.dart            # 替代 127.0.0.1 测试模式
+├── test/                            # flutter_test (单测 + widget test) — Phase 2 共 102 测
+│   ├── protocol/                     # 47 测 (Phase 1)
+│   │   ├── primitives_test.dart              # 编解码 round-trip + sealed error + DeviceInfo
+│   │   ├── experimental_nikon_transport_test.dart  # 5 测 (错误路径)
+│   │   ├── session_test.dart                 # 全部 session 测试 (lifecycle + traversal + transfers)
+│   │   └── transport/ptpip_connection_test.dart
+│   ├── services/                     # 10 测 (Phase 2)
+│   │   ├── preferences_store_test.dart       # 5 测 (JSON round-trip + schema 兼容 + error path + 持久化 key)
+│   │   └── download_asset_prioritizer_test.dart  # 5 测 (cameraOrder 不变 + jpegFirst 排序 + PNG/JPEG 同级)
+│   ├── features/                     # 29 测 (Phase 2)
+│   │   ├── app_shell/app_shell_view_model_test.dart    # 4 测
+│   │   ├── connection_setup/connection_view_model_test.dart  # 5 测
+│   │   ├── photo_browser/gallery_view_model_test.dart  # 5 测
+│   │   ├── downloads/download_manager_view_model_test.dart  # 3 测
+│   │   ├── settings/settings_view_model_test.dart  # 4 测
+│   │   └── shared/app_theme_test.dart         # 8 测 (workflowColor 6 + formatters.fileSize 4 + captureDate 4 + amberTheme 1)
+│   └── helpers/                      # fake helpers
+│       ├── fake_ptpip_socket.dart            # 替代 127.0.0.1 测试模式 (Phase 1)
+│       └── fake_camera_transport.dart         # Phase 2 新增 (FakeCameraTransport + FakeCameraTransportFactory)
+│
+├── widget_test.dart                  # App 启动 smoke (1 测)
+├── smoke_test.dart                   # 8 测 (4 页面 happy/error widget smoke)
 │
 ├── android/
 │   └── app/src/main/kotlin/.../
 │       ├── MainActivity.kt
-│       ├── PhotoLibraryPlugin.kt             # MethodChannel handler
-│       └── DownloadForegroundService.kt      # 对应 widget 行为
+│       ├── PhotoLibraryPlugin.kt             # ⏳ Phase 3
+│       └── DownloadForegroundService.kt      # ⏳ Phase 3
 │
-├── ios/
-│   └── Runner/
-│       ├── AppDelegate.swift
-│       └── PhotoLibraryPlugin.swift          # PHPhotoLibrary 实现
+├── ios/                              # ⏳ Phase 3 (Windows 上创建需借 Mac)
 │
 ├── pubspec.yaml
-├── analysis_options.yaml
+├── analysis_options.yaml              # Phase 2 11 条 lint 规则
 └── README.md
 ```
 
@@ -243,9 +258,9 @@ class FakePtpipSocket implements PtpipSocket {
 | 原 iOS ViewModel | Flutter Notifier |
 |---|---|
 | `ConnectionViewModel` | `ConnectionNotifier extends Notifier<ConnectionState>` |
-| `GalleryViewModel` | `GalleryNotifier extends AsyncNotifier<List<PhotoAsset>>` |
+| `GalleryViewModel` | `GalleryNotifier extends AsyncNotifier<GalleryState>`（freezed 包 selectedAssetIDs + isLoading） |
 | `DownloadManagerViewModel` | `DownloadManagerNotifier extends Notifier<DownloadQueueState>` |
-| `AppShellViewModel` | 多 `Provider` 组合 (无对应单一 Notifier) |
+| `AppShellViewModel` | `AppShellNotifier extends Notifier<AppShellState>`（单一 Notifier，Phase 2 决策改：原方案是"多 Provider 组合"，统一为单一类） |
 
 关键设计：
 
@@ -319,7 +334,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 
 **Phase 1 已完成，协议层已稳定。Phase 2 不再动协议层。**
 
-### Phase 2 — UI 骨架阶段 (19-21 天) — 🚧 **下一步**
+### Phase 2 — UI 骨架阶段 (19-21 天) — ✅ **已完成 (2026-07-23)**
 
 **目标**：搭好 UI 骨架（Riverpod Provider 拓扑 + 4 个 Tab + Shared 包），Phase 3 真机验证时直接填肉。
 
@@ -327,20 +342,26 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 
 **交付清单**：
 
-1. Riverpod Provider 拓扑
+1. Riverpod Provider 拓扑（7 个 Provider 全链路打通）
    - `preferencesStoreProvider` (Provider)
    - `transportFactoryProvider` (Provider)
    - `connectionProvider` (NotifierProvider)
-   - `galleryProvider` (AsyncNotifierProvider)
-   - `downloadManagerProvider` (NotifierProvider)
+   - `galleryProvider` (AsyncNotifierProvider<GalleryNotifier, GalleryState>，freezed 包 selectedAssetIDs + isLoading)
+   - `downloadManagerProvider` (NotifierProvider，弱依赖 `connectionProvider`)
    - `preferencesProvider` (NotifierProvider)
-2. App Shell + NavigationBar 4 个 Tab
-3. Connection / Gallery / Downloads / Settings 四页 UI
-4. Shared 包：`app_theme.dart`（暖白 #F9F9F8 + 琥珀金）+ `shared_components.dart`（主按钮 / 卡片 / 空状态）
-5. 4 个 widget smoke test + 17 个 Notifier 单测
-6. `pubspec.yaml` 加 `shared_preferences`
-7. `analysis_options.yaml` 加强（全套 lint）
+   - `appShellProvider` (NotifierProvider<AppShellNotifier, AppShellState>，freezed)
+2. App Shell + NavigationBar 4 个 Tab，`ViewfinderApp` ref.watch(appShellProvider) 弹 AlertDialog + global overlay
+3. Connection / Gallery / Downloads / Settings 四页 UI；Settings 页含 host/port 可编辑（TextField + onChanged/onSubmitted）
+4. Shared 包：`app_theme.dart`（暖白 #F9F9F8 + 琥珀金 + GoogleFonts InstrumentSerif/DMMono）+ `shared_components.dart`（11 widget）+ `formatters.dart`（fileSize/logTime/captureDate）+ `status_badge.dart`
+5. 5 widget smoke + 21 Notifier 单测 + workflowColor 6 色 + formatters 8 测 + AppPreferencesStore 5 测 + DownloadAssetPrioritizer 5 测 = 共 102 测试全绿
+6. `pubspec.yaml` 加 `shared_preferences` + `google_fonts` + `logging`
+7. `analysis_options.yaml` 加强（11 条 lint 规则，dart analyze 0 issues）
 8. DI 装配：`main.dart` → `app.dart` → 各 Page
+
+**Phase 2 关键决策**：
+- `downloadManagerProvider` 不依赖 gallery（iOS 原设计已弱化）
+- AppShell 改为单一 Notifier（iOS 原"多 Provider 组合"统一为 `AppShellNotifier`）
+- `GalleryNotifier` 用 `AsyncValue<GalleryState>` 包装 freezed，因为 selectedAssetIDs 不能直接进 AsyncValue
 
 **不在本 Phase 范围**（明确切边）：
 - ❌ 真机连 Nikon 验证（Phase 3）
@@ -461,7 +482,7 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | 原 iOS 文件 | Flutter 端落点 |
 |---|---|
 | `App/NikonConnectApp.swift` | `lib/main.dart` + `lib/app.dart` |
-| `App/AppShellViewModel.swift` | 多个 `Provider` 组合 (无单一类) |
+| `App/AppShellViewModel.swift` | `lib/features/app_shell/app_shell_view_model.dart`（Phase 2 决策：合并到单一 `AppShellNotifier`） |
 | `App/AppTheme.swift` | `lib/features/shared/app_theme.dart` |
 | `App/CameraSessionCoordinator.swift` | `lib/services/wifi_watcher.dart` + Riverpod 协调 |
 | `App/RootTabView.swift` | `lib/app.dart` 的 `NavigationBar` |
