@@ -19,9 +19,9 @@ Phase 0（Domain）+ Phase 1（PTP/IP 协议层）已完成。Phase 2 搭 UI 骨
 | Riverpod Provider 拓扑 | 6 个 Provider 全链路打通，注入 fake 可单测 |
 | 4 个 Tab 页面 | 连接 / 相册 / 下载 / 设置 — 占位 UI |
 | Shared 包 | 主题 + 主按钮 + 卡片 + 空状态 + 占位 logger |
-| pubspec | 加 `shared_preferences` + `google_fonts` |
+| pubspec | 加 `shared_preferences` + `google_fonts` + `package:logging` |
 | lint | `analysis_options.yaml` 加强 |
-| 测试 | 21 Notifier 单测 + 8 widget smoke = 29 新增（**不要求覆盖率**：UI 阶段，AGENTS.md §6.1 说不强求；Phase 3 才回头补） |
+| 测试 | 21 Notifier 单测 + 8 widget smoke = 29 新增（**覆盖率不要求 ≥ 80%（协议层目标，AGENTS.md §6.1）**，但每条 Notifier 必须有 happy + error 测试；widget smoke 必须断言关键 UI 元素存在；`dart analyze` 零警告 + `flutter test` 全绿是 commit 前最低门槛） |
 | DI 装配 | `main.dart` → `app.dart` → ProviderScope → 各 Page |
 
 ---
@@ -32,9 +32,9 @@ Phase 0（Domain）+ Phase 1（PTP/IP 协议层）已完成。Phase 2 搭 UI 骨
 
 ### 2.1 色板
 
-对标原 iOS `AppTheme` 14 个色 token + 5 个 workflow 状态色。
+对标原 iOS `AppTheme` 18 个色 token + workflow 状态色函数。
 
-#### 2.1.1 主色 / 强调 / 文字 / 边框
+#### 2.1.1 18 个色 token
 
 | Token | Hex | 用途 |
 |---|---|---|
@@ -84,24 +84,30 @@ Color AppTheme.workflowColor(CameraWorkflowState state) {
 
 ### 2.2 字体
 
+**Phase 2 字体决策**：保留 iOS `.system(.rounded)` 风格 + HTML 原型衬线。
+
 | 名 | Dart | 备注 |
 |---|---|---|
-| 衬线（大标题） | `GoogleFonts.instrumentSerif()` | "Viewfinder"、"相册"、"下载"、"设置" 页面标题 |
-| 默认（正文） | `Theme.of(context).textTheme` (系统) | iOS 苹方 / Android 思源 |
+| 衬线（大标题） | `GoogleFonts.instrumentSerif()` | "Viewfinder"、"相册"、"下载"、"设置" 页面标题（H1 26pt regular） |
+| 默认（正文） | `Theme.of(context).textTheme` (系统) | iOS 苹方 / Android 思源；**Flutter 默认 `.rounded` style**（对齐 iOS `.system(.rounded)`） |
 | 等宽（标签） | `GoogleFonts.dmMono()` | 端口/大小/格式/时间戳标签 |
+
+> **决策说明**：Phase 2 引入 Instrument Serif 是 HTML 原型给的视觉锚点，但保留 iOS `.rounded` 字体（Flutter 默认无 .rounded 修饰）。Phase 4 视觉抛光时如需统一，可改用衬线作为默认。
 
 #### 2.2.1 Typography scale
 
-对标原 iOS `.title3 / .footnote / .body` 等（写 app_theme.dart 时一并实现）：
+对标原 iOS `.title2 / .title3 / .body / .footnote` 等（写 app_theme.dart 时一并实现）：
 
-| 用途 | size / weight |
-|---|---|
-| 大标题（页面 H1） | 26 / regular（Instrument Serif） |
-| 中标题（卡片标题） | 18 / medium |
-| 正文 | 15 / regular |
-| 辅助文字 | 13 / regular |
-| 标签 / 注释 | 11 / medium（DM Mono） |
-| 数值（MetricTile 大字） | 20 / bold |
+| 用途 | Flutter textTheme | iOS 对位 | size / weight |
+|---|---|---|---|
+| 大标题（页面 H1） | `displayLarge` | `.title2` | 22 / bold（Instrument Serif） |
+| 中标题（卡片标题） | `titleLarge` | `.headline` | 17 / bold |
+| 正文 | `bodyLarge` | `.body` | 17 / regular |
+| 辅助文字 | `bodyMedium` | `.subheadline` | 15 / regular |
+| 标签 / 注释 | `labelSmall` | `.caption2` | 11 / medium（DM Mono） |
+| 数值（MetricTile 大字） | `titleMedium` | `.title3` | 20 / bold |
+
+> 注：原 iOS `.title2` 是 22pt（不是 Phase 2 §2.2.1 之前写的 26pt）；`.body` 是 17pt（不是 15pt）。Phase 4 视觉抛光时可微调。
 
 ### 2.3 Spacing & Radius tokens
 
@@ -124,19 +130,29 @@ Color AppTheme.workflowColor(CameraWorkflowState state) {
 
 | Widget | 对标原 iOS | 说明 |
 |---|---|---|
-| `PrimaryButton` | 原 `PrimaryActionButton` | 主按钮（黑底白字圆角胶囊 + 图标，可设禁用） |
-| `SecondaryButton` | 原 `SecondaryActionButton` | 次按钮（白底黑字圆角胶囊，可配前景色） |
+| `PrimaryActionButton` | 原 `PrimaryActionButton` | 主按钮（黑底白字圆角胶囊 + 图标，可设禁用） |
+| `SecondaryActionButton` | 原 `SecondaryActionButton` | 次按钮（白底黑字圆角胶囊，可配前景色） |
 | `CustomCard` | 原 `CustomCard` | 卡片容器（白底 + 圆角 18 + 阴影）— 4 个页面 section 容器都用 |
 | `SectionHeader` | 原 `SectionHeader(title:)` | section 标题（11px 大写 + 字距 1.5） |
-| `EmptyState` | 原 `EmptyStateView` | 空状态占位（图标 + 标题 + 副标题） |
-| `ErrorBanner` | 原 `ErrorBanner` | 错误提示横幅 |
 | **`StatusBadge`** | **`StatusBadgeView` 46 行** | 圆点 + 状态 label（占位静态，无 pulsing）— Connection 页状态指示用 |
 | **`MetricTile`** | **`AppTheme.swift` MetricTile 21 行** | 图标 + 数值 + 标签（Gallery 已加载/已选择 + Downloads 记录数/已入相册 + Settings 状态指标） |
+| **`GridRowItem`** | **`SharedComponents.swift` GridRowItem** | 设置页 Grid 列表项（图标 + label + value + chevron） |
+| **`DownloadProgressDetails`** | **`SharedComponents.swift` DownloadProgressDetails** | 下载页 activeDownloadSection 显示当前下载进度 |
+| **`Haptics`** | **`SharedComponents.swift` Haptics** | 触觉反馈（Phase 2 占位，Phase 4 才接实际震动） |
+| **`ShimmerView`** | **`SharedComponents.swift` ShimmerView** | 缩略图加载占位动画（Phase 2 占位静态，Phase 4 才加动画） |
+| **`LensGlowView`** | **`SharedComponents.swift` LensGlowView** | 连接页 hero 镜头呼吸光晕（Phase 2 占位静态圆形 + 边框） |
 
-**`StatusBadge` 必须有** —— 原 iOS 是独立 widget，Connection 页状态指示 + Diagnostics 显示都用。
-**`MetricTile` 必须有** —— 原 iOS 写在 AppTheme.swift 末尾，Gallery / Downloads / Settings 三页都依赖。
-**`CustomCard` + `SectionHeader` 必须有** —— 原 iOS 4 个页面所有 section 都用这两个 widget 包裹。
-**`PrimaryButton` / `SecondaryButton` 必须分开** —— 原 iOS 是两个独立 widget，胶囊样式相同但语义不同（主 vs 次），合并会丢失语义。
+**`EmptyState` + `ErrorBanner` Phase 2 不做**：
+- iOS 没独立 `EmptyStateView` widget；Settings/Downloads 用 inline `VStack/Text/Image` 自渲染空状态
+- iOS 没独立 `ErrorBanner` widget；全局 alert 用 `.alert(item: $shell.alertContext)` 系统弹窗
+- Phase 2 沿用 inline 渲染，不抽 widget
+
+**命名沿用原 iOS**：保留 `PrimaryActionButton` / `SecondaryActionButton` 命名（不加 Action 后缀就跟 iOS 对不齐）。`StatusBadge` / `MetricTile` / `Haptics` / `ShimmerView` / `LensGlowView` / `GridRowItem` / `DownloadProgressDetails` / `CustomCard` / `SectionHeader` 都跟 iOS 一致。
+
+**widget 文件归属**：
+- `app_theme.dart`：`MetricTile`（跟 iOS 同文件模式）+ ColorTokens + Typography + Spacing + Radius + workflowColor()
+- `shared_components.dart`：`PrimaryActionButton` / `SecondaryActionButton` / `CustomCard` / `SectionHeader` / `GridRowItem` / `DownloadProgressDetails` / `Haptics` / `ShimmerView` / `LensGlowView`
+- `status_badge.dart`：单独的 `StatusBadge` widget（对标 iOS 独立文件 `App/StatusBadgeView.swift` → `Viewfinder方案.md §11.1` 规划 `lib/features/shared/status_badge.dart`）
 
 ---
 
@@ -166,20 +182,32 @@ appShellProvider (NotifierProvider<AppShellNotifier, AppShellState>)
 | Provider | 类型 | 依赖 | 测试注入 |
 |---|---|---|---|
 | `preferencesStoreProvider` | `Provider` | — | `SharedPreferences.setMockInitialValues` |
-| `transportFactoryProvider` | `Provider` | preferencesStore | 直接 `CameraTransportFactory()` |
-| `connectionProvider` | `NotifierProvider` | transportFactory | `ProviderContainer.override` 注入 fake transport |
-| `galleryProvider` | `AsyncNotifierProvider` | connection | 同上 |
-| `downloadManagerProvider` | `NotifierProvider` | connection（弱依赖） | 同上 |
+| `transportFactoryProvider` | `Provider` | preferencesStore | override `FakeCameraTransportFactory` |
+| `connectionProvider` | `NotifierProvider<ConnectionNotifier, ConnectionState>` | preferencesStore + transportFactory | override transport factory（§3.4） |
+| `galleryProvider` | `AsyncNotifierProvider<GalleryNotifier, GalleryState>` | connection（Phase 2 占位只读，不 watch connection） | 直接 mock 12 asset 返回 |
+| `downloadManagerProvider` | `NotifierProvider` | connection（弱依赖：读 activeSession 决定能否下载；Phase 2 占位不强依赖） | override factory |
 | `preferencesProvider` | `NotifierProvider` | preferencesStore | `SharedPreferences` mock |
 | `appShellProvider` | `NotifierProvider` | — | 直接构造 AppShellNotifier |
+
+**拓扑决策记录**（与 `架构.md §6.1` 同步）：
+- 原 `架构.md §6.1` 把 `downloadManagerProvider` 依赖 `galleryProvider` —— **Phase 2 改为弱依赖 connectionProvider**：下载队列用选中资产，跟图库列表独立
+- 此决策需要在执行完 Phase 2 后同步更新 `架构.md §6.1` Provider 拓扑表
+
+**AppShellNotifier 单一类决策**（与 `Viewfinder方案.md §6` 同步）：
+- 原 `Viewfinder方案.md §6 / §11.1` 说 AppShellViewModel 是"多个 Provider 组合 (无对应单一 Notifier)"
+- Phase 2 改为**单一 Notifier**（appShellProvider），State 用 freezed AppShellState
+- 此决策需要在执行完 Phase 2 后同步更新 `Viewfinder方案.md §6` + `§11.1`
 
 #### 3.1 AppShellState 结构（任务 2.6a）
 
 对标原 iOS `AppShellViewModel` 49 行 4 个公开方法 / 3 个状态字段：
 
 ```dart
+// 文件：lib/features/app_shell/app_shell_state.dart
 @freezed
 class AppShellState with _$AppShellState {
+  const AppShellState._();  // 私有构造，允许内嵌 getter（绕开 freezed 2.5.8 bug）
+  
   const factory AppShellState({
     /// 全局日志，FIFO 30 条上限（原 iOS `activityLog`）
     @Default(<LogEntry>[]) List<LogEntry> activityLog,
@@ -192,29 +220,208 @@ class AppShellState with _$AppShellState {
   bool get isShowingGlobalActivity => globalActivityTitle != null;
 }
 
+// 文件：lib/features/app_shell/app_shell_view_model.dart
 class AppShellNotifier extends Notifier<AppShellState> {
+  // Riverpod 2.x Notifier 默认 main-isolated（@MainActor），不需要显式标注
+
   @override
-  AppShellState build() => const AppShellState();
+  AppShellState build() {
+    // 监听其他 Provider 状态变化，emit 全局 alerts（iOS AppShellViewModel 同样靠 shell.appendLog 写入）
+    ref.listen(connectionProvider, (prev, next) {
+      if (next.workflowState == .error) {
+        appendLog('连接错误: ${next.lastSummary}');
+      }
+    });
+    ref.listen(galleryProvider, (prev, next) {
+      next.whenOrNull(
+        error: (err, _) => appendLog('相册错误: $err'),
+      );
+    });
+    return const AppShellState();
+  }
   
   void setGlobalActivityTitle(String? title) { state = state.copyWith(globalActivityTitle: title); }
   void showAlert({required String title, required String message}) {
-    state = state.copyWith(alertContext: AlertContext(id: ..., title: title, message: message));
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
+    state = state.copyWith(alertContext: AlertContext(id: id, title: title, message: message));
   }
   void dismissAlert() { state = state.copyWith(alertContext: null); }
   void appendLog(String message) {
-    final entry = LogEntry(id: ..., timestamp: DateTime.now(), message: message);
+    final id = DateTime.now().microsecondsSinceEpoch.toString();
+    final entry = LogEntry(id: id, timestamp: DateTime.now(), message: message);
     final newLog = [entry, ...state.activityLog].take(30).toList();
     state = state.copyWith(activityLog: newLog);
   }
-  String handleError(Object error);  // → 中文消息 + appendLog + showAlert
+  String handleError(Object error) {
+    final message = error is CameraAppError ? error.message : error.toString();
+    appendLog(message);
+    showAlert(title: '出现问题', message: message);
+    return message;
+  }
 }
 ```
 
 **任务 2.6a 单测覆盖**（4 个）：
 1. `setGlobalActivityTitle / dismissAlert / showAlert` 状态切换
 2. `appendLog` FIFO 30 条上限
-3. `handleError` 写入 log + 显示 alert（普通 Error）
-4. `handleError` 接受 `CameraAppError`，message/recoverySuggestion 拼接
+3. `handleError` 接受 `StateError('boom')`（普通 Error）→ 写入 log + 显示 alert
+4. `handleError` 接受 `CameraAppError.networkProbeFailed('原因')` → 用 `error.message`（**不**重复拼接 recoverySuggestion，对齐 iOS `userFacingMessage(for:)`）
+
+#### 3.2 ConnectionState 结构（任务 2.4）
+
+对标原 iOS `ConnectionViewModel` 176 行 9 个 `@Published` 字段。**用 freezed 普通 class（不是 sealed），因为有 9 个独立字段而非离散 state**：
+
+```dart
+// 文件：lib/features/connection_setup/connection_state.dart
+@freezed
+class ConnectionState with _$ConnectionState {
+  const factory ConnectionState({
+    @Default(CameraWorkflowState.waitingForWifi) CameraWorkflowState workflowState,
+    CameraSession? activeSession,
+    @Default('') String hostInput,
+    @Default('') String portInput,
+    @Default(CameraTransportMode.experimentalNikon) CameraTransportMode transportMode,
+    @Default(true) bool autoExportToPhotoLibrary,
+    @Default(true) bool prioritizeJPEGDownloads,
+    @Default(false) bool isWorking,
+    @Default('先在系统设置里连接 Nikon 相机的 Wi-Fi，然后回到这里开始。') String lastSummary,
+  }) = _ConnectionState;
+  
+  const ConnectionState._();
+  
+  /// 对齐 iOS `canAttemptConnection: Bool`
+  bool get canAttemptConnection => true;
+}
+
+// 文件：lib/features/connection_setup/connection_view_model.dart
+class ConnectionNotifier extends Notifier<ConnectionState> {
+  @override
+  ConnectionState build() {
+    final prefs = ref.watch(preferencesStoreProvider);
+    final config = prefs.loadConnectionConfig();
+    return ConnectionState(
+      hostInput: config.host,
+      portInput: config.port.toString(),
+      transportMode: config.transportMode,
+      autoExportToPhotoLibrary: config.autoExportToPhotoLibrary,
+      prioritizeJPEGDownloads: config.prioritizeJPEGDownloads,
+    );
+  }
+  
+  // ... (connect / disconnect / setHost / setPort / setTransportMode / setAutoExport / setPrioritizeJPEG)
+}
+```
+
+**任务 2.4 测试用例**（5 个，对应原 iOS 9 个字段 + 行为）：
+1. `build()` 初始 state：从 `preferencesStoreProvider` 读 `CameraConnectionConfig`，字段映射正确
+2. `connect()` 成功：state.workflowState → `.connecting` → `.connected`，activeSession 非 null
+3. `connect()` 失败：state.workflowState → `.error`，lastSummary 写入错误消息
+4. `disconnect()`：state.workflowState → `.waitingForWifi`，activeSession = null
+5. `setHost` / `setPort` / `setTransportMode`：修改字段并持久化到 preferencesStore（fake store 用 mock）
+
+> 注意：`refreshPhotos()` **不**属 ConnectionNotifier。原 iOS `GalleryViewModel.refreshPhotos()`，由 GalleryNotifier 处理。Container 层 (`connection_container.dart`) 在 onConnect 成功后调 `ref.read(galleryProvider.notifier).refresh()`。
+
+#### 3.3 GalleryState 结构（任务 2.5）
+
+原 iOS `GalleryViewModel` 4 个 `@Published`：photoAssets / hasMorePhotos / selectedAssetIDs / isLoading。
+
+**Phase 2 GalleryNotifier state 用 freezed class 包 AsyncValue**（因为 selectedAssetIDs + isLoading 不能塞进 AsyncValue<List<PhotoAsset>>）：
+
+```dart
+// 文件：lib/features/photo_browser/gallery_state.dart
+@freezed
+class GalleryState with _$GalleryState {
+  const factory GalleryState({
+    @Default(<PhotoAsset>[]) List<PhotoAsset> photoAssets,
+    @Default(false) bool hasMorePhotos,
+    @Default(<String>{}) Set<String> selectedAssetIDs,  // Phase 2 mock 用 String id
+    @Default(false) bool isLoading,
+  }) = _GalleryState;
+  
+  const GalleryState._();
+  
+  bool get hasSelection => selectedAssetIDs.isNotEmpty;
+  int get selectedAssetsCount => selectedAssetIDs.length;
+}
+
+// 文件：lib/features/photo_browser/gallery_view_model.dart
+class GalleryNotifier extends AsyncNotifier<GalleryState> {
+  @override
+  Future<GalleryState> build() async {
+    // Phase 2 mock 数据：12 张占位 PhotoAsset
+    return _mockState();
+  }
+  
+  Future<void> refresh() async { ... }   // 重新生成 mock
+  Future<void> loadMore() async { ... }
+  void toggleSelection(String id) { ... }
+  void selectAll() { ... }
+  void clearSelection() { ... }
+  
+  GalleryState _mockState() => GalleryState(
+    photoAssets: List.generate(12, (i) => PhotoAsset(
+      id: 'mock-$i',
+      remoteIdentifier: '$i',
+      fileName: 'DSC_0${i + 100}.NEF',
+      kind: i.isEven ? PhotoAssetKind.raw : PhotoAssetKind.jpeg,
+      byteSize: 1024 * 1024 * (10 + i),
+      captureDate: DateTime.now().subtract(Duration(hours: i)),
+      thumbnailInfo: null,
+    )),
+    hasMorePhotos: false,
+  );
+}
+```
+
+**任务 2.5 测试用例**（5 个）：
+1. `build()` 初始 state：返回 12 个 mock assets
+2. `refresh()`：state 重置为 mock
+3. `loadMore()`：mock 列表超过 12 时返回下一页（Phase 2 mock 不变，测 async 行为）
+4. `toggleSelection(id)`：选/取消改 selectedAssetIDs
+5. `selectAll()` / `clearSelection()` 边界（命名对齐 iOS：`selectAllAssets()` / `clearSelection()`）
+
+#### 3.4 test mock 注入路径
+
+测试需要 fake `CameraTransport` 和 fake `CameraSession`，但 Domain 已有 `CameraSession`（freezed）。**统一在 `test/helpers/` 下新建**：
+
+```dart
+// 文件：test/helpers/fake_camera_transport.dart
+class FakeCameraTransport implements CameraTransport {
+  final CameraSession sessionToReturn;
+  final CameraAppError? errorToThrow;
+  
+  @override
+  Future<CameraSession> connect({required CameraConnectionConfig config}) async {
+    if (errorToThrow != null) throw errorToThrow!;
+    return sessionToReturn;
+  }
+  // ... 其他方法 stub
+}
+
+class FakeCameraTransportFactory implements CameraTransportFactory {
+  final FakeCameraTransport fakeTransport;
+  @override
+  CameraTransport makeTransport() => fakeTransport;
+}
+```
+
+**使用 pattern**：
+```dart
+test('connect 成功', () async {
+  final container = ProviderContainer(overrides: [
+    transportFactoryProvider.overrideWithValue(FakeCameraTransportFactory(
+      fakeTransport: FakeCameraTransport(
+        sessionToReturn: CameraSession(
+          id: 'test-1', cameraName: 'Test Camera',
+          connectedHost: '192.168.1.1', port: 15740,
+          connectedAt: DateTime.now(), capabilities: {...},
+        ),
+      ),
+    )),
+  ]);
+  // ...
+});
+```
 
 ---
 
@@ -253,10 +460,14 @@ lib/
 │   │   ├── settings_view_model.dart   ← PreferencesNotifier
 │   │   └── widgets/                   ← FormFieldRow / ToggleRow（表单输入复用）
 │   └── shared/
-│       ├── app_theme.dart             ← 暖白 + 琥珀金 + 14 token + typography + spacing + workflowColor()
-│       ├── shared_components.dart     ← CapsuleButton / EmptyState / ErrorBanner / StatusBadge / MetricTile
+│       ├── app_theme.dart             ← 暖白 + 琥珀金 + 14 token + typography + spacing + workflowColor() + MetricTile
+│       ├── shared_components.dart     ← PrimaryActionButton / SecondaryActionButton / CustomCard / SectionHeader / GridRowItem / DownloadProgressDetails / Haptics / ShimmerView / LensGlowView
 │       ├── formatters.dart            ← byteSize / date 格式化
-│       └── logger.dart                ← 占位 Logger（包 dart:developer log）
+│       └── status_badge.dart          ← StatusBadge（对标 iOS App/StatusBadgeView.swift 独立文件）
+│
+└── services/
+    ├── preferences_store.dart         ← AppPreferencesStore (shared_preferences)
+    └── logger.dart                    ← 占位 Logger（包 package:logging）— 路径与 Viewfinder方案.md §11.1 对齐
 ```
 
 **为什么用三件套（Container / Page / ViewModel）**：
@@ -280,7 +491,7 @@ lib/
 | # | 任务 | 估时 | 产出 |
 |---|---|---|---|
 | 2.0 | 创建 features/ 目录骨架（含 widgets/ 子目录） | 15 分钟 | 5 个 feature 目录 + shared/ 目录 |
-| 2.1 | `pubspec.yaml` 加 `shared_preferences ^2.x` + `google_fonts ^6.x` | 10 分钟 | `flutter pub get` 干净 |
+| 2.1 | `pubspec.yaml` 加 `shared_preferences ^2.x` + `google_fonts ^6.x` + `logging ^1.x` | 10 分钟 | `flutter pub get` 干净 |
 | 2.2 | `services/preferences_store.dart` | 1 小时 | AppPreferencesStore |
 | 2.3 | `settings_view_model.dart` + 4 单测 | 1.5 小时 | PreferencesNotifier |
 | 2.4 | `connection_view_model.dart` + 5 单测 | 2 小时 | ConnectionNotifier |
@@ -290,51 +501,58 @@ lib/
 
 #### 5.2 Notifier 测试用例清单
 
-对标原 iOS ViewModel 行数，列具体测试场景：
+详细 State 类型定义见 §3.1 / §3.2 / §3.3。
 
 **PreferencesNotifier (4)**：
-1. `load` 从 SharedPreferences 读出 `CameraConnectionConfig`（含 `decodeIfPresent` 默认值）
-2. `updateHost` / `updatePort` / `updateTransportMode` 修改字段
-3. `save` 持久化到 SharedPreferences（key: `camera_connection_config`）
+1. `build()` 初始 state：从 `preferencesStoreProvider` 读 `CameraConnectionConfig`，字段映射正确
+2. `setHost` / `setPort` / `setTransportMode` / `setAutoExportToPhotoLibrary` / `setPrioritizeJPEGDownloads` 修改字段
+3. `save()` 持久化到 SharedPreferences（key: `camera_connection_config`）
 4. 改 host 后重启（清空 SharedPreferences 再 load）验证 schema 兼容
 
-**ConnectionNotifier (5)**：
-1. 初始 state：`ConnectionState.idle()`（`workflowState = .waitingForWifi`，`activeSession = null`）
-2. `connect()` 成功：state → `.connecting` → `.connected(activeSession)`
-3. `connect()` 失败：state → `.error(CameraAppError.networkProbeFailed(...))`
-4. `disconnect()`：state → `.idle()` + `activeSession = null`
-5. `refreshPhotos()`：state `.loadingPhotos` → `.connected(updatedSession)`
+**ConnectionNotifier (5)**（状态定义见 §3.2）：
+1. `build()` 初始 state：从 `preferencesStoreProvider` 读 config，9 个字段映射正确
+2. `connect()` 成功：state.workflowState → `.connecting` → `.connected`，activeSession 非 null（用 FakeCameraTransportFactory mock）
+3. `connect()` 失败：state.workflowState → `.error`，lastSummary 写入错误消息
+4. `disconnect()`：state.workflowState → `.waitingForWifi`，activeSession = null
+5. `setHost` / `setPort` / `setTransportMode`：修改字段并持久化到 preferencesStore
 
-**GalleryNotifier (5)**：
-1. 初始 state：`AsyncValue.data(<12 mock assets>)`（Phase 2 不接真相机，直接给 mock 数据）
-2. `refresh()`（resetTraversal=true）从 mock 重置
-3. `loadMore()`：mock 列表超过 12 时返回下一页
-4. `toggleSelection(asset)`：选/取消改 `selectedAssetIDs: Set<String>`
-5. `clearSelection()` / `selectAll()` 边界情况
+**GalleryNotifier (5)**（状态定义见 §3.3）：
+1. `build()` 初始 state：返回 12 个 mock assets 的 AsyncValue.data
+2. `refresh()`：state 重置为 12 个 mock
+3. `loadMore()`：Phase 2 mock 不变，验证 async 行为完成
+4. `toggleSelection(id)`：选/取消改 selectedAssetIDs
+5. `selectAllAssets()` / `clearSelection()` 边界（命名对齐 iOS）
 
 **DownloadManagerNotifier (3)**：
-1. 初始 state：`DownloadQueueState.empty()`（`jobs = []`, `status = .idle`）
-2. `enqueue(asset)`：从选中资产创建 DownloadJob
+1. `build()` 初始 state：`DownloadQueueState.empty()`（`jobs = []`, `status = .idle`）
+2. `enqueue(asset)`：构造 `PhotoAsset(id: '1', remoteIdentifier: '100', fileName: 'DSC_0100.NEF', kind: .raw, byteSize: 10MB, captureDate: DateTime.now())` 后调 `enqueue`，state.jobs.length = 1
 3. `cancelJob(id)`：status → `.cancelled`
 
 **AppShellNotifier (4)**（§3.1 已列）：
 1. 状态切换：`setGlobalActivityTitle` / `dismissAlert` / `showAlert`
 2. `appendLog` FIFO 30 条上限
-3. `handleError` 普通 Error → 写 log + 显示 alert
-4. `handleError` 接受 `CameraAppError`，message + recoverySuggestion 拼接
-| 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart` + `logger.dart`） | 2.5 小时 | 主题 + 4 个复用 widget + 2 个格式化函数 + 占位 logger |
+3. `handleError` 接受 `StateError('boom')`（普通 Error）→ 写 log + 显示 alert
+4. `handleError` 接受 `CameraAppError.networkProbeFailed('原因')` → 用 `error.message`（**不**重复拼接 recoverySuggestion，对齐 iOS `userFacingMessage(for:)`）
+
+**测试 mock 注入**（§3.4）：`test/helpers/fake_camera_transport.dart` 提供 `FakeCameraTransport` + `FakeCameraTransportFactory`，测试用 `ProviderContainer(overrides: [transportFactoryProvider.overrideWithValue(...)])` 注入。
+
+| # | 任务 | 估时 | 产出 |
+|---|---|---|---|
+| 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart` + `status_badge.dart`） | 4 小时 | 主题 + 8 widget + 2 formatter（详见 §2.4） |
+| 2.7a | `lib/services/logger.dart`（统一路径，§18 修订） | 30 分钟 | 包 package:logging 占位 Logger |
 | 2.8 | `connection_container.dart` + `connection_page.dart` + widgets/ | 1.5 小时 | 连接页 UI（未连接 + 已连接 readySection） |
 | 2.9 | `gallery_container.dart` + `gallery_page.dart` + widgets/ | 2.5 小时 | 缩略图网格 + 3 态 + 12 mock + filterBar (4 chip 占位) + MetricTile (已加载/已选择 占位) |
-| 2.10 | `downloads_container.dart` + `downloads_page.dart` | 1.5 小时 | 队列页（4 section 占位） |
+| 2.10 | `downloads_container.dart` + `downloads_page.dart` | 1.5 小时 | 队列页（5 section 占位：overview/queue/active/throughput/records） |
 | 2.11 | `settings_container.dart` + `settings_page.dart` + widgets/ | 1.5 小时 | 设置页（3 section：连接/下载/其他） |
 | 2.12 | `app.dart` + `main.dart` 装配 | 1.5 小时 | ProviderScope + Tab + entry point |
 | 2.13 | 8 widget smoke test（每页 happy + error） | 2.5 小时 | 8 个 smoke test |
-| 2.14 | `analysis_options.yaml` 加强 | 30 分钟 | 全套 lint |
+| 2.13a | `lib/services/download_asset_prioritizer.dart`（JPEG 优先排序） | 30 分钟 | 对齐 iOS DownloadAssetPrioritizer enum |
+| 2.14 | `analysis_options.yaml` 加强（具体规则见 §6.6） | 30 分钟 | 全套 lint |
 | 2.15 | 验收 + commit + push + 更新 docs | 1 小时 | git + 项目状态.md |
 
-**总估时**：~24 小时纯干活时间（不含用户验收反馈；按每天 4-5h 实际推进 → **约 2 周**）
+**总估时**：~28 小时纯干活（不含验收；按 4-5h/天 → **约 2.5 周**）
 
-> 注：§1 "约 4 周" 是更宽松的估计（含偶发中断、跨任务反馈等待）。这里取中间值 2 周。
+> 注：§1 "约 4 周" 含偶发中断 / 反馈等待；这里取 2.5 周为中等估计。
 
 ### 5.1 任务依赖图
 
@@ -343,20 +561,22 @@ lib/
 | 任务 | 前置 | 产出 |
 |---|---|---|
 | 2.0 目录 | — | 5 个 feature 目录 + shared/ 目录 |
-| 2.1 pubspec | — | shared_preferences + google_fonts |
+| 2.1 pubspec | — | shared_preferences + google_fonts + package:logging |
 | 2.2 preferences_store | 2.1 | AppPreferencesStore |
 | 2.3 PreferencesNotifier | 2.2 | Notifier + 4 测试 |
 | 2.4 ConnectionNotifier | 2.2 | Notifier + 5 测试 |
 | 2.5 GalleryNotifier | 2.4 | Notifier + 5 测试 |
 | 2.6 DownloadManagerNotifier | 2.4 | Notifier + 3 测试 |
 | 2.6a AppShellNotifier | — | Notifier + 4 测试 |
-| 2.7 shared 包 | — | app_theme + shared_components + formatters + logger |
+| 2.7 shared 包 | — | app_theme + shared_components + formatters + status_badge + 5 widgets |
+| 2.7a services/logger.dart | 2.1 | 包装 package:logging 占位 Logger |
 | 2.8 connection_container + page + widgets | 2.4, 2.7 | UI（未连 + 已连 readySection） |
 | 2.9 gallery_container + page + widgets | 2.5, 2.7 | UI |
-| 2.10 downloads_container + page | 2.6, 2.7 | UI（4 section 占位） |
+| 2.10 downloads_container + page | 2.6, 2.7 | UI（5 section 占位） |
 | 2.11 settings_container + page + widgets | 2.3, 2.7 | UI（3 section） |
 | 2.12 app 装配 | 2.0-2.11 | 全链路打通 |
 | 2.13 widget smoke | 2.12 | 8 个 smoke test |
+| 2.13a download_asset_prioritizer | 2.6 | JPEG 优先排序 |
 | 2.14 lint | 2.13 | 全套 lint |
 | 2.15 验收 | 2.14 | commit + push + docs |
 
@@ -408,12 +628,12 @@ flutter build apk --debug        # BUILD SUCCESSFUL
 2. `flutter test` 全绿（现存 47 + 新增 29 = 76）
 3. `flutter build apk --debug` 能装到 Android 真机
 4. `flutter run` 起 app，4 个 Tab 切换正常
-5. Settings 页改 host/port 保存后重现不变
+5. Settings 页改 host/port 保存后重启不变（**Phase 2 新增功能**：原 iOS Settings 页 host/port 只读；Phase 2 加可编辑输入框，对应 `PreferencesNotifier.setHost/setPort` 方法）
 6. 连接页显示：
    - **未连接态**：LensGlowView 占位 + 状态文字（"未连接 — 请先连接相机 Wi-Fi"）+ 主按钮 "连接相机"
    - **已连接态**（readySection）：CustomCard 容器，相机名 + 照片数（"X 张照片"）+ "重新读取"按钮 + 断开连接次按钮
 7. 相册页显示占位缩略图（mock 数据，12 个色块 + 标签）+ filterBar（4 chip 占位）+ MetricTile（已加载/已选择 占位）
-8. 下载页显示 4 section 占位（overview / queue / active / records），每个 section 标 "Phase 3 实现"
+8. 下载页显示 5 section 占位（overview / queue / active / throughput / records），每个 section 标 "Phase 3 实现"
 
 ---
 
@@ -423,15 +643,18 @@ flutter build apk --debug        # BUILD SUCCESSFUL
 
 **症状**：
 ```
-GoogleFonts.config.allowRuntimeFetching = false
 FontException: ... Could not find FontManifest
 ```
 
 **原因**：`google_fonts ^6.x` 首次运行会从 Google Fonts CDN 拉字体；网络不稳或被墙时失败。
 
 **解法**：
-1. 短期：pubspec 加 `google_fonts: ^6.x`，运行时允许拉取（`GoogleFonts.config.allowRuntimeFetching = true`）
-2. 长期：把字体文件下载到 `assets/fonts/` 用本地版本（`pubspec` 加 `fonts:` 段）
+1. 短期：pubspec 加 `google_fonts: ^6.x`，运行时允许拉取：
+   ```dart
+   // main.dart 入口
+   GoogleFonts.config.allowRuntimeFetching = true;
+   ```
+2. 长期（Phase 4 视觉抛光时）：把字体文件下载到 `assets/fonts/` 用本地版本（pubspec 加 `fonts:` 段）
 
 ### 6.5.2 shared_preferences 在测试中需要 mock
 
@@ -446,13 +669,18 @@ setUp(() async {
 
 ### 6.5.3 Riverpod 2.x Notifier API 跟旧 Provider 不同
 
-**症状**：用旧 `StateNotifier` 写法编译失败
+**症状**：用旧 `StateNotifier` 写法编译失败；或 `FooState.initial()` 不存在（freezed 默认是 `FooState()`）。
 
 **解法**：照官方 Notifier 文档写
 ```dart
+@freezed
+class FooState with _$FooState {
+  const factory FooState({@Default(0) int count}) = _FooState;
+}
+
 class FooNotifier extends Notifier<FooState> {
   @override
-  FooState build() => FooState.initial();
+  FooState build() => const FooState();  // 默认 freezed factory，不是 initial()
   // ...
 }
 final fooProvider = NotifierProvider<FooNotifier, FooState>(FooNotifier.new);
@@ -463,6 +691,41 @@ final fooProvider = NotifierProvider<FooNotifier, FooState>(FooNotifier.new);
 **症状**：`flutter pub get` 或 `flutter test` 在中文路径下偶发 LSP / IO 错误
 
 **解法**：用 `dart analyze` 和 `dart test` 替代（仅在 UI 阶段有效；构建仍需 `flutter`）
+
+---
+
+### 6.6 Lint 规则（任务 2.14）
+
+`analysis_options.yaml` 在现有 `flutter_lints ^6.0.0` 基础上加：
+
+```yaml
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - require_trailing_commas
+    - avoid_print
+    - use_key_in_widget_constructors
+    - sized_box_for_whitespace
+    - prefer_final_locals
+    - prefer_final_in_for_each
+    - unawaited_futures
+```
+
+**不启用**（Phase 2 太严会卡住）：
+- `always_declare_return_types`（Phase 2 快速写很多 Notifier，先不强求）
+- `public_member_api_docs`（Phase 4 再加）
 
 ---
 
