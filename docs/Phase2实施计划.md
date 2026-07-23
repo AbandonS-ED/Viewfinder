@@ -124,13 +124,19 @@ Color AppTheme.workflowColor(CameraWorkflowState state) {
 
 | Widget | 对标原 iOS | 说明 |
 |---|---|---|
-| `CapsuleButton` | 原 `CapsuleButton` | 主按钮（黑底白字圆角胶囊） |
+| `PrimaryButton` | 原 `PrimaryActionButton` | 主按钮（黑底白字圆角胶囊 + 图标，可设禁用） |
+| `SecondaryButton` | 原 `SecondaryActionButton` | 次按钮（白底黑字圆角胶囊，可配前景色） |
+| `CustomCard` | 原 `CustomCard` | 卡片容器（白底 + 圆角 18 + 阴影）— 4 个页面 section 容器都用 |
+| `SectionHeader` | 原 `SectionHeader(title:)` | section 标题（11px 大写 + 字距 1.5） |
 | `EmptyState` | 原 `EmptyStateView` | 空状态占位（图标 + 标题 + 副标题） |
 | `ErrorBanner` | 原 `ErrorBanner` | 错误提示横幅 |
-| **`StatusBadge`** | **`StatusBadgeView` 46 行** | 圆点 + 状态 label（占位静态，无 pulsing） |
-| **`MetricTile`** | **`AppTheme.swift` MetricTile 21 行** | 图标 + 数值 + 标签（Settings 统计 / Connection 状态指标） |
+| **`StatusBadge`** | **`StatusBadgeView` 46 行** | 圆点 + 状态 label（占位静态，无 pulsing）— Connection 页状态指示用 |
+| **`MetricTile`** | **`AppTheme.swift` MetricTile 21 行** | 图标 + 数值 + 标签（Gallery 已加载/已选择 + Downloads 记录数/已入相册 + Settings 状态指标） |
 
-**`StatusBadge` 必须有** —— 原 iOS 是独立 widget，Connection 页状态指示 + Diagnostics 显示都用。**`MetricTile` 必须有** —— 原 iOS 写在 AppTheme.swift 末尾，Settings 显示 IP/端口/文件名/字节数等都依赖。
+**`StatusBadge` 必须有** —— 原 iOS 是独立 widget，Connection 页状态指示 + Diagnostics 显示都用。
+**`MetricTile` 必须有** —— 原 iOS 写在 AppTheme.swift 末尾，Gallery / Downloads / Settings 三页都依赖。
+**`CustomCard` + `SectionHeader` 必须有** —— 原 iOS 4 个页面所有 section 都用这两个 widget 包裹。
+**`PrimaryButton` / `SecondaryButton` 必须分开** —— 原 iOS 是两个独立 widget，胶囊样式相同但语义不同（主 vs 次），合并会丢失语义。
 
 ---
 
@@ -281,11 +287,46 @@ lib/
 | 2.5 | `gallery_view_model.dart` + 5 单测 | 2 小时 | GalleryNotifier |
 | 2.6 | `download_manager_view_model.dart` + 3 单测 | 1.5 小时 | DownloadManagerNotifier 占位 |
 | 2.6a | `app_shell_view_model.dart` + 4 单测 | 1.5 小时 | AppShellNotifier（全局 alerts/diagnostics） |
+
+#### 5.2 Notifier 测试用例清单
+
+对标原 iOS ViewModel 行数，列具体测试场景：
+
+**PreferencesNotifier (4)**：
+1. `load` 从 SharedPreferences 读出 `CameraConnectionConfig`（含 `decodeIfPresent` 默认值）
+2. `updateHost` / `updatePort` / `updateTransportMode` 修改字段
+3. `save` 持久化到 SharedPreferences（key: `camera_connection_config`）
+4. 改 host 后重启（清空 SharedPreferences 再 load）验证 schema 兼容
+
+**ConnectionNotifier (5)**：
+1. 初始 state：`ConnectionState.idle()`（`workflowState = .waitingForWifi`，`activeSession = null`）
+2. `connect()` 成功：state → `.connecting` → `.connected(activeSession)`
+3. `connect()` 失败：state → `.error(CameraAppError.networkProbeFailed(...))`
+4. `disconnect()`：state → `.idle()` + `activeSession = null`
+5. `refreshPhotos()`：state `.loadingPhotos` → `.connected(updatedSession)`
+
+**GalleryNotifier (5)**：
+1. 初始 state：`AsyncValue.data(<12 mock assets>)`（Phase 2 不接真相机，直接给 mock 数据）
+2. `refresh()`（resetTraversal=true）从 mock 重置
+3. `loadMore()`：mock 列表超过 12 时返回下一页
+4. `toggleSelection(asset)`：选/取消改 `selectedAssetIDs: Set<String>`
+5. `clearSelection()` / `selectAll()` 边界情况
+
+**DownloadManagerNotifier (3)**：
+1. 初始 state：`DownloadQueueState.empty()`（`jobs = []`, `status = .idle`）
+2. `enqueue(asset)`：从选中资产创建 DownloadJob
+3. `cancelJob(id)`：status → `.cancelled`
+
+**AppShellNotifier (4)**（§3.1 已列）：
+1. 状态切换：`setGlobalActivityTitle` / `dismissAlert` / `showAlert`
+2. `appendLog` FIFO 30 条上限
+3. `handleError` 普通 Error → 写 log + 显示 alert
+4. `handleError` 接受 `CameraAppError`，message + recoverySuggestion 拼接
 | 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart` + `logger.dart`） | 2.5 小时 | 主题 + 4 个复用 widget + 2 个格式化函数 + 占位 logger |
-| 2.8 | `connection_page.dart` | 1.5 小时 | 连接页 UI |
-| 2.9 | `gallery_container.dart` + `gallery_page.dart` + widgets/ | 2.5 小时 | 缩略图网格 + 3 态 + 12 mock 缩略图 |
-| 2.10 | `downloads_page.dart` | 1 小时 | 队列页（占位文字） |
-| 2.11 | `settings_page.dart` | 1.5 小时 | 设置页 |
+| 2.8 | `connection_container.dart` + `connection_page.dart` + widgets/ | 1.5 小时 | 连接页 UI（未连接 + 已连接 readySection） |
+| 2.9 | `gallery_container.dart` + `gallery_page.dart` + widgets/ | 2.5 小时 | 缩略图网格 + 3 态 + 12 mock + filterBar (4 chip 占位) + MetricTile (已加载/已选择 占位) |
+| 2.10 | `downloads_container.dart` + `downloads_page.dart` | 1.5 小时 | 队列页（4 section 占位） |
+| 2.11 | `settings_container.dart` + `settings_page.dart` + widgets/ | 1.5 小时 | 设置页（3 section：连接/下载/其他） |
 | 2.12 | `app.dart` + `main.dart` 装配 | 1.5 小时 | ProviderScope + Tab + entry point |
 | 2.13 | 8 widget smoke test（每页 happy + error） | 2.5 小时 | 8 个 smoke test |
 | 2.14 | `analysis_options.yaml` 加强 | 30 分钟 | 全套 lint |
@@ -310,10 +351,10 @@ lib/
 | 2.6 DownloadManagerNotifier | 2.4 | Notifier + 3 测试 |
 | 2.6a AppShellNotifier | — | Notifier + 4 测试 |
 | 2.7 shared 包 | — | app_theme + shared_components + formatters + logger |
-| 2.8 connection_page | 2.4, 2.7 | UI |
-| 2.9 gallery_page | 2.5, 2.7 | UI |
-| 2.10 downloads_page | 2.6, 2.7 | UI |
-| 2.11 settings_page | 2.3, 2.7 | UI |
+| 2.8 connection_container + page + widgets | 2.4, 2.7 | UI（未连 + 已连 readySection） |
+| 2.9 gallery_container + page + widgets | 2.5, 2.7 | UI |
+| 2.10 downloads_container + page | 2.6, 2.7 | UI（4 section 占位） |
+| 2.11 settings_container + page + widgets | 2.3, 2.7 | UI（3 section） |
 | 2.12 app 装配 | 2.0-2.11 | 全链路打通 |
 | 2.13 widget smoke | 2.12 | 8 个 smoke test |
 | 2.14 lint | 2.13 | 全套 lint |
@@ -368,9 +409,11 @@ flutter build apk --debug        # BUILD SUCCESSFUL
 3. `flutter build apk --debug` 能装到 Android 真机
 4. `flutter run` 起 app，4 个 Tab 切换正常
 5. Settings 页改 host/port 保存后重现不变
-6. 连接页显示 LensGlowView 占位 + 状态文字 + 连接按钮（无动画，圆形 + 边框）
-7. 相册页显示占位缩略图（mock 数据，12 个色块 + 标签）
-8. 下载页显示"下载功能 Phase 3 实现"占位
+6. 连接页显示：
+   - **未连接态**：LensGlowView 占位 + 状态文字（"未连接 — 请先连接相机 Wi-Fi"）+ 主按钮 "连接相机"
+   - **已连接态**（readySection）：CustomCard 容器，相机名 + 照片数（"X 张照片"）+ "重新读取"按钮 + 断开连接次按钮
+7. 相册页显示占位缩略图（mock 数据，12 个色块 + 标签）+ filterBar（4 chip 占位）+ MetricTile（已加载/已选择 占位）
+8. 下载页显示 4 section 占位（overview / queue / active / records），每个 section 标 "Phase 3 实现"
 
 ---
 
@@ -431,6 +474,18 @@ final fooProvider = NotifierProvider<FooNotifier, FooState>(FooNotifier.new);
 - ❌ 进度通知 / Foreground Service（Phase 3）
 - ❌ 触觉 / 动画 / 动效（Phase 4）
 - ❌ iOS 平台创建（Phase 3）
+
+### 7.1 Phase 3 注意事项（提前 flag）
+
+**AssetThumbnailService 简化方案**（原 iOS 715 行 → Phase 3 必须简化）：
+
+原 iOS 6 字典 × 2 种 derivative（thumbnail + preview）+ Task in-flight + unavailable set。Phase 3 简化为：
+- 单 `thumbnail` derivative（首版只做 thumbnail；preview 跳过，Phase 4 才需要）
+- 单字典 `_cache: Map<remoteIdentifier, Uint8List>`
+- 单 Task 去重 `_inFlight: Map<remoteIdentifier, Future<Uint8List?>>`
+- 磁盘缓存用 `path_provider`（不实现，自 Phase 4）
+
+不要复刻原 iOS 6 字典 + 2 derivative 的过度工程 — 当前架构只需要 1 个。
 
 ---
 
