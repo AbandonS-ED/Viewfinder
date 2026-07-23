@@ -18,10 +18,10 @@ Phase 0（Domain）+ Phase 1（PTP/IP 协议层）已完成。Phase 2 搭 UI 骨
 |---|---|
 | Riverpod Provider 拓扑 | 6 个 Provider 全链路打通，注入 fake 可单测 |
 | 4 个 Tab 页面 | 连接 / 相册 / 下载 / 设置 — 占位 UI |
-| Shared 包 | 主题 + 主按钮 + 卡片 + 空状态 |
+| Shared 包 | 主题 + 主按钮 + 卡片 + 空状态 + 占位 logger |
 | pubspec | 加 `shared_preferences` + `google_fonts` |
 | lint | `analysis_options.yaml` 加强 |
-| 测试 | 17 Notifier 单测 + 4 widget smoke = 21 新增（**不要求覆盖率**：UI 阶段，AGENTS.md §6.1 说不强求；Phase 3 才回头补） |
+| 测试 | 21 Notifier 单测 + 8 widget smoke = 29 新增（**不要求覆盖率**：UI 阶段，AGENTS.md §6.1 说不强求；Phase 3 才回头补） |
 | DI 装配 | `main.dart` → `app.dart` → ProviderScope → 各 Page |
 
 ---
@@ -52,8 +52,9 @@ Phase 0（Domain）+ Phase 1（PTP/IP 协议层）已完成。Phase 2 搭 UI 骨
 
 | 名 | Dart | 备注 |
 |---|---|---|
-| 默认 | `Theme.of(context).textTheme` (系统) | iOS 苹方 / Android 思源 |
-| 等宽 | `GoogleFonts.dmMono()` | 端口/大小/格式标签 |
+| 衬线（大标题） | `GoogleFonts.instrumentSerif()` | "Viewfinder"、"相册"、"下载"、"设置" 页面标题 |
+| 默认（正文） | `Theme.of(context).textTheme` (系统) | iOS 苹方 / Android 思源 |
+| 等宽（标签） | `GoogleFonts.dmMono()` | 端口/大小/格式/时间戳标签 |
 
 ---
 
@@ -69,12 +70,16 @@ preferencesStoreProvider (Provider<AppPreferencesStore>)
 
 downloadManagerProvider (NotifierProvider<DownloadManagerNotifier, DownloadQueueState>)
     └── connectionProvider (读 CameraSession 决定能否下载；Phase 2 占位不强依赖)
+
+appShellProvider (NotifierProvider<AppShellNotifier, AppShellState>)
+    └── (监听各 Notifier 状态变化，emit 全局 alerts / diagnostics)
 ```
 
 **设计说明**：
 - `downloadManagerProvider` **不依赖** `galleryProvider`：下载队列以"选中的照片"为输入，跟图库列表独立
 - Phase 2 中 `downloadManager` 是**占位实现**，只持有空队列；Phase 3 才从 connection session 拉真实下载项
 - `preferencesProvider` 复用 `preferencesStoreProvider`，**不依赖** transport chain
+- **`appShellProvider` 是跨功能的全局状态**：原 iOS `AppShellViewModel` 49 行管理全局 alerts + diagnostics + activeTask 计数。Phase 2 必须有对应 Provider，否则全局提示无处挂
 
 | Provider | 类型 | 依赖 | 测试注入 |
 |---|---|---|---|
@@ -84,6 +89,7 @@ downloadManagerProvider (NotifierProvider<DownloadManagerNotifier, DownloadQueue
 | `galleryProvider` | `AsyncNotifierProvider` | connection | 同上 |
 | `downloadManagerProvider` | `NotifierProvider` | connection（弱依赖） | 同上 |
 | `preferencesProvider` | `NotifierProvider` | preferencesStore | `SharedPreferences` mock |
+| `appShellProvider` | `NotifierProvider` | — | 直接构造 AppShellNotifier |
 
 ---
 
@@ -103,30 +109,47 @@ lib/
 │
 ├── features/
 │   ├── connection_setup/
-│   │   ├── connection_page.dart       ← 连接页 UI
+│   │   ├── connection_container.dart ← 组合根（ConsumerWidget，watch providers → 渲染 page）
+│   │   ├── connection_page.dart       ← 连接页 UI（纯 Widget）
 │   │   ├── connection_view_model.dart ← ConnectionNotifier
-│   │   └── widgets/                   ← ConnectButton / StatusIndicator (按需)
+│   │   └── widgets/                   ← ConnectButton / StatusIndicator / LensGlowView 占位
 │   ├── photo_browser/
-│   │   ├── gallery_page.dart          ← 缩略图网格
+│   │   ├── gallery_container.dart    ← 组合根
+│   │   ├── gallery_page.dart          ← 缩略图网格 UI
 │   │   ├── gallery_view_model.dart    ← GalleryNotifier
-│   │   └── widgets/                   ← ThumbnailGrid / PlaceholderThumb
+│   │   └── widgets/                   ← ThumbnailGrid / PlaceholderThumb / StateChip
 │   ├── downloads/
+│   │   ├── downloads_container.dart   ← 组合根
 │   │   ├── downloads_page.dart        ← 队列页（占位）
 │   │   └── download_manager_view_model.dart ← DownloadManagerNotifier
 │   ├── settings/
+│   │   ├── settings_container.dart   ← 组合根
 │   │   ├── settings_page.dart         ← 设置页
-│   │   └── settings_view_model.dart   ← PreferencesNotifier
+│   │   ├── settings_view_model.dart   ← PreferencesNotifier
+│   │   └── widgets/                   ← FormFieldRow / ToggleRow（表单输入复用）
 │   └── shared/
-│       ├── app_theme.dart             ← 暖白 + 琥珀金
-│       ├── shared_components.dart     ← CapsuleButton / EmptyState
-│       └── formatters.dart            ← byteSize / date 格式化
+│       ├── app_theme.dart             ← 暖白 + 琥珀金 + Instrument Serif
+│       ├── shared_components.dart     ← CapsuleButton / EmptyState / ErrorBanner
+│       ├── formatters.dart            ← byteSize / date 格式化
+│       └── logger.dart                ← 占位 Logger（包 dart:developer log）
+│
+├── utils/
+│   └── logger.dart                    ← 同 shared/logger.dart，重复指向
 ```
+
+**为什么用三件套（Container / Page / ViewModel）**：
+- AGENTS.md §4 / Viewfinder方案.md §11 都要求三件套
+- 原 iOS 每个 Feature 都有 ContainerView/View/ViewModel
+- Container 是 Provider 与 Widget 的连接点：用 `ConsumerWidget` watch providers + 把数据传给 `Page`
+- Page 是纯 Widget：不直接 ref.watch，保持 presentation 层无业务
+- ViewModel 是 Notifier：业务逻辑 + 状态
 
 **为什么 Connection/Gallery 加 `widgets/` 子目录**：
 - AGENTS.md §5 要求 View (Page) ≤ 300 行；超出就拆 widget
-- Connection 页（连接按钮 + 状态文字 + 重试提示）容易超 200 行
+- Connection 页（LensGlowView 占位 + 状态文字 + 重试提示）容易超 200 行
 - Gallery 页（缩略图网格 + 加载/空/错误 3 态）必须拆
-- Downloads/Settings 是简单占位，Page 本身体积可控，**不拆**
+- Settings 也加 widgets/：表单行（FormFieldRow / ToggleRow）抽出来避免 Page 超 300 行
+- Downloads 是简单占位，Page 本身体积可控，**不拆**
 
 ---
 
@@ -141,19 +164,20 @@ lib/
 | 2.4 | `connection_view_model.dart` + 5 单测 | 2 小时 | ConnectionNotifier |
 | 2.5 | `gallery_view_model.dart` + 5 单测 | 2 小时 | GalleryNotifier |
 | 2.6 | `download_manager_view_model.dart` + 3 单测 | 1.5 小时 | DownloadManagerNotifier 占位 |
-| 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart`） | 2 小时 | 主题 + 3 个复用 widget + 2 个格式化函数 |
+| 2.6a | `app_shell_view_model.dart` + 4 单测 | 1.5 小时 | AppShellNotifier（全局 alerts/diagnostics） |
+| 2.7 | features/shared 包（`app_theme.dart` + `shared_components.dart` + `formatters.dart` + `logger.dart`） | 2.5 小时 | 主题 + 4 个复用 widget + 2 个格式化函数 + 占位 logger |
 | 2.8 | `connection_page.dart` | 1.5 小时 | 连接页 UI |
-| 2.9 | `gallery_page.dart` | 2 小时 | 缩略图网格 + 3 态 |
+| 2.9 | `gallery_container.dart` + `gallery_page.dart` + widgets/ | 2.5 小时 | 缩略图网格 + 3 态 + 12 mock 缩略图 |
 | 2.10 | `downloads_page.dart` | 1 小时 | 队列页（占位文字） |
 | 2.11 | `settings_page.dart` | 1.5 小时 | 设置页 |
-| 2.12 | `app.dart` + `main.dart` 装配 | 1.5 小时 | ProviderScope + Tab |
-| 2.13 | 4 widget smoke test | 1.5 小时 | 每页 1 个 |
+| 2.12 | `app.dart` + `main.dart` 装配 | 1.5 小时 | ProviderScope + Tab + entry point |
+| 2.13 | 8 widget smoke test（每页 happy + error） | 2.5 小时 | 8 个 smoke test |
 | 2.14 | `analysis_options.yaml` 加强 | 30 分钟 | 全套 lint |
 | 2.15 | 验收 + commit + push + 更新 docs | 1 小时 | git + 项目状态.md |
 
-**总估时**：~19 小时纯干活时间（不含用户验收反馈；按每天 4-5h 实际推进 → **约 1.5-2 周**）
+**总估时**：~24 小时纯干活时间（不含用户验收反馈；按每天 4-5h 实际推进 → **约 2 周**）
 
-> 注：§1 "约 4 周" 是更宽松的估计（含偶发中断、跨任务反馈等待）。这里取中间值 1.5-2 周。
+> 注：§1 "约 4 周" 是更宽松的估计（含偶发中断、跨任务反馈等待）。这里取中间值 2 周。
 
 ### 5.1 任务依赖图
 
@@ -168,15 +192,43 @@ lib/
 | 2.4 ConnectionNotifier | 2.2 | Notifier + 5 测试 |
 | 2.5 GalleryNotifier | 2.4 | Notifier + 5 测试 |
 | 2.6 DownloadManagerNotifier | 2.4 | Notifier + 3 测试 |
-| 2.7 shared 包 | — | app_theme + shared_components + formatters |
+| 2.6a AppShellNotifier | — | Notifier + 4 测试 |
+| 2.7 shared 包 | — | app_theme + shared_components + formatters + logger |
 | 2.8 connection_page | 2.4, 2.7 | UI |
 | 2.9 gallery_page | 2.5, 2.7 | UI |
 | 2.10 downloads_page | 2.6, 2.7 | UI |
 | 2.11 settings_page | 2.3, 2.7 | UI |
 | 2.12 app 装配 | 2.0-2.11 | 全链路打通 |
-| 2.13 widget smoke | 2.12 | 4 个 smoke test |
+| 2.13 widget smoke | 2.12 | 8 个 smoke test |
 | 2.14 lint | 2.13 | 全套 lint |
 | 2.15 验收 | 2.14 | commit + push + docs |
+
+**任务 2.12 entry point 结构**（对标原 iOS `NikonConnectApp.swift` 66 行手工注入）：
+
+```dart
+// main.dart — 23 行
+void main() {
+  runApp(const ProviderScope(child: ViewfinderApp()));
+}
+
+// app.dart — ViewfinderApp 内部
+class ViewfinderApp extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: AppTheme.light(),  // amber 主题
+      home: AppShell(),         // NavigationBar + 4 Tab
+    );
+  }
+}
+
+// AppShell (在 app.dart) 用 NavigationBar + IndexedStack 切换 4 Tab
+// 每 Tab 调用对应 *_container.dart 的 build()
+```
+
+**关键设计**：
+- `ProviderScope` 顶层注入；不用 `autoDispose`（Phase 2 占位 UI 不频繁创建销毁）
+- 6 个 Provider（preferencesStore / transportFactory / connection / gallery / downloadManager / preferences / appShell）在 ProviderScope 内自动 `ref.watch` 解析依赖
+- 单测时用 `ProviderContainer` + `overrideWith` 注入 fake transport（task 2.4-2.6 测试）
 
 ---
 
@@ -191,11 +243,11 @@ flutter build apk --debug        # BUILD SUCCESSFUL
 ```
 
 1. `dart analyze` 零警告
-2. `flutter test` 全绿（现存 47 + 新增 21 = 68）
+2. `flutter test` 全绿（现存 47 + 新增 29 = 76）
 3. `flutter build apk --debug` 能装到 Android 真机
 4. `flutter run` 起 app，4 个 Tab 切换正常
 5. Settings 页改 host/port 保存后重现不变
-6. 连接页显示网络图标 + 状态文字 + 连接按钮
+6. 连接页显示 LensGlowView 占位 + 状态文字 + 连接按钮（无动画，圆形 + 边框）
 7. 相册页显示占位缩略图（mock 数据，12 个色块 + 标签）
 8. 下载页显示"下载功能 Phase 3 实现"占位
 
