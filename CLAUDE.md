@@ -129,13 +129,13 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 
 - Phase 2 之前 `lib/features/`、`lib/services/`、`lib/platform/` 三个目录**还没有内容**。`lib/main.dart` 是 Phase 0 占位 `ViewfinderApp`。
 - Phase 2 起开始建：
-  - `lib/services/`：`preferences_store.dart` (shared_preferences) — Phase 2 落地；其他（`download_store.dart` / `asset_thumbnail_service.dart` / `photo_library_export_service.dart` / `download_progress_notifier.dart` / `background_download_runner.dart` / `wifi_watcher.dart`）Phase 3 起落地。
-  - `lib/platform/`：`photo_library_channel*.dart` (interface + Android + iOS + IO stub) — Phase 3 落地。
+  - `lib/services/`：`preferences_store.dart` / `download_store.dart` / `asset_thumbnail_service.dart` / `download_notification_service.dart` / `background_download_runner.dart` / `wifi_watcher.dart` / `log_file_store.dart` / `logger.dart` / `download_asset_prioritizer.dart` — Phase 2 + Phase 3 落地。
+  - `lib/platform/`：`photo_library_channel.dart` (interface + Android + iOS + IO stub) — Phase 3 落地。
   - `lib/features/`：`connection_setup/` / `photo_browser/` / `downloads/` / `settings/` / `shared/` — Phase 2 全部落地。
 
 ## Riverpod 状态管理
 
-- 原 iOS ViewModel → Flutter Notifier：`ConnectionNotifier extends Notifier<ConnectionState>` / `GalleryNotifier extends AsyncNotifier<List<PhotoAsset>>` / `DownloadManagerNotifier extends Notifier<DownloadQueueState>` / `PreferencesNotifier extends Notifier<CameraConnectionConfig>`。
+- 原 iOS ViewModel → Flutter Notifier：`ConnectionNotifier extends Notifier<ConnectionState>` / `GalleryNotifier extends AsyncNotifier<GalleryState>` / `DownloadManagerNotifier extends Notifier<DownloadQueueState>` / `PreferencesNotifier extends Notifier<CameraConnectionConfig>` / `AppShellNotifier extends Notifier<AppShellState>` / `CameraWifiConnectionNotifier extends Notifier<bool>`（共 6 个 Notifier）。
 - **协议层不持有 Riverpod**：`PtpipSession` 是 plain Dart 类，Notifier 注入并订阅。`PtpipSocket` 接口允许单测里注入 fake。
 - `StreamProvider` 包 socket 数据事件，`family` modifier 处理多任务下载（按 downloadId 区分）。
 - Phase 2 完整的 Provider 拓扑表见 `docs/架构.md` §6。

@@ -181,12 +181,40 @@ class DownloadManagerNotifier extends Notifier<DownloadQueueState> {
     );
   }
 
-  Future<void> refreshDownloads() async {}
+  Future<void> refreshDownloads() async {
+    try {
+      // 计划 §5.2 step 11: 与磁盘 records 对账.
+      // - 拉取磁盘上所有 DownloadRecord
+      // - 如果 completed job 对应的 record 不在磁盘上, 把它从 state.jobs 移除
+      //   (例如用户在系统设置里删了相册照片, 或 manifest 在外部被损坏)
+      // - 如果磁盘上多出 record (例如上次的 _runQueue 崩了没 persist), 不在此处补 jobs;
+      //   Phase 4 加 records 独立展示时再处理
+      final store = ref.read(downloadStoreProvider);
+      final diskRecords = await store.listRecords();
+      final diskIDs = diskRecords.map((r) => r.id).toSet();
+      final keptJobs = state.jobs.where((j) {
+        if (j.status != DownloadJobStatus.completed) return true;
+        return diskIDs.contains(j.id);
+      }).toList(growable: false);
+      if (keptJobs.length != state.jobs.length) {
+        state = state.copyWith(jobs: keptJobs);
+        await _persist();
+      }
+      ref.read(appShellProvider.notifier).appendLog(
+        '下载列表已刷新：磁盘 records 共 ${diskRecords.length} 条。',
+      );
+    } on CameraAppError catch (e) {
+      ref.read(appShellProvider.notifier).appendLog(
+        'refreshDownloads 失败: ${e.message}',
+      );
+    }
+  }
 
   void handleScenePhaseChange(AppLifecycleState phase) {
     switch (phase) {
       case AppLifecycleState.resumed:
         unawaited(ref.read(backgroundRunnerProvider).end());
+        break;
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
@@ -196,6 +224,7 @@ class DownloadManagerNotifier extends Notifier<DownloadQueueState> {
             onExpiration: () => interruptActiveDownload('App 进入后台后系统暂停了下载。'),
           ));
         }
+        break;
       case AppLifecycleState.inactive:
         break;
     }
@@ -220,7 +249,22 @@ class DownloadManagerNotifier extends Notifier<DownloadQueueState> {
     );
   }
 
-  Future<void> appendTransportDiagnostics(CameraTransport transport) async {}
+  Future<void> appendTransportDiagnostics(CameraTransport transport) async {
+    try {
+      // 计划 §5.2 step 9: 队列完成一个 job 后调, 把 transport 的诊断写到 LogFileStore.
+      final session = ref.read(cameraSessionProvider);
+      if (session == null) return;
+      final diagnostics = await transport.consumeDiagnostics(session);
+      if (diagnostics.isEmpty) return;
+      for (final line in diagnostics) {
+        ref.read(appShellProvider.notifier).appendLog('transport: $line');
+      }
+    } on CameraAppError catch (e) {
+      ref.read(appShellProvider.notifier).appendLog(
+        'consumeDiagnostics 失败: ${e.message}',
+      );
+    }
+  }
 
   // ──────────────────────── 内部 ────────────────────────
 
@@ -351,6 +395,9 @@ class DownloadManagerNotifier extends Notifier<DownloadQueueState> {
             activeJobID: null,
             activeDownloadProgress: null,
           );
+
+          // 计划 §5.2 step 9: 完成后清诊断
+          await appendTransportDiagnostics(transport);
 
           unawaited(ref.read(backgroundRunnerProvider).end());
           await ref.read(notificationServiceProvider).cancel(

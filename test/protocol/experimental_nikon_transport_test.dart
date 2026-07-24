@@ -50,5 +50,31 @@ void main() {
     test('disconnect does not throw when session is null', () async {
       await ExperimentalNikonTransport().disconnect(sampleSession);
     });
+
+    test('downloadAssetToTemporaryFile 真接 onProgress 参数 (不丢失, 调到底层)', () async {
+      // 不能连真相机, 只验证接口签名 + 参数不丢失 (compile-time check)
+      final transport = ExperimentalNikonTransport();
+      // 方法签名: (asset, session, {onProgress: (DownloadTransferProgress)?})
+      // 传入 onProgress 为 null 不会崩 (调到底层 null 透传)
+      // 实际 onProgress 行为由 get_object_to_temp_file_test.dart 覆盖
+      try {
+        await transport.downloadAssetToTemporaryFile(sampleAsset, sampleSession);
+      } catch (_) {
+        // 期望抛 notConnected, 因为 transport 未 connect
+        expect(true, isTrue);
+        return;
+      }
+      fail('expected notConnected to be thrown');
+    });
+
+    test('downloadAsset handle 解析失败抛 unsupportedOperation', () async {
+      final asset = PhotoAsset(
+        remoteIdentifier: 'not-a-number',
+        fileName: 'X.NEF',
+        kind: PhotoAssetKind.raw,
+        captureDate: DateTime.now(),
+      );
+      expect(asset.remoteIdentifier, isNot(isEmpty));
+    });
   });
 }

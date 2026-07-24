@@ -123,16 +123,16 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   ├── experimental_nikon_transport.dart
 │   │   └── camera_transport_factory.dart   # 工厂 (返回 ExperimentalNikonTransport)
 │   │
-│   ├── services/                    # 应用级服务 (Phase 2 已落 3 个，剩余 Phase 3)
-│   │   ├── preferences_store.dart   # ✅ Phase 2 (JSON round-trip + schema 兼容)
-│   │   ├── logger.dart              # ✅ Phase 2 (包装 package:logging)
-│   │   ├── download_asset_prioritizer.dart  # ✅ Phase 2 (JPEG 优先 enum)
-│   │   ├── download_store.dart      # ⏳ Phase 3 (本地落盘 + 持久化 JSON)
-│   │   ├── asset_thumbnail_service.dart      # ⏳ Phase 3 (简化为单 thumbnail derivative)
-│   │   ├── photo_library_export_service.dart  # ⏳ Phase 3 (platform channel)
-│   │   ├── download_progress_notifier.dart    # ⏳ Phase 3 (替代 LiveActivityController)
-│   │   ├── background_download_runner.dart    # ⏳ Phase 3 (后台下载 + foreground service)
-│   │   └── wifi_watcher.dart        # ⏳ Phase 3
+│   ├── services/                    # 应用级服务 (Phase 2 3 个 + Phase 3 6 个)
+│   │   ├── preferences_store.dart   # ✅ Phase 2
+│   │   ├── logger.dart              # ✅ Phase 2
+│   │   ├── download_asset_prioritizer.dart  # ✅ Phase 2
+│   │   ├── download_store.dart      # ✅ Phase 3
+│   │   ├── asset_thumbnail_service.dart      # ✅ Phase 3
+│   │   ├── wifi_watcher.dart        # ✅ Phase 3
+│   │   ├── log_file_store.dart      # ✅ Phase 3
+│   │   ├── download_notification_service.dart  # ✅ Phase 3 (替代 LiveActivityController)
+│   │   └── background_download_runner.dart    # ✅ Phase 3
 │   │
 │   ├── features/                    # UI 业务模块 (Phase 2 落地)
 │   │   ├── connection_setup/
@@ -146,9 +146,9 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │   │   ├── gallery_view_model.dart     # GalleryNotifier (AsyncNotifier<GalleryState>)
 │   │   │   └── gallery_state.dart          # freezed GalleryState
 │   │   ├── downloads/
-│   │   │   ├── downloads_container.dart     # ConsumerWidget
-│   │   │   ├── downloads_page.dart          # 5 section 占位
-│   │   │   └── download_manager_view_model.dart  # DownloadManagerNotifier
+│   │   │   ├── downloads_container.dart     # ConsumerWidget (容器+状态连线)
+│   │   │   ├── downloads_page.dart          # 4 section: 概览 / 当前下载 / 队列 / 已下载 (292 行，全功能按钮)
+│   │   │   └── download_manager_view_model.dart  # DownloadManagerNotifier (13 方法)
 │   │   ├── settings/
 │   │   │   ├── settings_container.dart     # ConsumerWidget
 │   │   │   ├── settings_page.dart           # 4 section (host/port TextField + 2 Switch + 3 GridRowItem)
@@ -162,31 +162,38 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 │   │       ├── shared_components.dart      # 9 widget (PrimaryActionButton / SecondaryActionButton / CustomCard / SectionHeader / GridRowItem / DownloadProgressDetails / Haptics / ShimmerView / LensGlowView)
 │   │       └── formatters.dart              # fileSize / logTime / captureDate
 │   │
-│   └── platform/                    # ⏳ Phase 3 才创建 (iOS / Android 桥接)
-│       ├── photo_library_channel.dart        # interface
-│       ├── photo_library_channel_io.dart     # dart:io stub
-│       ├── photo_library_channel_android.dart  # MethodChannel 实现
-│       └── photo_library_channel_ios.dart       # MethodChannel 实现
+│   └── platform/                    # ✅ Phase 3 (iOS / Android 桥接，1 文件含全部实现)
+│       └── photo_library_channel.dart        # 抽象 + IO/Android/iOS 三端实现 + factory
 │
-├── test/                            # flutter_test (单测 + widget test) — Phase 2 共 102 测
-│   ├── protocol/                     # 47 测 (Phase 1)
-│   │   ├── primitives_test.dart              # 编解码 round-trip + sealed error + DeviceInfo
-│   │   ├── experimental_nikon_transport_test.dart  # 5 测 (错误路径)
-│   │   ├── session_test.dart                 # 全部 session 测试 (lifecycle + traversal + transfers)
-│   │   └── transport/ptpip_connection_test.dart
-│   ├── services/                     # 10 测 (Phase 2)
-│   │   ├── preferences_store_test.dart       # 5 测 (JSON round-trip + schema 兼容 + error path + 持久化 key)
-│   │   └── download_asset_prioritizer_test.dart  # 5 测 (cameraOrder 不变 + jpegFirst 排序 + PNG/JPEG 同级)
-│   ├── features/                     # 29 测 (Phase 2)
+├── test/                            # flutter_test (单测 + widget test) — 198 测 (2026-07-25 v3)
+│   ├── protocol/                     # 51 测 (Phase 1 + Phase 3)
+│   │   ├── primitives_test.dart              # 29 测 (编解码 + sealed error + DeviceInfo)
+│   │   ├── experimental_nikon_transport_test.dart  # 7 测 (错误路径 + onProgress 参数 + handle 解析)
+│   │   ├── session_test.dart                 # 5 测 (lifecycle + traversal + transfers)
+│   │   ├── transport/ptpip_connection_test.dart # 7 测
+│   │   └── get_object_to_temp_file_test.dart # 3 测 (流式 + progress + error cleanup)
+│   ├── domain/                       # 17 测
+│   ├── services/                     # 52 测
+│   │   ├── preferences_store_test.dart       # 5 测
+│   │   ├── download_asset_prioritizer_test.dart  # 5 测
+│   │   ├── asset_thumbnail_service_test.dart # 9 测 (并发 + 缓存 + 错误)
+│   │   ├── wifi_watcher_test.dart            # 7 测
+│   │   ├── log_file_store_test.dart          # 6 测 (rotation 2MB)
+│   │   ├── download_notification_service_test.dart  # 4 测
+│   │   ├── background_download_runner_test.dart  # 3 测
+│   │   └── download_store_test.dart          # 13 测
+│   ├── features/                     # 54 测
 │   │   ├── app_shell/app_shell_view_model_test.dart    # 4 测
-│   │   ├── connection_setup/connection_view_model_test.dart  # 5 测
-│   │   ├── photo_browser/gallery_view_model_test.dart  # 5 测
-│   │   ├── downloads/download_manager_view_model_test.dart  # 3 测
+│   │   ├── connection_setup/connection_view_model_test.dart  # 6 测
+│   │   ├── photo_browser/gallery_view_model_test.dart  # 7 测
+│   │   ├── downloads/download_manager_view_model_test.dart  # 17 测
 │   │   ├── settings/settings_view_model_test.dart  # 4 测
-│   │   └── shared/app_theme_test.dart         # 8 测 (workflowColor 6 + formatters.fileSize 4 + captureDate 4 + amberTheme 1)
+│   │   └── shared/app_theme_test.dart         # 16 测
+│   ├── platform/                     # 15 测
+│   │   └── photo_library_channel_test.dart
 │   └── helpers/                      # fake helpers
-│       ├── fake_ptpip_socket.dart            # 替代 127.0.0.1 测试模式 (Phase 1)
-│       └── fake_camera_transport.dart         # Phase 2 新增 (FakeCameraTransport + FakeCameraTransportFactory)
+│       ├── fake_ptpip_socket.dart            # Phase 1
+│       └── fake_camera_transport.dart        # Phase 2
 │
 ├── widget_test.dart                  # App 启动 smoke (1 测)
 ├── smoke_test.dart                   # 8 测 (4 页面 happy/error widget smoke)
@@ -194,10 +201,10 @@ Viewfinder/                       # Flutter 工程根 (snake_case lowercase 给 
 ├── android/
 │   └── app/src/main/kotlin/.../
 │       ├── MainActivity.kt
-│       ├── PhotoLibraryPlugin.kt             # ⏳ Phase 3
-│       └── DownloadForegroundService.kt      # ⏳ Phase 3
+│       ├── PhotoLibraryPlugin.kt             # ✅ Phase 3
+│       └── BackgroundDownloadPlugin.kt       # ✅ Phase 3 (原名 DownloadForegroundService.kt)
 │
-├── ios/                              # ⏳ Phase 3 (Windows 上创建需借 Mac)
+├── ios/                              # ✅ Phase 3 (手动创建，需 macOS flutter create 验证编译)
 │
 ├── pubspec.yaml
 ├── analysis_options.yaml              # Phase 2 11 条 lint 规则
@@ -398,18 +405,39 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 4. `flutter run` 起 app 4 个 Tab 切换正常
 5. Settings 页能改 host/port 并保存
 
-### Phase 3 — ✅ 已完成 (2026-07-24)
+### Phase 3 — ✅ 已完成 (2026-07-24 初版 / 2026-07-25 v2 全审修正)
 
 **目标**：在 Android 真机上跑通端到端：连接 + 浏览 + 下载 + 进度通知。
 
-🔧 **实际交付**：
+🔧 **实际交付**（**198 单测全绿**, `dart analyze` 0 issues）：
 - Android APK 构建成功（`flutter build apk --debug`，160 MB）
-- 8 个核心 service：DownloadStore / AssetThumbnailService / WifiWatcher / LogFileStore / DownloadNotificationService / BackgroundRunner / PhotoLibraryChannel / DownloadManagerNotifier（13 方法 + runQueue 循环）
-- UI 连线：DownloadsPage 真实队列（pause/resume/cancel/retry/clearFinished）+ GalleryPage `onDownloadSelected` + 真实缩略图（AssetThumbnailService FutureBuilder）
+- 6 个核心 service：DownloadStore / AssetThumbnailService / WifiWatcher / LogFileStore / DownloadNotificationService / BackgroundRunner
+- DownloadManagerNotifier 全量 13 公开方法全部真实现（含 v2 修复：refreshDownloads listRecords 对账 + appendTransportDiagnostics _runQueue step 9）
+- UI 连线：DownloadsPage 4 section 全功能按钮（pause/resume/cancel/retry/clearFinished）+ GalleryPage `onDownloadSelected` 从 connectionProvider 读用户偏好（v2 修复，v3 真修根因）+ 真实缩略图（AssetThumbnailService FutureBuilder）
 - Android 平台代码：PhotoLibraryPlugin.kt（MediaStore）+ BackgroundDownloadPlugin.kt + MainActivity.kt 注册 + AndroidManifest 权限 15 项 + foreground service
 - iOS 平台文件手动创建（需 macOS `flutter create --platforms=ios` 验证编译）
-- 集成测试 3 个新增（并发缩略图 / 日志 rotation / 队列持久化 round-trip）
-- 131 个单测全绿，`dart analyze` 零警告
+- 集成测试 + 平台测试 = **198 单测全绿**，`dart analyze` 零警告
+
+#### 2026-07-25 v2 关键修复（8 项）
+| # | 修复 | 章节 | 类型 |
+|---|---|---|---|
+| 1 | `handleScenePhaseChange` switch 加 3 个 break | §5.5 | CRITICAL BUG |
+| 2 | `cameraWifiConnectedProvider` 反应式订阅 `connectionStream` | §9.4 | CRITICAL |
+| 3 | `connectionProvider.build()` 改读 `preferencesProvider` (v1→v2 部分修复，v3 修根因) | §5.6 / §6.1 | HIGH |
+| 4 | GalleryContainer 改从 connectionProvider 读用户偏好 | §5.6 / §13.4 | HIGH |
+| 5 | `refreshDownloads` 真实现 | §5.2 step 11 | HIGH |
+| 6 | `appendTransportDiagnostics` + `_runQueue` step 9 | §5.2 step 9 | HIGH |
+| 7 | NotificationService `_payloads` Map 保留 payload | §7.4 | MEDIUM |
+| 8 | LogFileStore.exportFile() 用 timestamp 命名 | §10.2 | LOW |
+
+#### 2026-07-25 v3 根因修复（1 项 + 1 回归测）
+
+v2 让 GalleryContainer 读 `connectionProvider`, 但 `ConnectionNotifier.build()` 用的是 stable `ref.watch(preferencesStoreProvider)`, Settings 改 toggle 后 `connectionProvider` 不立刻更新 —— **v2 修复没有真正让设置页 toggle 生效**。
+
+| # | 修复 | 章节 | 类型 |
+|---|---|---|---|
+| 9 | `ConnectionNotifier.build()` 改 `ref.watch(preferencesProvider)` (NotifierProvider 替代 stable `preferencesStoreProvider`) | §5.6 / §6.1 | **HIGH (v2 根因)** |
+| 10 | 新增 `connectionProvider 反应式跟随 preferencesProvider` 回归测 | §5.7 / §16 | regression test |
 
 **不在本 Phase 范围**（未变）：
 - ❌ UI 抛光 / 触觉 / 动效（Phase 4）
@@ -500,7 +528,7 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | `Services/PTPIPSession+Lifecycle.swift` → `Services/PTPIPSession.swift` (单文件) | `lib/protocol/session/ptpip_session.dart`（单类合并三 extension） |
 | `Services/PTPIPTCPConnection.swift` | `lib/protocol/transport/ptpip_connection.dart` |
 | `DownloadActivityWidget/*` | ❌ 删除 (跨端不实现 Live Activity) |
-| `Tests/*.swift` (7 个) | `test/**/*.dart` (重写为 Dart 单测，131 测全绿) |
+| `Tests/*.swift` (7 个) | `test/**/*.dart` (重写为 Dart 单测，198 测全绿) |
 
 ### 11.1 补充映射 (嵌套类型 + 接口协议)
 

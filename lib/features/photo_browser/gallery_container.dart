@@ -15,6 +15,7 @@ class GalleryContainer extends ConsumerWidget {
     final transport = ref.watch(cameraTransportProvider);
     final session = ref.watch(cameraSessionProvider);
     final thumbService = ref.watch(assetThumbnailServiceProvider);
+    final connection = ref.watch(connectionProvider);
     return asyncState.when(
       data: (state) {
         return GalleryPage(
@@ -31,8 +32,8 @@ class GalleryContainer extends ConsumerWidget {
                       .toList();
                   ref.read(downloadManagerProvider.notifier).downloadSelected(
                         selected,
-                        autoExport: false,
-                        prioritizeJPEG: true,
+                        autoExport: connection.autoExportToPhotoLibrary,
+                        prioritizeJPEG: connection.prioritizeJPEGDownloads,
                       );
                 }
               : null,

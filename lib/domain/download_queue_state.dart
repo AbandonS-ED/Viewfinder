@@ -23,11 +23,11 @@ class DownloadQueueState with _$DownloadQueueState {
   /// 当前正在运行的 job
   DownloadJob? get activeJob {
     final id = activeJobID;
-    if (id == null) return null;
-    return jobs.firstWhere(
-      (j) => j.id == id,
-      orElse: () => jobs.first,
-    );
+    if (id == null || jobs.isEmpty) return null;
+    for (final job in jobs) {
+      if (job.id == id) return job;
+    }
+    return null;
   }
 
   /// 未完成的 jobs (queued/running/paused/interrupted)

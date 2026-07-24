@@ -238,7 +238,11 @@ reference/
 | 2026-07-21 | 初版，配套 docs/ 三件套 |
 | 2026-07-23 | Phase 1 完成：PTP/IP 协议层 + 47 单测全绿 |
 | 2026-07-23 | Phase 2 完成：UI 骨架 + 102 单测全绿。详见 `docs/项目状态.md §5.3` |
-| 2026-07-24 | Phase 3 完成：完整下载链路 + Android 前台服务 + 进度通知 + 131 单测全绿 + APK 构建成功。关键决策：onProgress 回调链绕过 Riverpod；Provider 替代 iOS Coordinator；缩略图纯内存 cache（磁盘 cache 因 Android 性能不适合）。详见 `docs/项目状态.md §5.4` |
+| 2026-07-24 | Phase 3 完成：完整下载链路 + Android 前台服务 + 进度通知 + 144 单测全绿 + APK 构建成功。关键决策：onProgress 回调链绕过 Riverpod；Provider 替代 iOS Coordinator；缩略图纯内存 cache（磁盘 cache 因 Android 性能不适合）。详见 `docs/项目状态.md §5.4` |
+| 2026-07-24 | Phase 3 修复合入：activeJob getter 修 RangeError (Phase 3 §17.9 漏修); main.dart 注册 WidgetsBindingObserver 转发生命周期到 handleScenePhaseChange; Gallery 接真实相机 (build() 通过 ref.listen cameraSessionProvider + onSessionChanged 回调); DownloadStore 直接单测 13 个; onProgress 链单测 5 个; Domain 层单测 17 个 (含 activeJob fix 回归测); `dart analyze` 0 issues。详见下方 12.3 节 |
+| 2026-07-25 | Phase 3 修正 v2（对照计划 §3-§10 / §15 全审）：(1) handleScenePhaseChange 加 break 修 switch fall-through (回前台 → 后台 runner 重 arm 的 CRITICAL BUG); (2) wifiWatcherProvider 反应式化 (新增 cameraWifiConnectedProvider 让 §9.4 / §16 验收 4 行 "Wi-Fi 断线 → 队列自动暂停" 真工作); (3) GalleryContainer 改读 connectionProvider.autoExportToPhotoLibrary + prioritizeJPEGDownloads (用户偏好不再被覆盖); (4) refreshDownloads 真实现 (调 listRecords 剔磁盘无 record 的 completed job); (5) appendTransportDiagnostics 真实现 + _runQueue step 9 调用 (consumeDiagnostics → appendLog); (6) 53 个新测 (JPEG-sort / loadPersistedQueue running→interrupted / refreshDownloads sync records / cameraWifiConnectedProvider 反应式 / PhotoLibraryChannel mapIosResult+mapAndroidResult 全 5 值 ×2 / DownloadStore 13 + onProgress 流式 3 + 等等); (7) notification service 加 _payloads Map 修 update() payload 丢失; (8) LogFileStore.exportFile 改 timestamp 命名 (多次导出不覆盖); `dart analyze` 0 issues, `flutter test` 197/197 green |
+| 2026-07-25 | Phase 3 修正 v3（v2 修复后审计): **根因** v2 让 GalleryContainer 读 `connectionProvider`, 但 `ConnectionNotifier.build()` v1/v2 用的是 stable `preferencesStoreProvider`, Settings 改 toggle 后 `connectionProvider` 不更新, v2 修复**没有真正让 toggle 生效**. **修复** `ConnectionNotifier.build()` 改 `ref.watch(preferencesProvider)` (NotifierProvider); GalleryContainer 现在**真**跟用户偏好同步. **新增 1 回归测** (cameraSessionProvider 反应式 → connectionProvider) 锁住此行为. `flutter test` 198/198 green |
+| 2026-07-25 | Phase 3 修正 v3（v2 修复后审计): **根因** v2 让 GalleryContainer 读 `connectionProvider`, 但 `ConnectionNotifier.build()` v1/v2 用的是 stable `preferencesStoreProvider`, Settings 改 toggle 后 `connectionProvider` 不更新, v2 修复**没有真正让 toggle 生效**. **修复** `ConnectionNotifier.build()` 改 `ref.watch(preferencesProvider)` (NotifierProvider); GalleryContainer 现在**真**跟用户偏好同步. **新增 1 回归测** (cameraSessionProvider 反应式 → connectionProvider) 锁住此行为. `flutter test` 198/198 green |
 
 ### 12.1 Phase 3 关键决策 (新增)
 
@@ -253,10 +257,37 @@ reference/
 
 | 文件 | 规范 |
 |---|---|
-| `services/notification_service.dart` | `show`/`update`/`cancelAll` 三个公开方法；不持有 Riverpod ref；非 `@MainActor`（在后台 isolate 调用） |
-| `services/background_runner.dart` | `start`/`stop`/`isRunning` 三个公开方法；通过 `IsolateNameServer` 与主 isolate 通信 |
-| `services/photo_library_channel_*.dart` | `saveAsset(Uint8List data, String fileName)` → `Future<bool>`；各端实现自行处理权限/错误 |
-| `services/asset_thumbnail_service.dart` | 公开方法 `getThumbnail(PhotoAsset asset)` → `Future<Uint8List?>`；内部 `Map` cache + `Map` inFlight 去重 |
-| `services/download_store.dart` | `save`/`load`/`clear` 三方法；JSON round-trip；`encodeIfNotPresent` 兼容 |
-| `services/wifi_watcher.dart` | `start`/`stop`/`onWifiDisconnected` Stream；不直接 import Riverpod |
-| `services/log_file_store.dart` | `write`/`readAll`/`clear` + 1MB rotation |
+| `lib/services/download_notification_service.dart` | `show`/`update`/`cancel`/`cancelAll` 四个公开方法；通过 `notificationServiceProvider` 被 Riverpod 持有；main isolate 调用 |
+| `lib/services/background_download_runner.dart` | `begin`/`end`/`isActive` 三个公开方法；Android 端用 `flutter_background_service`，iOS 端用 `MethodChannel('viewfinder/background_download')`；`onExpiration` 回调 iOS 端从 channel handler 转发，Android 端暂存待 Phase 4 接 |
+| `lib/platform/photo_library_channel.dart` | `requestPermission()` → `Future<PhotoLibraryPermission>`；`exportFile({required String filePath})` → `Future<void>`；各端实现自行处理权限/错误 |
+| `lib/services/asset_thumbnail_service.dart` | 公开方法 `getThumbnail(PhotoAsset asset)` → `Future<Uint8List?>`；内部 `Map` cache + `Map` inFlight 去重 |
+| `lib/services/download_store.dart` | `save`/`load`/`clear` 三方法；JSON round-trip；`encodeIfNotPresent` 兼容 |
+| `lib/services/wifi_watcher.dart` | `start`/`stop`/`onWifiDisconnected` Stream；新增 `cameraWifiConnectedProvider` (NotifierProvider<bool>) 反应式订阅 `connectionStream`；`isCameraWifiConnected` 是同步 getter，`isActive` 在 BackgroundRunner 里改为 `Future<bool>` (测试用 await) |
+| `lib/services/log_file_store.dart` | `append`/`readAll`/`exportFile` + 1MB rotation；`exportFile()` 用 `viewfinder-{ms}.log` 命名避免覆盖 |
+| `lib/services/download_notification_service.dart` | `show`/`update`/`cancel`/`cancelAll` 四个公开方法；内部 `_payloads: Map<int, String>` 让 `update()` 保留首次 payload 供 deepLink |
+| `lib/features/photo_browser/gallery_view_model.dart` | `build()` 初始返 mock 12 张 (无 session 时 fallback); `onSessionChanged(prev, next)` 由外部 (app.dart) ref.listen 触发切换到真实数据；`refresh()` 调 `transport.fetchAssetsPage`；`loadMore()` 同上但 `resetTraversal: false` |
+| `lib/features/photo_browser/gallery_container.dart` | 从 `connectionProvider.autoExportToPhotoLibrary / prioritizeJPEGDownloads` 读用户偏好传入 `downloadSelected()`（不再硬编码） |
+| `lib/features/downloads/download_manager_view_model.dart` | 13 个公开方法全真实现（含 `refreshDownloads` listRecords 对账、`appendTransportDiagnostics` _runQueue step 9、`loadPersistedQueue` markInterruptedRunningJobs） |
+| `lib/app.dart` | `WidgetsBindingObserver` 注册到 downloadManagerProvider.notifier（注意 §5.5 的 `switch` 三个 `break` 不可省，否则 resumed fall-through 重 arm 后台 runner）；ref.listen `connectionProvider.select(activeSession)` 触发 gallery.onSessionChanged + 断线自动 pauseQueue；ref.listen **`cameraWifiConnectedProvider`** 断线自动 pauseQueue |
+
+### 12.3 Phase 3 偏离 Phase3实施计划.md 的决策 (审计 2026-07-24 ~ 2026-07-25)
+
+| 偏离项 | 计划要求 | 实际实现 | 原因 / 状态 |
+|---|---|---|---|
+| Gallery 默认 fallback 仍用 mock | §1.1 §16 #4 "12+ 张真实缩略图（从相机拉的，不是 mock）" | `build()` 返 12 张 mock，外部 `onSessionChanged(null→session)` 触发 `refresh()` 切真实 | mock 保留用于 (a) 测试环境 (b) 未连接相机的 demo；连接后立刻切真实数据。**Phase 4 评估是否需要去掉 mock fallback** |
+| `AssetThumbnailService` 磁盘 cache | §3.6 列了 5 个测含 "磁盘 cache hit" | 纯内存 cache (Line 11 注释明确); 测试 8 个全部内存路径 | Android 文件系统小文件随机读性能不适合；iOS 端有 NSURLCache 兜底。**Phase 4 评估 iOS 端磁盘 cache 价值** |
+| 持久化 JSON 文件数 | §4.1 "3 JSON 文件" | 2 JSON 文件 (`downloads-manifest.json` + `download-jobs.json`) | 取消独立的 throughput 文件 (Phase 3 简化为 memory only, 计划 §18 推到 Phase 4) |
+| `WRITE_EXTERNAL_STORAGE` maxSdkVersion | §12.1 写 "32" | 实际 "29" | 28+ scoped storage 引入，WRITE_EXTERNAL_STORAGE 仅 Android 9 及以下需要 |
+| 测试总数 | §15.2 "Phase 2 102 + Phase 3 80 = 182" | **198** (Phase 2 102 + Phase 3 **96**) | v1: 144 → v2: 197 (+53) → v3: 198 (+1)。v2 加 DownloadStore 13 + JPEG-sort 1 + downloadSelected-session 1 + loadPersistedQueue-running→interrupted 1 + refreshDownloads 1 + cameraWifiConnectedProvider 反应式 1 + PhotoLibraryChannel mapIosResult 5 + mapAndroidResult 5 + onProgress 流式 3 + Domain 17 + 等等 = 53；v3 加 connectionProvider 反应式回归测 1 |
+| `BackgroundRunner.onExpiration` Android 端 | §6.1 要求 | Android 端 `onExpiration` 暂存未调 (iOS 端已 wire) | flutter_background_service 暂不支持 onExpiration 回调；**Phase 4 评估替代方案 (WorkManager getInstance().getWorkInfoByIdLiveData)** |
+| `BackgroundRunner.isActive` 类型 | §6.1 `bool get isActive` | `Future<bool> get isActive` | iOS 真实现需要 await `_taskId != -1`（channel 异步）；测试也 `await runner.isActive`。计划原文属伪代码偏差 |
+| `DownloadStore` 并发原语 | §4.2 写 "Lock" | `Mutex` (`package:sync` 实际导出 `Mutex`，无 Lock) | import 名笔误，功能等价（acquire/release 串行化） |
+| `DownloadStore` 路径连接 | §4.3 写 `Platform.pathSeparator` | `p.join()` (`package:path`) | 跨平台 POSIX 风格，路径包已在依赖里 |
+| `_interruptibleStatus` 实现 | §5.3 8-case switch | `error.isInterruptibleDownloadStatus ? interrupted : failed` (boolean) | 8 个 `CameraAppError` 子类各自定义此 getter，行为完全等价 |
+| `downloadSelected()` `prioritizeJPEG: false` 路径 | §5.6 写 "raw assets" | `DownloadAssetPrioritizer.cameraOrder.sort()` (defensive copy) | 防御性 list copy，功能等价 |
+| **`handleScenePhaseChange` switch break** | §5.5 隐含每个 case 独立 | 2026-07-25 v2 修复加上 3 个 `break`（**v1 漏修的 critical bug**） | 不修则 resumed fall-through 到 paused，重新 arm 后台 runner；LinkState 测试可加 |
+| **`wifiWatcherProvider` 反应式化** | §9.4 `ref.listen(wifiWatcherProvider, ...)` | 2026-07-25 v2 加 `cameraWifiConnectedProvider: NotifierProvider<bool>` 转发 `connectionStream` | 不修则 `ref.listen` 永不触发，"Wi-Fi 断线 → 队列自动暂停"失效 |
+| **`GalleryContainer.downloadSelected` prefs** | §5.6 / §13.4 从 prefs 读 | 2026-07-25 v2 改读 `connectionProvider.autoExportToPhotoLibrary + prioritizeJPEGDownloads` | 不修则用户开关形同虚设（设置页 autoExportToPhotoLibrary toggle 永远不生效） |
+| **`ConnectionNotifier.build()` 反应式** (v3 根因) | §5.6 隐含 `connectionProvider` 必须跟 `preferencesProvider` | 2026-07-25 v3 改 `ref.watch(preferencesProvider)` (NotifierProvider) 替代 v1/v2 的 stable `preferencesStoreProvider` | **v2 fix 不到位**：v2 让 GalleryContainer 读 `connectionProvider` 但 `connectionProvider` 自己不更新。Settings 改 toggle 后必须重启 app 才生效，违反 §16 验收"设置页 → 立即生效"。v3 fix 让 `connectionProvider` 跟 `preferencesProvider` 反应式同步 |
+| **`refreshDownloads` / `appendTransportDiagnostics` 实现** | §5.1 + §5.2 step 11/9 | 2026-07-25 v2 全部填实（listRecords 对账 + consumeDiagnostics → appendLog） | v1 是空 stub，§5.7 test 11 无法补 |
+| `NotificationService.update()` 持久化 payload | §7.4 deepLink 隐含 | v1 漏，`update()` 写 `payload: null`；v2 加 `_payloads` Map 修复 | 不修则下载中点通知不路由 downloads 页 |

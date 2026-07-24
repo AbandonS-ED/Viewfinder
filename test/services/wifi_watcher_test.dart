@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:viewfinder/services/wifi_watcher.dart';
@@ -132,6 +133,32 @@ void main() {
       );
       await watcher.dispose();
       expect(watcher.connectionStream, emitsDone);
+    });
+  });
+
+  group('CameraWifiConnectionNotifier (Riverpod)', () {
+    test('cameraWifiConnectedProvider 在 watcher._setConnected 翻转时真正更新 state', () async {
+      final watcher = DefaultWifiWatcher(
+        networkInfo: _FakeNetworkInfo(bssid: null, ssid: null),
+        connectivity: _FakeConnectivity(),
+      );
+      await Future<void>.delayed(Duration.zero);
+      final container = ProviderContainer(
+        overrides: [wifiWatcherProvider.overrideWithValue(watcher)],
+      );
+      addTearDown(container.dispose);
+
+      expect(container.read(cameraWifiConnectedProvider), false);
+
+      // 关键：直接调 _setConnected (通过 debugSetConnected) 不走平台 API,
+      // 但 Riverpod 应通过 connectionStream 订阅反应式更新
+      watcher.debugSetConnected(true);
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(cameraWifiConnectedProvider), true);
+
+      watcher.debugSetConnected(false);
+      await Future<void>.delayed(Duration.zero);
+      expect(container.read(cameraWifiConnectedProvider), false);
     });
   });
 }

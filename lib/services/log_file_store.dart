@@ -70,7 +70,9 @@ class FileLogStore implements LogFileStore {
   @override
   Future<File> exportFile() async {
     final src = File(_currentPath);
-    final dst = File(p.join(_basePath, 'viewfinder-export.log'));
+    // 计划 §10.2: 用 timestamp 命名, 多次导出不会互相覆盖.
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final dst = File(p.join(_basePath, 'viewfinder-$ts.log'));
     if (await src.exists()) {
       await src.copy(dst.path);
     } else {

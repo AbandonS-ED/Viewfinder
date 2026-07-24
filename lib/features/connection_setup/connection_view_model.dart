@@ -28,14 +28,16 @@ final cameraSessionProvider = Provider<CameraSession?>((ref) {
 class ConnectionNotifier extends Notifier<ConnectionState> {
   @override
   ConnectionState build() {
-    final prefs = ref.watch(preferencesStoreProvider);
-    final config = prefs.loadConnectionConfig();
+    // 2026-07-25 v3 fix: 用 NotifierProvider<CameraConnectionConfig> (preferencesProvider) 而不是 stable Provider (preferencesStoreProvider)
+    // 让 GalleryContainer 在 Settings 改 toggle 后能立即看到新值 (否则要重启 app 才生效).
+    // v2 修复让 GalleryContainer 读 connectionProvider 是对的, 但 connectionProvider 自己没反应式同步.
+    final prefs = ref.watch(preferencesProvider);
     return ConnectionState(
-      hostInput: config.host,
-      portInput: config.port.toString(),
-      transportMode: config.transportMode,
-      autoExportToPhotoLibrary: config.autoExportToPhotoLibrary,
-      prioritizeJPEGDownloads: config.prioritizeJPEGDownloads,
+      hostInput: prefs.host,
+      portInput: prefs.port.toString(),
+      transportMode: prefs.transportMode,
+      autoExportToPhotoLibrary: prefs.autoExportToPhotoLibrary,
+      prioritizeJPEGDownloads: prefs.prioritizeJPEGDownloads,
     );
   }
 

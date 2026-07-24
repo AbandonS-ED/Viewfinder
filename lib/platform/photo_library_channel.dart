@@ -14,6 +14,27 @@ abstract class PhotoLibraryChannel {
     if (Platform.isIOS) return IosPhotoLibraryChannel();
     return IoPhotoLibraryChannel();
   }
+
+  /// Android 端字符串 → 权限 enum 映射 (计划 §8.3).
+  /// 提到静态方法方便测试 (避免 mock MethodChannel).
+  static PhotoLibraryPermission mapAndroidResult(String? result) =>
+      switch (result) {
+        'granted' => PhotoLibraryPermission.granted,
+        'limited' => PhotoLibraryPermission.limited,
+        'denied' => PhotoLibraryPermission.denied,
+        'never_ask_again' => PhotoLibraryPermission.neverAskAgain,
+        _ => PhotoLibraryPermission.denied,
+      };
+
+  /// iOS 端字符串 → 权限 enum 映射 (计划 §8.2).
+  static PhotoLibraryPermission mapIosResult(String? result) =>
+      switch (result) {
+        'authorized' => PhotoLibraryPermission.granted,
+        'limited' => PhotoLibraryPermission.limited,
+        'denied' => PhotoLibraryPermission.denied,
+        'restricted' => PhotoLibraryPermission.denied,
+        _ => PhotoLibraryPermission.denied,
+      };
 }
 
 /// IO 实现：写到 temp 目录（桌面开发 / 测试用，无需权限）。
@@ -38,13 +59,7 @@ class AndroidPhotoLibraryChannel implements PhotoLibraryChannel {
   @override
   Future<PhotoLibraryPermission> requestPermission() async {
     final result = await _channel.invokeMethod<String>('requestPermission');
-    return switch (result) {
-      'granted' => PhotoLibraryPermission.granted,
-      'limited' => PhotoLibraryPermission.limited,
-      'denied' => PhotoLibraryPermission.denied,
-      'never_ask_again' => PhotoLibraryPermission.neverAskAgain,
-      _ => PhotoLibraryPermission.denied,
-    };
+    return PhotoLibraryChannel.mapAndroidResult(result);
   }
 
   @override
@@ -60,13 +75,7 @@ class IosPhotoLibraryChannel implements PhotoLibraryChannel {
   @override
   Future<PhotoLibraryPermission> requestPermission() async {
     final result = await _channel.invokeMethod<String>('requestPermission');
-    return switch (result) {
-      'authorized' => PhotoLibraryPermission.granted,
-      'limited' => PhotoLibraryPermission.limited,
-      'denied' => PhotoLibraryPermission.denied,
-      'restricted' => PhotoLibraryPermission.denied,
-      _ => PhotoLibraryPermission.denied,
-    };
+    return PhotoLibraryChannel.mapIosResult(result);
   }
 
   @override

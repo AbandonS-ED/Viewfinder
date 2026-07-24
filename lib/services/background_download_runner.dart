@@ -57,11 +57,24 @@ class AndroidBackgroundDownloadRunner implements BackgroundDownloadRunner {
 class IosBackgroundDownloadRunner implements BackgroundDownloadRunner {
   static const _channel = MethodChannel('viewfinder/background_download');
   int _taskId = -1;
+  void Function()? _onExpiration;
 
   @override
   Future<void> begin({required String name, void Function()? onExpiration}) async {
-    if (_taskId != -1) return;
+    if (_taskId != -1) {
+      _onExpiration = onExpiration;
+      return;
+    }
+    _onExpiration = onExpiration;
+    _channel.setMethodCallHandler(_handleMethodCall);
     _taskId = (await _channel.invokeMethod<int>('begin', {'name': name})) ?? -1;
+  }
+
+  Future<dynamic> _handleMethodCall(MethodCall call) async {
+    if (call.method == 'onExpiration') {
+      _onExpiration?.call();
+    }
+    return null;
   }
 
   @override
@@ -69,6 +82,7 @@ class IosBackgroundDownloadRunner implements BackgroundDownloadRunner {
     if (_taskId == -1) return;
     await _channel.invokeMethod<void>('end', {'taskId': _taskId});
     _taskId = -1;
+    _onExpiration = null;
   }
 
   @override

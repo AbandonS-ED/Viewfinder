@@ -153,5 +153,37 @@ void main() {
       expect(saved['host'], '192.168.0.50');
       expect(saved['port'], 11570);
     });
+
+    test('2026-07-25 v3 fix: connectionProvider 反应式跟随 preferencesProvider (Settings 改 toggle 后 GalleryContainer 立刻看到新值)',
+        () async {
+      // 回归测试: v1 用 ref.watch(preferencesStoreProvider) 是 stable Provider,
+      // 改设置后 connectionProvider 不会更新 → GalleryContainer 下载按钮永远按旧值走
+      SharedPreferences.setMockInitialValues({
+        'camera_connection_config': jsonEncode({
+          'host': '192.168.1.1',
+          'port': 15740,
+          'transportMode': 'experimentalNikon',
+          'autoExportToPhotoLibrary': false,
+          'prioritizeJPEGDownloads': false,
+        }),
+      });
+      final sp = await SharedPreferences.getInstance();
+      final container = ProviderContainer(overrides: [
+        sharedPreferencesProvider.overrideWithValue(sp),
+      ]);
+      addTearDown(() => container.dispose());
+
+      expect(container.read(connectionProvider).autoExportToPhotoLibrary, isFalse);
+      expect(container.read(connectionProvider).prioritizeJPEGDownloads, isFalse);
+
+      // 修改 preferencesProvider (Settings 页 toggle)
+      container.read(preferencesProvider.notifier).setAutoExportToPhotoLibrary(true);
+      container.read(preferencesProvider.notifier).setPrioritizeJPEGDownloads(true);
+
+      // connectionProvider 应立即反应 (不需重启 app)
+      expect(container.read(connectionProvider).autoExportToPhotoLibrary, isTrue,
+          reason: '偏好改动后 connectionProvider 必须立刻反映');
+      expect(container.read(connectionProvider).prioritizeJPEGDownloads, isTrue);
+    });
   });
 }

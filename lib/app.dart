@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'domain/camera_session.dart';
+import 'domain/download_queue_state.dart';
 import 'features/app_shell/app_shell_view_model.dart';
 import 'features/connection_setup/connection_container.dart';
+import 'features/connection_setup/connection_view_model.dart';
+import 'features/downloads/download_manager_view_model.dart';
 import 'features/downloads/downloads_container.dart';
 import 'features/photo_browser/gallery_container.dart';
+import 'features/photo_browser/gallery_view_model.dart';
 import 'features/settings/settings_container.dart';
 import 'features/shared/app_theme.dart';
+import 'services/wifi_watcher.dart';
 
 class ViewfinderApp extends ConsumerStatefulWidget {
   const ViewfinderApp({super.key});
@@ -15,9 +21,27 @@ class ViewfinderApp extends ConsumerStatefulWidget {
   ConsumerState<ViewfinderApp> createState() => _ViewfinderAppState();
 }
 
-class _ViewfinderAppState extends ConsumerState<ViewfinderApp> {
+class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   String? _shownAlertId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    ref.read(downloadManagerProvider.notifier).handleScenePhaseChange(state);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +69,36 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp> {
           ),
         );
       });
+    });
+
+    ref.listen<CameraSession?>(
+        connectionProvider.select((s) => s.activeSession), (prev, next) {
+      final wasConnected = prev != null;
+      final isConnected = next != null;
+      if (wasConnected && !isConnected) {
+        if (ref.read(downloadManagerProvider).status ==
+            DownloadQueueStatus.running) {
+          ref.read(downloadManagerProvider.notifier).pauseQueue();
+          ref.read(appShellProvider.notifier).appendLog(
+                '相机已断开，下载队列已自动暂停。',
+              );
+        }
+      }
+      ref.read(galleryProvider.notifier).onSessionChanged(prev, next);
+    });
+
+    ref.listen<bool>(cameraWifiConnectedProvider, (prev, next) {
+      if (prev == null) return;
+      if (prev == next) return;
+      if (!next) {
+        if (ref.read(downloadManagerProvider).status ==
+            DownloadQueueStatus.running) {
+          ref.read(downloadManagerProvider.notifier).pauseQueue();
+          ref.read(appShellProvider.notifier).appendLog(
+                'Wi-Fi 已断开相机热点，下载队列已自动暂停。',
+              );
+        }
+      }
     });
 
     final shell = ref.watch(appShellProvider);

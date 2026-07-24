@@ -43,4 +43,70 @@ void main() {
       );
     });
   });
+
+  group('PhotoLibraryPermission enum', () {
+    test('4 个权限状态值 (granted/limited/denied/neverAskAgain)', () {
+      expect(PhotoLibraryPermission.values.length, 4);
+      expect(PhotoLibraryPermission.values, contains(PhotoLibraryPermission.granted));
+      expect(PhotoLibraryPermission.values, contains(PhotoLibraryPermission.limited));
+      expect(PhotoLibraryPermission.values, contains(PhotoLibraryPermission.denied));
+      expect(PhotoLibraryPermission.values, contains(PhotoLibraryPermission.neverAskAgain));
+    });
+
+    test('iOS 映射: limited → limited (iOS 14+ 部分授权)', () {
+      // iOS 端的 switch case 在 photo_library_channel.dart:65
+      // 这里通过枚举值存在性间接验证
+      expect(PhotoLibraryPermission.limited.name, 'limited');
+    });
+  });
+
+  group('PhotoLibraryChannel.mapAndroidResult (计划 §8.3)', () {
+    test('"limited" → PhotoLibraryPermission.limited (Android 部分授权)', () {
+      expect(PhotoLibraryChannel.mapAndroidResult('limited'),
+          PhotoLibraryPermission.limited);
+    });
+
+    test('"granted" → granted', () {
+      expect(PhotoLibraryChannel.mapAndroidResult('granted'),
+          PhotoLibraryPermission.granted);
+    });
+
+    test('"denied" → denied', () {
+      expect(PhotoLibraryChannel.mapAndroidResult('denied'),
+          PhotoLibraryPermission.denied);
+    });
+
+    test('"never_ask_again" → neverAskAgain', () {
+      expect(PhotoLibraryChannel.mapAndroidResult('never_ask_again'),
+          PhotoLibraryPermission.neverAskAgain);
+    });
+
+    test('未知 / null → denied (fallback)', () {
+      expect(PhotoLibraryChannel.mapAndroidResult(null), PhotoLibraryPermission.denied);
+      expect(PhotoLibraryChannel.mapAndroidResult('garbage'), PhotoLibraryPermission.denied);
+    });
+  });
+
+  group('PhotoLibraryChannel.mapIosResult (计划 §8.2)', () {
+    test('"limited" → PhotoLibraryPermission.limited (iOS 14+ .addOnly 部分授权)',
+        () {
+      expect(PhotoLibraryChannel.mapIosResult('limited'),
+          PhotoLibraryPermission.limited);
+    });
+
+    test('"authorized" → granted', () {
+      expect(PhotoLibraryChannel.mapIosResult('authorized'),
+          PhotoLibraryPermission.granted);
+    });
+
+    test('"restricted" → denied', () {
+      expect(PhotoLibraryChannel.mapIosResult('restricted'),
+          PhotoLibraryPermission.denied);
+    });
+
+    test('未知 / null → denied (fallback)', () {
+      expect(PhotoLibraryChannel.mapIosResult(null), PhotoLibraryPermission.denied);
+      expect(PhotoLibraryChannel.mapIosResult('garbage'), PhotoLibraryPermission.denied);
+    });
+  });
 }

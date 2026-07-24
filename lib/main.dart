@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
@@ -31,6 +35,8 @@ void main() async {
   final notificationService = FlutterDownloadNotificationService(
     plugin: _createNotificationsPlugin(),
   );
+
+  unawaited(_requestRuntimePermissions(notificationService));
 
   runApp(
     ProviderScope(
@@ -70,4 +76,20 @@ FlutterLocalNotificationsPlugin _createNotificationsPlugin() {
     },
   );
   return plugin;
+}
+
+Future<void> _requestRuntimePermissions(
+  DownloadNotificationService notificationService,
+) async {
+  if (!Platform.isAndroid) {
+    return;
+  }
+  final notification = await Permission.notification.request();
+  if (!notification.isGranted) {
+    log_util.appLogger.warning('通知权限被拒绝，进度通知将不会显示。');
+  }
+  final location = await Permission.locationWhenInUse.request();
+  if (!location.isGranted) {
+    log_util.appLogger.warning('位置权限被拒绝，Wi-Fi SSID 检测将退化为低精度模式。');
+  }
 }

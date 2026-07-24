@@ -29,6 +29,7 @@ class FlutterDownloadNotificationService implements DownloadNotificationService 
   final Map<int, String> _titles = {};
   final Map<int, String> _bodies = {};
   final Map<int, int> _progresses = {};
+  final Map<int, String> _payloads = {};
 
   static const _channelId = 'download_progress';
 
@@ -45,6 +46,7 @@ class FlutterDownloadNotificationService implements DownloadNotificationService 
     _titles[notificationId] = title;
     _bodies[notificationId] = body;
     _progresses[notificationId] = progress;
+    if (payload != null) _payloads[notificationId] = payload;
 
     final androidDetails = AndroidNotificationDetails(
       channelId ?? _channelId,
@@ -101,7 +103,13 @@ class FlutterDownloadNotificationService implements DownloadNotificationService 
       android: androidDetails,
       iOS: iosDetails,
     );
-    await _plugin.show(notificationId, t, b, details, payload: null);
+    await _plugin.show(
+      notificationId,
+      t,
+      b,
+      details,
+      payload: _payloads[notificationId],
+    );
   }
 
   @override
@@ -109,6 +117,7 @@ class FlutterDownloadNotificationService implements DownloadNotificationService 
     _titles.remove(notificationId);
     _bodies.remove(notificationId);
     _progresses.remove(notificationId);
+    _payloads.remove(notificationId);
     await _plugin.cancel(notificationId);
   }
 
@@ -117,6 +126,7 @@ class FlutterDownloadNotificationService implements DownloadNotificationService 
     _titles.clear();
     _bodies.clear();
     _progresses.clear();
+    _payloads.clear();
     await _plugin.cancelAll();
   }
 }
