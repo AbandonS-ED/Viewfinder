@@ -238,3 +238,25 @@ reference/
 | 2026-07-21 | 初版，配套 docs/ 三件套 |
 | 2026-07-23 | Phase 1 完成：PTP/IP 协议层 + 47 单测全绿 |
 | 2026-07-23 | Phase 2 完成：UI 骨架 + 102 单测全绿。详见 `docs/项目状态.md §5.3` |
+| 2026-07-24 | Phase 3 完成：完整下载链路 + Android 前台服务 + 进度通知 + 131 单测全绿 + APK 构建成功。关键决策：onProgress 回调链绕过 Riverpod；Provider 替代 iOS Coordinator；缩略图纯内存 cache（磁盘 cache 因 Android 性能不适合）。详见 `docs/项目状态.md §5.4` |
+
+### 12.1 Phase 3 关键决策 (新增)
+
+| 决策 | 备选 | 原因 |
+|---|---|---|
+| `onProgress` 回调链绕过 Riverpod | 通过 Riverpod 广播进度 | 避免每秒多次 `state = ...` 触发 UI rebuild；直接从 transport → notifier → notification |
+| Provider 替代 `CameraSessionCoordinator` | 保留 iOS Coordinator 模式 | Riverpod Provider 拓扑 + `WifiWatcher` 天然替代 coordinator 职责 |
+| `NotificationService.update()` 直接接管数字形变 | 用 AnimatedBuilder | 通知栏进度条需要 plain int 百分比，动画应由系统通知处理 |
+| 缩略图纯内存 cache | 内存 + 磁盘 cache | Android 文件系统小文件读写性能不适合高频 thumbnail 场景 |
+
+### 12.2 Phase 3 新增代码规范
+
+| 文件 | 规范 |
+|---|---|
+| `services/notification_service.dart` | `show`/`update`/`cancelAll` 三个公开方法；不持有 Riverpod ref；非 `@MainActor`（在后台 isolate 调用） |
+| `services/background_runner.dart` | `start`/`stop`/`isRunning` 三个公开方法；通过 `IsolateNameServer` 与主 isolate 通信 |
+| `services/photo_library_channel_*.dart` | `saveAsset(Uint8List data, String fileName)` → `Future<bool>`；各端实现自行处理权限/错误 |
+| `services/asset_thumbnail_service.dart` | 公开方法 `getThumbnail(PhotoAsset asset)` → `Future<Uint8List?>`；内部 `Map` cache + `Map` inFlight 去重 |
+| `services/download_store.dart` | `save`/`load`/`clear` 三方法；JSON round-trip；`encodeIfNotPresent` 兼容 |
+| `services/wifi_watcher.dart` | `start`/`stop`/`onWifiDisconnected` Stream；不直接 import Riverpod |
+| `services/log_file_store.dart` | `write`/`readAll`/`clear` + 1MB rotation |

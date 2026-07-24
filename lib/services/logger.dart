@@ -1,5 +1,7 @@
 import 'package:logging/logging.dart' as logging;
 
+import 'log_file_store.dart';
+
 final AppLogger appLogger = AppLogger('Viewfinder');
 
 class AppLogger {
@@ -12,11 +14,21 @@ class AppLogger {
   void severe(String message) => _logger.severe(message);
 }
 
-void setupLogging() {
+LogFileStore? _logStore;
+
+void setupLogging(LogFileStore store) {
+  _logStore = store;
   logging.hierarchicalLoggingEnabled = true;
   logging.Logger.root.level = logging.Level.ALL;
   logging.Logger.root.onRecord.listen((record) {
-    // ignore: avoid_print
-    print('[${record.level.name}] ${record.loggerName}: ${record.message}');
+    final level = switch (record.level.name) {
+      'INFO' => LogLevel.info,
+      'WARNING' => LogLevel.warning,
+      _ => LogLevel.severe,
+    };
+    _logStore?.append(
+      message: '${record.loggerName}: ${record.message}',
+      level: level,
+    );
   });
 }

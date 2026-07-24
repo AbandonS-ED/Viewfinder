@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:typed_data';
 
 import '../domain/camera_connection_config.dart';
@@ -107,6 +106,35 @@ class ExperimentalNikonTransport implements CameraTransport {
     }
   }
 
+  /// 真传 [onProgress] 给底层 PtpipSession.getObjectToTempFile。Phase 3 修复。
+  /// bytesTransferred 由 PtpipSession 累计；totalBytes 用 asset.byteSize 兜底。
+  Future<String> downloadAssetToTempFile(
+    PhotoAsset asset,
+    CameraSession session, {
+    required void Function(int bytesTransferred, int totalBytes)? onProgress,
+  }) async {
+    final s = _session;
+    if (s == null) throw const CameraAppError.notConnected();
+    final handle = int.tryParse(asset.remoteIdentifier);
+    if (handle == null) {
+      throw CameraAppError.unsupportedOperation('bad handle: ${asset.remoteIdentifier}');
+    }
+    try {
+      return await s.getObjectToTempFile(
+        handle: handle,
+        suggestedFileName: asset.fileName,
+        expectedByteSize: asset.byteSize > 0 ? asset.byteSize : null,
+        onProgress: onProgress == null
+            ? null
+            : (int transferred, int total) {
+                onProgress(transferred, total > 0 ? total : transferred);
+              },
+      );
+    } catch (e) {
+      throw _mapError(e);
+    }
+  }
+
   @override
   Future<Uint8List?> downloadThumbnail(PhotoAsset asset, CameraSession session) async {
     final s = _session;
@@ -128,11 +156,21 @@ class ExperimentalNikonTransport implements CameraTransport {
     CameraSession session, {
     void Function(DownloadTransferProgress)? onProgress,
   }) async {
-    final bytes = await downloadAsset(asset, session);
-    final tempDir = Directory.systemTemp.createTempSync();
-    final file = File('${tempDir.path}/${asset.fileName}');
-    await file.writeAsBytes(bytes);
-    return file.path;
+    return downloadAssetToTempFile(
+      asset,
+      session,
+      onProgress: onProgress == null
+          ? null
+          : (int transferred, int total) {
+              onProgress(DownloadTransferProgress(
+                bytesTransferred: transferred,
+                totalBytes: total,
+                resumedCount: 0,
+                currentOffset: transferred,
+                chunkSize: 0,
+              ));
+            },
+    );
   }
 
   @override

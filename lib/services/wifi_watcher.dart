@@ -1,0 +1,70 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:network_info_plus/network_info_plus.dart';
+
+/// Phase 3 §9. 热点检测服务。BSSID 优先，SSID fallback。
+abstract class WifiWatcher {
+  bool get isCameraWifiConnected;
+  Stream<bool> get connectionStream;
+  Future<void> dispose();
+}
+
+/// BSSID + SSID 双层匹配的默认实现。
+class DefaultWifiWatcher implements WifiWatcher {
+  DefaultWifiWatcher({
+    NetworkInfo? networkInfo,
+    Connectivity? connectivity,
+  })  : _networkInfo = networkInfo ?? NetworkInfo(),
+        _connectivity = connectivity ?? Connectivity() {
+    _subscription = _connectivity.onConnectivityChanged.listen(
+      (_) => _refresh(),
+      onError: (_) {},
+    );
+    _refresh();
+  }
+
+  final NetworkInfo _networkInfo;
+  final Connectivity _connectivity;
+  final StreamController<bool> _controller = StreamController<bool>.broadcast();
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
+
+  bool _isCameraWifi = false;
+
+  @override
+  bool get isCameraWifiConnected => _isCameraWifi;
+
+  @override
+  Stream<bool> get connectionStream => _controller.stream;
+
+  Future<void> _refresh() async {
+    try {
+      final bssid = await _networkInfo.getWifiBSSID();
+      if (_matchesNikonPattern(bssid)) {
+        _setConnected(true);
+        return;
+      }
+      final ssid = await _networkInfo.getWifiName();
+      _setConnected(_matchesNikonPattern(ssid));
+    } catch (_) {
+      _setConnected(false);
+    }
+  }
+
+  bool _matchesNikonPattern(String? s) {
+    if (s == null) return false;
+    return s.contains('Nikon') || s.contains('nikon') || s.contains('NIKON');
+  }
+
+  void _setConnected(bool v) {
+    if (_isCameraWifi == v) return;
+    _isCameraWifi = v;
+    _controller.add(v);
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _subscription?.cancel();
+    await _controller.close();
+  }
+}

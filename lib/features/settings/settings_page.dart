@@ -12,6 +12,7 @@ class SettingsPage extends StatefulWidget {
     required this.onSetPort,
     required this.onSetAutoExport,
     required this.onSetPrioritizeJPEG,
+    this.onExportLogs,
   });
 
   final CameraConnectionConfig config;
@@ -19,6 +20,7 @@ class SettingsPage extends StatefulWidget {
   final void Function(String) onSetPort;
   final void Function(bool) onSetAutoExport;
   final void Function(bool) onSetPrioritizeJPEG;
+  final Future<void> Function()? onExportLogs;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -191,19 +193,32 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _supportSection(BuildContext context) {
-    return const Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader('支持与版本'),
-        SizedBox(height: 12),
+        const SectionHeader('支持与版本'),
+        const SizedBox(height: 12),
         CustomCard(
           child: Column(
             children: [
-              GridRowItem(
+              const GridRowItem(
                 label: '版本',
                 value: 'Viewfinder v0.2.0',
                 icon: Icons.info_outline,
               ),
+              if (widget.onExportLogs != null) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await widget.onExportLogs?.call();
+                    },
+                    icon: const Icon(Icons.file_download_outlined, size: 18),
+                    label: const Text('导出日志'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -44,6 +44,20 @@ dependencies:
   google_fonts: ^6.2.1           # Instrument Serif + DM Mono
   logging: ^1.2.0                # services/logger.dart 占位 Logger
 
+  # Phase 3 真机端到端 + 完整下载链路新增依赖
+  path_provider: ^2.1.0          # §10 LogFileStore + §4 DownloadStore 应用目录
+  sync: ^0.3.0                   # §4 DownloadStore / §3 AssetThumbnailService 并发安全 Mutex
+  path: ^1.9.0                   # §4 DownloadStore 路径拼接（p.join）
+  crypto: ^3.0.3                 # §3 AssetThumbnailService SHA256 缩略图 cache key
+  connectivity_plus: ^6.0.0      # §9 WifiWatcher Wi-Fi 状态
+  network_info_plus: ^4.0.0       # §9 WifiWatcher BSSID/SSID
+  permission_handler: ^11.0.0     # §17.1/17.2/17.3 运行时权限
+  app_settings: ^5.1.0           # §17.2 跳系统设置
+  share_plus: ^9.0.0             # §13.5 导出日志分享
+  cross_file: ^0.3.0             # XFile 类型 (share_plus 间接依赖，显式声明)
+  flutter_local_notifications: ^17.0.0  # §7 DownloadNotificationService 进度通知
+  flutter_background_service: ^5.0.0    # §6 BackgroundRunner Android Foreground Service
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

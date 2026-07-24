@@ -8,14 +8,19 @@
 - **目标平台**：iOS 16.0+ / Android API 24+
 - **协议**：CIPA PTP/IP (TCP)，默认端点 `192.168.1.1:15740`
 - **技术栈**：Dart 3 + Flutter stable + Riverpod 2.x + freezed 2.x + `dart:io` Socket + `google_fonts`
-- **状态**：Phase 0 + Phase 1 + Phase 2 已完成；102 个单测全绿；`dart analyze` 零警告
+- **状态**：Phase 0 + Phase 1 + Phase 2 + Phase 3 已完成；131 个单测全绿；`dart analyze` 零警告；`flutter build apk --debug` 成功
 
-## 当前能力 (Phase 2)
+## 当前能力 (Phase 3)
 
 - **连接**：默认 192.168.1.1:15740；可在设置页编辑 host/port，重启后保留
-- **相册**：mock 12 张照片缩略图（缩略图/网格/选择/3 段式状态）
-- **下载**：占位 5 section（概览 / 队列 / 当前下载 / 传输速率 / 已下载记录）
-- **设置**：连接配置 + 下载行为 + 版本信息
+- **相册**：连接相机后展示真实缩略图（`AssetThumbnailService` 内存 cache + in-flight 去重）；离线态 fallback 图标；支持多选 + 全选 + 清除选择
+- **下载**：完整队列管理（enqueue / cancel / retry / pause / resume / clearFinished）；`DownloadManagerNotifier` 13 方法；队列切换 runQueue 循环；`downloadSelected` 批量入队 + JPEG 优先排序；`ActiveDownloadProgress` 实时进度（文件名 / 项号 / bytes / 速率）
+- **进度通知**：Android 进度条通知（`DownloadNotificationService.show/update/cancelAll`）；通知栏实时更新
+- **后台下载**：Android `flutter_background_service` Foreground Service；iOS `UIBackgroundTask` MethodChannel 占位（需 Mac 验证）
+- **相册导出**：Android `MediaStore` API（`PhotoLibraryPlugin.kt`）；iOS `PHPhotoLibrary.addOnly`（`PhotoLibraryPlugin.swift`，需 Mac 验证）；Dart IO stub（测试/桌面用）
+- **日志**：1MB rotation + 3 文件备份（`LogFileStore`）；设置页"导出日志"按钮（share_plus 分享面板）
+- **Wi-Fi 断线感知**：BSSID + SSID 双指标监听（`WifiWatcher`）；断线自动触发队列暂停
+- **设置**：连接配置 + 下载行为（自动入相册 / JPEG 优先）+ 导出日志 + 版本信息
 - **主题**：暖阳琥珀 (#F9F9F8 暖白 + #D4A24E 琥珀金)；衬线标题用 Instrument Serif，等宽标签用 DM Mono
 
 ## 文档导航

@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import '../primitives/ptpip_data_types.dart';
 import '../primitives/ptpip_data_structures.dart';
-import '../primitives/ptpip_packet_codec.dart';
 import '../primitives/ptpip_error.dart';
+import '../primitives/ptpip_packet_codec.dart';
 import '../transport/ptpip_connection.dart';
 
 import '../../domain/photo_asset.dart';
@@ -127,6 +128,120 @@ class PtpipSession {
           e.responseCode == PTPResponseCode.operationNotSupported.rawValue) {
         return null;
       }
+      rethrow;
+    }
+  }
+
+  /// 下载对象到临时文件（Phase 3）。per-chunk 写盘 + 调 [onProgress]。
+  /// 返回 temp file 绝对路径，caller 负责用完后清理（move 到 downloads/ 或 delete）。
+  Future<String> getObjectToTempFile({
+    required int handle,
+    required String suggestedFileName,
+    required int? expectedByteSize,
+    required void Function(int bytesTransferred, int totalBytes)? onProgress,
+  }) async {
+    final txId = _nextTransactionID++;
+    await _commandConnection.send(
+      PTPIPCodec.encodeOperationRequest(
+        operation: PTPOperationCode.getObject,
+        transactionID: txId,
+        parameters: [handle],
+        dataPhase: PTPIPDataPhaseInfo.noDataOrDataIn,
+      ),
+    );
+
+    final tempDir = Directory.systemTemp.createTempSync('viewfinder_');
+    final file = File('${tempDir.path}${Platform.pathSeparator}$suggestedFileName');
+    final sink = file.openWrite();
+    var bytesWritten = 0;
+    var totalLength = expectedByteSize ?? 0;
+
+    Future<void> cleanup() async {
+      try {
+        await sink.close();
+      } catch (_) {}
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+
+    try {
+      final first = await _commandConnection.receivePacket();
+      if (first.type == PTPIPPacketType.operationResponse) {
+        await cleanup();
+        final resp = PTPIPCodec.parseResponsePacket(first);
+        if (resp.transactionID != txId) {
+          throw PTPIPError.invalidTransaction(expected: txId, actual: resp.transactionID);
+        }
+        throw PTPIPError.unexpectedResponse(resp.code);
+      }
+      if (first.type != PTPIPPacketType.startData) {
+        await cleanup();
+        throw PTPIPError.unexpectedPacket(
+          expected: [PTPIPPacketType.startData],
+          actual: first.type,
+        );
+      }
+      final startInfo = PTPIPCodec.parseStartDataPayload(first.payload);
+      if (startInfo.transactionID != txId) {
+        await cleanup();
+        throw PTPIPError.invalidTransaction(expected: txId, actual: startInfo.transactionID);
+      }
+      if (expectedByteSize == null) {
+        totalLength = startInfo.totalLength;
+      }
+
+      while (true) {
+        final packet = await _commandConnection.receivePacket();
+        switch (packet.type) {
+          case PTPIPPacketType.data:
+            final info = PTPIPCodec.parseDataPayload(packet.payload);
+            if (info.transactionID != txId) {
+              await cleanup();
+              throw PTPIPError.invalidTransaction(expected: txId, actual: info.transactionID);
+            }
+            sink.add(info.bytes);
+            bytesWritten += info.bytes.length;
+            onProgress?.call(bytesWritten, totalLength);
+          case PTPIPPacketType.endData:
+            final endInfo = PTPIPCodec.parseDataPayload(packet.payload);
+            if (endInfo.transactionID != txId) {
+              await cleanup();
+              throw PTPIPError.invalidTransaction(expected: txId, actual: endInfo.transactionID);
+            }
+            final respPacket = await _commandConnection.receivePacket();
+            final resp = PTPIPCodec.parseResponsePacket(respPacket);
+            if (resp.transactionID != txId) {
+              await cleanup();
+              throw PTPIPError.invalidTransaction(expected: txId, actual: resp.transactionID);
+            }
+            if (resp.code != PTPResponseCode.ok.rawValue) {
+              await cleanup();
+              throw PTPIPError.unexpectedResponse(resp.code);
+            }
+            await sink.flush();
+            await sink.close();
+            return file.path;
+          case PTPIPPacketType.operationResponse:
+            await cleanup();
+            final resp = PTPIPCodec.parseResponsePacket(packet);
+            throw PTPIPError.unexpectedResponse(resp.code);
+          default:
+            await cleanup();
+            throw PTPIPError.unexpectedPacket(
+              expected: [
+                PTPIPPacketType.data,
+                PTPIPPacketType.endData,
+                PTPIPPacketType.operationResponse,
+              ],
+              actual: packet.type,
+            );
+        }
+      }
+    } catch (_) {
+      // 异常路径：cleanup 已在 throw 前调过；这里 rethrow
       rethrow;
     }
   }

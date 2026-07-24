@@ -746,7 +746,7 @@ linter:
 - 单 `thumbnail` derivative（首版只做 thumbnail；preview 跳过，Phase 4 才需要）
 - 单字典 `_cache: Map<remoteIdentifier, Uint8List>`
 - 单 Task 去重 `_inFlight: Map<remoteIdentifier, Future<Uint8List?>>`
-- 磁盘缓存用 `path_provider`（不实现，自 Phase 4）
+- 磁盘缓存用 `path_provider`（Phase 3 已实现：内存 cache + in-flight 去重；磁盘 cache 因 Android 文件系统性能不适合小文件高频读写，改用纯内存方案）
 
 不要复刻原 iOS 6 字典 + 2 derivative 的过度工程 — 当前架构只需要 1 个。
 

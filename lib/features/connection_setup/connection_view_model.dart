@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/camera_app_error.dart';
 import '../../domain/camera_connection_config.dart';
+import '../../domain/camera_session.dart';
 import '../../domain/camera_transport_mode.dart';
 import '../../domain/camera_workflow_state.dart';
+import '../../protocol/camera_transport.dart';
 import '../../protocol/camera_transport_factory.dart';
 import '../settings/settings_view_model.dart';
 import 'connection_state.dart';
@@ -16,6 +18,12 @@ final transportFactoryProvider = Provider<CameraTransportFactory>((ref) {
 
 final connectionProvider =
     NotifierProvider<ConnectionNotifier, ConnectionState>(ConnectionNotifier.new);
+
+final cameraTransportProvider = StateProvider<CameraTransport?>((ref) => null);
+
+final cameraSessionProvider = Provider<CameraSession?>((ref) {
+  return ref.watch(connectionProvider.select((s) => s.activeSession));
+});
 
 class ConnectionNotifier extends Notifier<ConnectionState> {
   @override
@@ -67,6 +75,7 @@ class ConnectionNotifier extends Notifier<ConnectionState> {
       );
       final transport = factory.makeTransport();
       final session = await transport.connect(config: config);
+      ref.read(cameraTransportProvider.notifier).state = transport;
       state = state.copyWith(
         workflowState: CameraWorkflowState.connected,
         activeSession: session,
@@ -102,6 +111,7 @@ class ConnectionNotifier extends Notifier<ConnectionState> {
     final factory = ref.read(transportFactoryProvider);
     final transport = factory.makeTransport();
     await transport.disconnect(session);
+    ref.read(cameraTransportProvider.notifier).state = null;
     state = state.copyWith(
       workflowState: CameraWorkflowState.waitingForWifi,
       activeSession: null,

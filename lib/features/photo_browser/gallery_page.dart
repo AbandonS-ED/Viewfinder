@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/camera_session.dart';
 import '../../domain/photo_asset.dart';
+import '../../protocol/camera_transport.dart';
+import '../../services/asset_thumbnail_service.dart';
 import '../shared/app_theme.dart';
 import '../shared/shared_components.dart';
 import 'gallery_state.dart';
+import 'thumbnail_widget.dart';
 
 class GalleryPage extends StatelessWidget {
   const GalleryPage({
@@ -14,6 +18,10 @@ class GalleryPage extends StatelessWidget {
     required this.onToggleSelection,
     required this.onSelectAll,
     required this.onClearSelection,
+    this.onDownloadSelected,
+    this.thumbnailService,
+    this.transport,
+    this.session,
   });
 
   final GalleryState state;
@@ -22,6 +30,13 @@ class GalleryPage extends StatelessWidget {
   final void Function(String id) onToggleSelection;
   final VoidCallback onSelectAll;
   final VoidCallback onClearSelection;
+  final VoidCallback? onDownloadSelected;
+  final AssetThumbnailServing? thumbnailService;
+  final CameraTransport? transport;
+  final CameraSession? session;
+
+  bool get _canShowThumbnails =>
+      thumbnailService != null && transport != null && session != null;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +77,7 @@ class GalleryPage extends StatelessWidget {
   }
 
   Widget _selectionBar(BuildContext context) {
+    final downloadCb = onDownloadSelected;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
@@ -77,6 +93,13 @@ class GalleryPage extends StatelessWidget {
             expands: false,
             onPressed: onClearSelection,
           ),
+          const SizedBox(width: 8),
+          if (downloadCb != null)
+            SecondaryActionButton(
+              title: '下载所选',
+              expands: false,
+              onPressed: downloadCb,
+            ),
         ],
       ),
     );
@@ -148,31 +171,42 @@ class GalleryPage extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    asset.kind == PhotoAssetKind.raw
-                        ? Icons.camera_alt_outlined
-                        : Icons.photo_outlined,
-                    color: AppThemeColors.t2,
-                    size: 28,
-                  ),
-                  const SizedBox(height: 4),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      asset.fileName,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 9, color: AppThemeColors.tm),
+            if (_canShowThumbnails)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: ThumbnailWidget(
+                  asset: asset,
+                  service: thumbnailService!,
+                  transport: transport!,
+                  session: session!,
+                ),
+              )
+            else
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      asset.kind == PhotoAssetKind.raw
+                          ? Icons.camera_alt_outlined
+                          : Icons.photo_outlined,
+                      color: AppThemeColors.t2,
+                      size: 28,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        asset.fileName,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 9, color: AppThemeColors.tm),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
             if (selected)
               Positioned(
                 top: 4,

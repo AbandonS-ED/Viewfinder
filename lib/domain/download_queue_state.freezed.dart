@@ -20,6 +20,8 @@ mixin _$DownloadQueueState {
   List<DownloadJob> get jobs => throw _privateConstructorUsedError;
   String? get activeJobID => throw _privateConstructorUsedError;
   DownloadQueueStatus get status => throw _privateConstructorUsedError;
+  ActiveDownloadProgress? get activeDownloadProgress =>
+      throw _privateConstructorUsedError;
 
   /// Create a copy of DownloadQueueState
   /// with the given fields replaced by the non-null parameter values.
@@ -39,7 +41,10 @@ abstract class $DownloadQueueStateCopyWith<$Res> {
     List<DownloadJob> jobs,
     String? activeJobID,
     DownloadQueueStatus status,
+    ActiveDownloadProgress? activeDownloadProgress,
   });
+
+  $ActiveDownloadProgressCopyWith<$Res>? get activeDownloadProgress;
 }
 
 /// @nodoc
@@ -60,6 +65,7 @@ class _$DownloadQueueStateCopyWithImpl<$Res, $Val extends DownloadQueueState>
     Object? jobs = null,
     Object? activeJobID = freezed,
     Object? status = null,
+    Object? activeDownloadProgress = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -75,8 +81,29 @@ class _$DownloadQueueStateCopyWithImpl<$Res, $Val extends DownloadQueueState>
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
                       as DownloadQueueStatus,
+            activeDownloadProgress: freezed == activeDownloadProgress
+                ? _value.activeDownloadProgress
+                : activeDownloadProgress // ignore: cast_nullable_to_non_nullable
+                      as ActiveDownloadProgress?,
           )
           as $Val,
+    );
+  }
+
+  /// Create a copy of DownloadQueueState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ActiveDownloadProgressCopyWith<$Res>? get activeDownloadProgress {
+    if (_value.activeDownloadProgress == null) {
+      return null;
+    }
+
+    return $ActiveDownloadProgressCopyWith<$Res>(
+      _value.activeDownloadProgress!,
+      (value) {
+        return _then(_value.copyWith(activeDownloadProgress: value) as $Val);
+      },
     );
   }
 }
@@ -94,7 +121,11 @@ abstract class _$$DownloadQueueStateImplCopyWith<$Res>
     List<DownloadJob> jobs,
     String? activeJobID,
     DownloadQueueStatus status,
+    ActiveDownloadProgress? activeDownloadProgress,
   });
+
+  @override
+  $ActiveDownloadProgressCopyWith<$Res>? get activeDownloadProgress;
 }
 
 /// @nodoc
@@ -114,6 +145,7 @@ class __$$DownloadQueueStateImplCopyWithImpl<$Res>
     Object? jobs = null,
     Object? activeJobID = freezed,
     Object? status = null,
+    Object? activeDownloadProgress = freezed,
   }) {
     return _then(
       _$DownloadQueueStateImpl(
@@ -129,6 +161,10 @@ class __$$DownloadQueueStateImplCopyWithImpl<$Res>
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
                   as DownloadQueueStatus,
+        activeDownloadProgress: freezed == activeDownloadProgress
+            ? _value.activeDownloadProgress
+            : activeDownloadProgress // ignore: cast_nullable_to_non_nullable
+                  as ActiveDownloadProgress?,
       ),
     );
   }
@@ -141,6 +177,7 @@ class _$DownloadQueueStateImpl extends _DownloadQueueState {
     final List<DownloadJob> jobs = const <DownloadJob>[],
     this.activeJobID,
     this.status = DownloadQueueStatus.idle,
+    this.activeDownloadProgress,
   }) : _jobs = jobs,
        super._();
 
@@ -158,10 +195,12 @@ class _$DownloadQueueStateImpl extends _DownloadQueueState {
   @override
   @JsonKey()
   final DownloadQueueStatus status;
+  @override
+  final ActiveDownloadProgress? activeDownloadProgress;
 
   @override
   String toString() {
-    return 'DownloadQueueState(jobs: $jobs, activeJobID: $activeJobID, status: $status)';
+    return 'DownloadQueueState(jobs: $jobs, activeJobID: $activeJobID, status: $status, activeDownloadProgress: $activeDownloadProgress)';
   }
 
   @override
@@ -172,7 +211,9 @@ class _$DownloadQueueStateImpl extends _DownloadQueueState {
             const DeepCollectionEquality().equals(other._jobs, _jobs) &&
             (identical(other.activeJobID, activeJobID) ||
                 other.activeJobID == activeJobID) &&
-            (identical(other.status, status) || other.status == status));
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.activeDownloadProgress, activeDownloadProgress) ||
+                other.activeDownloadProgress == activeDownloadProgress));
   }
 
   @override
@@ -181,6 +222,7 @@ class _$DownloadQueueStateImpl extends _DownloadQueueState {
     const DeepCollectionEquality().hash(_jobs),
     activeJobID,
     status,
+    activeDownloadProgress,
   );
 
   /// Create a copy of DownloadQueueState
@@ -200,6 +242,7 @@ abstract class _DownloadQueueState extends DownloadQueueState {
     final List<DownloadJob> jobs,
     final String? activeJobID,
     final DownloadQueueStatus status,
+    final ActiveDownloadProgress? activeDownloadProgress,
   }) = _$DownloadQueueStateImpl;
   const _DownloadQueueState._() : super._();
 
@@ -209,6 +252,8 @@ abstract class _DownloadQueueState extends DownloadQueueState {
   String? get activeJobID;
   @override
   DownloadQueueStatus get status;
+  @override
+  ActiveDownloadProgress? get activeDownloadProgress;
 
   /// Create a copy of DownloadQueueState
   /// with the given fields replaced by the non-null parameter values.

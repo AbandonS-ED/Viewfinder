@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../services/log_file_store.dart';
 import 'settings_page.dart';
 import 'settings_view_model.dart';
+
+final logFileStoreProvider = Provider<LogFileStore>((ref) {
+  throw UnimplementedError('override in main.dart');
+});
 
 class SettingsContainer extends ConsumerWidget {
   const SettingsContainer({super.key});
@@ -21,6 +27,11 @@ class SettingsContainer extends ConsumerWidget {
       },
       onSetAutoExport: notifier.setAutoExportToPhotoLibrary,
       onSetPrioritizeJPEG: notifier.setPrioritizeJPEGDownloads,
+      onExportLogs: () async {
+        final store = ref.read(logFileStoreProvider);
+        final file = await store.exportFile();
+        await Share.shareXFiles([XFile(file.path)], text: 'Viewfinder 日志');
+      },
     );
   }
 }

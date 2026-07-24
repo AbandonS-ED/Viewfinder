@@ -10,6 +10,15 @@ class DownloadsContainer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(downloadManagerProvider);
-    return DownloadsPage(state: state);
+    final notifier = ref.read(downloadManagerProvider.notifier);
+    return DownloadsPage(
+      state: state,
+      onPause: () => notifier.pauseQueue(),
+      onResume: () => notifier.resumeInterruptedDownloads(),
+      onCancel: (id) => notifier.cancelJob(id),
+      onCancelAll: () => notifier.cancelAll(),
+      onClearFinished: () => notifier.clearFinished(),
+      onRetry: (id) => notifier.retryJob(id),
+    );
   }
 }

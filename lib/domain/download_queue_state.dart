@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'active_download_progress.dart';
 import 'download_job.dart';
 
 part 'download_queue_state.freezed.dart';
@@ -13,6 +14,8 @@ class DownloadQueueState with _$DownloadQueueState {
     String? activeJobID,
 
     @Default(DownloadQueueStatus.idle) DownloadQueueStatus status,
+
+    ActiveDownloadProgress? activeDownloadProgress,
   }) = _DownloadQueueState;
 
   const DownloadQueueState._();

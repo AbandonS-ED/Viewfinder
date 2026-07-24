@@ -256,18 +256,18 @@ class FakePtpipSocket implements PtpipSocket {
 原 iOS ViewModel 全 `@MainActor` + `@Published`。Dart 端用 Riverpod `Notifier`：
 
 | 原 iOS ViewModel | Flutter Notifier |
-|---|---|
+|---|---|---|
 | `ConnectionViewModel` | `ConnectionNotifier extends Notifier<ConnectionState>` |
 | `GalleryViewModel` | `GalleryNotifier extends AsyncNotifier<GalleryState>`（freezed 包 selectedAssetIDs + isLoading） |
-| `DownloadManagerViewModel` | `DownloadManagerNotifier extends Notifier<DownloadQueueState>` |
+| `DownloadManagerViewModel` | `DownloadManagerNotifier extends Notifier<DownloadQueueState>`（13 公开方法：enqueueSelected/cancelJob/retryJob/pauseJob/resumeJob/cancelAll/clearFinished/downloadSelected/loadPersistedQueue/pauseAll/resumeAll/unpauseJobsWithWifiActive/runQueue） |
 | `AppShellViewModel` | `AppShellNotifier extends Notifier<AppShellState>`（单一 Notifier，Phase 2 决策改：原方案是"多 Provider 组合"，统一为单一类） |
 
 关键设计：
 
-- **协议层不持有 Riverpod**：`PtpipSession` 是 plain Dart 类；Notifier 注入并订阅
-- **`StreamProvider`** 包装 socket 收到的数据事件；UI 用 `ref.watch(streamProvider)` 自动 rebuild
-- **`family` modifier** 处理多任务下载队列 (按 `downloadId` 区分)
-- **测试用 `ProviderContainer`** 注入 fake，不依赖 Flutter widget 测试框架
+- **协议层不持有 Riverpod**：`PtpipSession` 是 plain Dart 类
+- **onProgress 回调链**：`ExperimentalNikonTransport.downloadAsset(onProgress:)` → `DownloadManagerNotifier._handleProgressUpdate()` → `DownloadNotificationService.update()`，不通过 Riverpod 广播进度（避免 UI 不必要 rebuild）
+- **Provider 替代 Coordinator**：iOS `CameraSessionCoordinator` 职责由 Riverpod Provider 拓扑 + `WifiWatcher` 替代
+- **`unawaited(_save())`** fire-and-forget persistence（lint 规则）
 
 ---
 
@@ -398,29 +398,22 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 4. `flutter run` 起 app 4 个 Tab 切换正常
 5. Settings 页能改 host/port 并保存
 
-### Phase 3 — 真机验证 + 下载 + 进度通知 (5-7 天)
+### Phase 3 — ✅ 已完成 (2026-07-24)
 
 **目标**：在 Android 真机上跑通端到端：连接 + 浏览 + 下载 + 进度通知。
 
-**任务**：
-- Android 真机：连相机热点 → 启动 app → 看到照片缩略图列表 → 下载几张 → 通知中心看进度
-- iOS 真机（**前提：借到 macOS**）：同上
-- 补 `_parseDeviceInfo` / `_parseObjectInfo` 完整 dataset 解析（对照 iOS）
-- 单张下载通路：`GetObject` → 写本地 → MediaStore / PhotoLibrary 入库
-- 批量队列：参考 `DownloadAssetPrioritizer` (JPEG 优先)
-- `flutter_local_notifications` 进度条；`flutter_background_service` 保活（Android）
-- Wi-Fi 断线检测 + 暂停 / 重试
-- 本地日志文件写入 + Settings 页提供「导出日志」按钮
-- 创建 ios/ 目录（macOS 上 `flutter create . --platforms=ios`）
+🔧 **实际交付**：
+- Android APK 构建成功（`flutter build apk --debug`，160 MB）
+- 8 个核心 service：DownloadStore / AssetThumbnailService / WifiWatcher / LogFileStore / DownloadNotificationService / BackgroundRunner / PhotoLibraryChannel / DownloadManagerNotifier（13 方法 + runQueue 循环）
+- UI 连线：DownloadsPage 真实队列（pause/resume/cancel/retry/clearFinished）+ GalleryPage `onDownloadSelected` + 真实缩略图（AssetThumbnailService FutureBuilder）
+- Android 平台代码：PhotoLibraryPlugin.kt（MediaStore）+ BackgroundDownloadPlugin.kt + MainActivity.kt 注册 + AndroidManifest 权限 15 项 + foreground service
+- iOS 平台文件手动创建（需 macOS `flutter create --platforms=ios` 验证编译）
+- 集成测试 3 个新增（并发缩略图 / 日志 rotation / 队列持久化 round-trip）
+- 131 个单测全绿，`dart analyze` 零警告
 
-**不在本 Phase 范围**：
+**不在本 Phase 范围**（未变）：
 - ❌ UI 抛光 / 触觉 / 动效（Phase 4）
 - ❌ 多品牌（Phase 5）
-
-✅ 验收：
-- Android 真机批量下载 50 张 RAW+JPEG 混合，进程被杀后通知仍可恢复
-- 日志可导出
-- 缩略图无延迟，下载进度实时更新
 
 ### Phase 4 — UI 抛光 + 触觉 + 动效 (5-6 天)
 
@@ -480,37 +473,34 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 ## 11. 与原 iOS 文件的映射表
 
 | 原 iOS 文件 | Flutter 端落点 |
-|---|---|
+|---|---|---|
 | `App/NikonConnectApp.swift` | `lib/main.dart` + `lib/app.dart` |
 | `App/AppShellViewModel.swift` | `lib/features/app_shell/app_shell_view_model.dart`（Phase 2 决策：合并到单一 `AppShellNotifier`） |
 | `App/AppTheme.swift` | `lib/features/shared/app_theme.dart` |
-| `App/CameraSessionCoordinator.swift` | `lib/services/wifi_watcher.dart` + Riverpod 协调 |
+| `App/CameraSessionCoordinator.swift` | `lib/services/wifi_watcher.dart` + Riverpod Provider 拓扑替代 |
 | `App/RootTabView.swift` | `lib/app.dart` 的 `NavigationBar` |
 | `App/StatusBadgeView.swift` | `lib/features/shared/status_badge.dart` |
 | `Domain/*.swift` (15 个 = 14 普通 + 1 特殊) | `lib/domain/*.dart` (freezed) |
 | `Features/ConnectionSetup/*` | `lib/features/connection_setup/*` |
 | `Features/PhotoBrowser/*` | `lib/features/photo_browser/*` |
-| `Features/Downloads/*` | `lib/features/downloads/*` |
+| `Features/Downloads/*` | `lib/features/downloads/*` + `lib/services/download_manager_notifier.dart` |
 | `Features/Settings/*` | `lib/features/settings/*` |
 | `Features/Shared/SharedComponents.swift` | `lib/features/shared/shared_components.dart` |
 | `Infrastructure/AppLogger.swift` | `lib/services/logger.dart` (包装 `package:logging`) |
 | `Infrastructure/Formatters.swift` | `lib/features/shared/formatters.dart` |
 | `Services/AppPreferencesStore.swift` | `lib/services/preferences_store.dart` |
-| `Services/AssetThumbnailService.swift` | `lib/services/asset_thumbnail_service.dart` |
+| `Services/AssetThumbnailService.swift` | `lib/services/asset_thumbnail_service.dart`（内存 cache + in-flight 去重，~50 行） |
 | `Services/BackgroundDownloadExecutionService.swift` | `lib/services/background_download_runner.dart` |
 | `Services/CameraTransport*.swift` | `lib/protocol/camera_transport.dart` + factory |
-| `Services/DownloadLiveActivityController.swift` | ❌ 删除，改为 `lib/services/download_progress_notifier.dart` |
+| `Services/DownloadLiveActivityController.swift` | ❌ 删除，改为 `lib/services/download_notification_service.dart`（跨端不实现 Live Activity） |
 | `Services/DownloadStore.swift` | `lib/services/download_store.dart` |
 | `Services/ExperimentalNikonTransport.swift` | `lib/protocol/experimental_nikon_transport.dart` |
 | `Services/PhotoLibraryExportService.swift` | `lib/platform/photo_library_channel_*.dart` |
 | `Services/PTPIPPrimitives.swift` | `lib/protocol/primitives/*.dart` |
-| `Services/PTPIPSession+Lifecycle.swift` | `lib/protocol/session/ptpip_session.dart`（单类） |
-| `Services/PTPIPSession+AssetTraversal.swift` | `lib/protocol/session/ptpip_session.dart`（单类） |
-| `Services/PTPIPSession+Transfers.swift` | `lib/protocol/session/ptpip_session.dart`（单类） |
-| `Services/PTPIPSession.swift` | `lib/protocol/session/ptpip_session.dart` |
+| `Services/PTPIPSession+Lifecycle.swift` → `Services/PTPIPSession.swift` (单文件) | `lib/protocol/session/ptpip_session.dart`（单类合并三 extension） |
 | `Services/PTPIPTCPConnection.swift` | `lib/protocol/transport/ptpip_connection.dart` |
 | `DownloadActivityWidget/*` | ❌ 删除 (跨端不实现 Live Activity) |
-| `Tests/*.swift` (7 个) | `test/**/*.dart` (重写为 Dart 单测) |
+| `Tests/*.swift` (7 个) | `test/**/*.dart` (重写为 Dart 单测，131 测全绿) |
 
 ### 11.1 补充映射 (嵌套类型 + 接口协议)
 

@@ -1,7 +1,21 @@
 allprojects {
     repositories {
+        maven { setUrl("https://maven.aliyun.com/repository/google") }
+        maven { setUrl("https://maven.aliyun.com/repository/central") }
+        maven { setUrl("https://maven.aliyun.com/repository/gradle-plugin") }
         google()
         mavenCentral()
+    }
+}
+
+subprojects {
+    afterEvaluate {
+        if (project.hasProperty("android")) {
+            val androidExt = extensions.getByName("android")
+            androidExt.withGroovyBuilder {
+                setProperty("compileSdkVersion", 36)
+            }
+        }
     }
 }
 

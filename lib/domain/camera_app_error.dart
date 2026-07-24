@@ -8,6 +8,9 @@ sealed class CameraAppError {
   /// 用户可读的恢复建议
   String get recoverySuggestion;
 
+  /// Phase 3 下载任务层级：true = 可续传的 terminal（断线等），false = 永久失败
+  bool get isInterruptibleDownloadStatus;
+
   const factory CameraAppError.missingHost() = _MissingHost;
   const factory CameraAppError.invalidPort() = _InvalidPort;
   const factory CameraAppError.notConnected() = _NotConnected;
@@ -24,6 +27,8 @@ class _MissingHost extends CameraAppError {
   String get message => '请输入相机地址。';
   @override
   String get recoverySuggestion => '先在 iPhone 设置里连接相机 Wi-Fi，再输入相机 IP 地址。';
+  @override
+  bool get isInterruptibleDownloadStatus => false;
 }
 
 class _InvalidPort extends CameraAppError {
@@ -32,6 +37,8 @@ class _InvalidPort extends CameraAppError {
   String get message => '端口号无效。';
   @override
   String get recoverySuggestion => '请确认端口为 1 到 65535 之间的数字。';
+  @override
+  bool get isInterruptibleDownloadStatus => false;
 }
 
 class _NotConnected extends CameraAppError {
@@ -40,6 +47,8 @@ class _NotConnected extends CameraAppError {
   String get message => '当前没有可用的相机会话。';
   @override
   String get recoverySuggestion => '先建立连接，再读取照片列表或执行下载。';
+  @override
+  bool get isInterruptibleDownloadStatus => true;
 }
 
 class _NetworkProbeFailed extends CameraAppError {
@@ -49,6 +58,8 @@ class _NetworkProbeFailed extends CameraAppError {
   String get message => '连接相机失败：\$detail';
   @override
   String get recoverySuggestion => '确认 iPhone 已连接到相机热点，并允许本地网络访问。';
+  @override
+  bool get isInterruptibleDownloadStatus => true;
 }
 
 class _UnsupportedOperation extends CameraAppError {
@@ -59,6 +70,8 @@ class _UnsupportedOperation extends CameraAppError {
   @override
   String get recoverySuggestion =>
     '当前工程已经预留了协议层接口，下一步可以在这里接入 Nikon 真实传输实现。';
+  @override
+  bool get isInterruptibleDownloadStatus => false;
 }
 
 class _FileSystemFailure extends CameraAppError {
@@ -68,6 +81,8 @@ class _FileSystemFailure extends CameraAppError {
   String get message => '本地文件写入失败：\$detail';
   @override
   String get recoverySuggestion => '检查设备存储空间是否充足。';
+  @override
+  bool get isInterruptibleDownloadStatus => false;
 }
 
 class _PhotoLibraryAccessDenied extends CameraAppError {
@@ -76,6 +91,8 @@ class _PhotoLibraryAccessDenied extends CameraAppError {
   String get message => '系统相册权限未授予。';
   @override
   String get recoverySuggestion => '到系统设置里为 App 开启"照片"写入权限。';
+  @override
+  bool get isInterruptibleDownloadStatus => false;
 }
 
 class _PhotoLibraryExportFailed extends CameraAppError {
@@ -85,4 +102,6 @@ class _PhotoLibraryExportFailed extends CameraAppError {
   String get message => '保存到系统相册失败：\$detail';
   @override
   String get recoverySuggestion => '可以先保存在 App 本地目录，再稍后导出。';
+  @override
+  bool get isInterruptibleDownloadStatus => false;
 }
