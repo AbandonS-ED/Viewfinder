@@ -66,21 +66,52 @@ class ConnectionPage extends StatelessWidget {
   }
 
   Widget _actionSection(BuildContext context) {
-    if (state.isWorking) {
-      return const Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(strokeWidth: 2.5),
-        ),
-      );
+    final t = ViewfinderTheme.of(context);
+    if (state.workflowState == CameraWorkflowState.connected) {
+      return const SizedBox.shrink();
     }
-    if (state.workflowState == CameraWorkflowState.connected) return const SizedBox.shrink();
-    return PrimaryActionButton(
-      title: '连接相机',
-      icon: Icons.wifi,
-      onPressed: onConnect,
+    return Column(
+      children: [
+        if (state.isWorking)
+          const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+          )
+        else
+          PrimaryActionButton(
+            title: '连接相机',
+            icon: Icons.wifi,
+            onPressed: onConnect,
+          ),
+        const SizedBox(height: 8),
+        Text(
+          _actionHintText(),
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: t.t2),
+        ),
+      ],
     );
+  }
+
+  /// 底部 Action 区文案随状态切换
+  String _actionHintText() {
+    switch (state.workflowState) {
+      case CameraWorkflowState.waitingForWifi:
+        return '请先在相机上启用 Wi-Fi 热点';
+      case CameraWorkflowState.connecting:
+        return '正在搜索相机…';
+      case CameraWorkflowState.loadingPhotos:
+        return '正在读取相册…';
+      case CameraWorkflowState.downloading:
+        return '正在下载照片…';
+      case CameraWorkflowState.connected:
+        return '已连接';
+      case CameraWorkflowState.error:
+        return '连接失败，请检查相机 Wi-Fi 设置';
+    }
   }
 
   Widget _readySection(BuildContext context, CameraSession session) {
