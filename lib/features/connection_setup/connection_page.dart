@@ -6,6 +6,7 @@ import '../shared/shared_components.dart';
 import '../shared/status_badge.dart';
 import '../shared/viewfinder_theme.dart';
 import 'connection_state.dart' as cs;
+import 'hero_title.dart';
 
 class ConnectionPage extends StatelessWidget {
   const ConnectionPage({
@@ -43,10 +44,7 @@ class ConnectionPage extends StatelessWidget {
       children: [
         LensGlowView(state: state.workflowState),
         const SizedBox(height: 16),
-        Text(
-          'Viewfinder',
-          style: Theme.of(context).textTheme.displayLarge,
-        ),
+        HeroTitle(state: state.workflowState),
       ],
     );
   }
