@@ -21,6 +21,7 @@ mixin _$GalleryState {
   bool get hasMorePhotos => throw _privateConstructorUsedError;
   Set<String> get selectedAssetIDs => throw _privateConstructorUsedError;
   bool get isLoading => throw _privateConstructorUsedError;
+  GridDensity get gridDensity => throw _privateConstructorUsedError;
 
   /// Create a copy of GalleryState
   /// with the given fields replaced by the non-null parameter values.
@@ -41,6 +42,7 @@ abstract class $GalleryStateCopyWith<$Res> {
     bool hasMorePhotos,
     Set<String> selectedAssetIDs,
     bool isLoading,
+    GridDensity gridDensity,
   });
 }
 
@@ -63,6 +65,7 @@ class _$GalleryStateCopyWithImpl<$Res, $Val extends GalleryState>
     Object? hasMorePhotos = null,
     Object? selectedAssetIDs = null,
     Object? isLoading = null,
+    Object? gridDensity = null,
   }) {
     return _then(
       _value.copyWith(
@@ -82,6 +85,10 @@ class _$GalleryStateCopyWithImpl<$Res, $Val extends GalleryState>
                 ? _value.isLoading
                 : isLoading // ignore: cast_nullable_to_non_nullable
                       as bool,
+            gridDensity: null == gridDensity
+                ? _value.gridDensity
+                : gridDensity // ignore: cast_nullable_to_non_nullable
+                      as GridDensity,
           )
           as $Val,
     );
@@ -102,6 +109,7 @@ abstract class _$$GalleryStateImplCopyWith<$Res>
     bool hasMorePhotos,
     Set<String> selectedAssetIDs,
     bool isLoading,
+    GridDensity gridDensity,
   });
 }
 
@@ -123,6 +131,7 @@ class __$$GalleryStateImplCopyWithImpl<$Res>
     Object? hasMorePhotos = null,
     Object? selectedAssetIDs = null,
     Object? isLoading = null,
+    Object? gridDensity = null,
   }) {
     return _then(
       _$GalleryStateImpl(
@@ -142,6 +151,10 @@ class __$$GalleryStateImplCopyWithImpl<$Res>
             ? _value.isLoading
             : isLoading // ignore: cast_nullable_to_non_nullable
                   as bool,
+        gridDensity: null == gridDensity
+            ? _value.gridDensity
+            : gridDensity // ignore: cast_nullable_to_non_nullable
+                  as GridDensity,
       ),
     );
   }
@@ -155,6 +168,7 @@ class _$GalleryStateImpl extends _GalleryState {
     this.hasMorePhotos = false,
     final Set<String> selectedAssetIDs = const <String>{},
     this.isLoading = false,
+    this.gridDensity = GridDensity.standard,
   }) : _photoAssets = photoAssets,
        _selectedAssetIDs = selectedAssetIDs,
        super._();
@@ -183,10 +197,13 @@ class _$GalleryStateImpl extends _GalleryState {
   @override
   @JsonKey()
   final bool isLoading;
+  @override
+  @JsonKey()
+  final GridDensity gridDensity;
 
   @override
   String toString() {
-    return 'GalleryState(photoAssets: $photoAssets, hasMorePhotos: $hasMorePhotos, selectedAssetIDs: $selectedAssetIDs, isLoading: $isLoading)';
+    return 'GalleryState(photoAssets: $photoAssets, hasMorePhotos: $hasMorePhotos, selectedAssetIDs: $selectedAssetIDs, isLoading: $isLoading, gridDensity: $gridDensity)';
   }
 
   @override
@@ -205,7 +222,9 @@ class _$GalleryStateImpl extends _GalleryState {
               _selectedAssetIDs,
             ) &&
             (identical(other.isLoading, isLoading) ||
-                other.isLoading == isLoading));
+                other.isLoading == isLoading) &&
+            (identical(other.gridDensity, gridDensity) ||
+                other.gridDensity == gridDensity));
   }
 
   @override
@@ -215,6 +234,7 @@ class _$GalleryStateImpl extends _GalleryState {
     hasMorePhotos,
     const DeepCollectionEquality().hash(_selectedAssetIDs),
     isLoading,
+    gridDensity,
   );
 
   /// Create a copy of GalleryState
@@ -232,6 +252,7 @@ abstract class _GalleryState extends GalleryState {
     final bool hasMorePhotos,
     final Set<String> selectedAssetIDs,
     final bool isLoading,
+    final GridDensity gridDensity,
   }) = _$GalleryStateImpl;
   const _GalleryState._() : super._();
 
@@ -243,6 +264,8 @@ abstract class _GalleryState extends GalleryState {
   Set<String> get selectedAssetIDs;
   @override
   bool get isLoading;
+  @override
+  GridDensity get gridDensity;
 
   /// Create a copy of GalleryState
   /// with the given fields replaced by the non-null parameter values.

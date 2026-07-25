@@ -4,6 +4,17 @@ import '../../domain/photo_asset.dart';
 
 part 'gallery_state.freezed.dart';
 
+/// 网格密度
+enum GridDensity {
+  standard(3, '标准'),
+  compact(5, '紧凑');
+
+  const GridDensity(this.crossAxisCount, this.label);
+
+  final int crossAxisCount;
+  final String label;
+}
+
 @freezed
 class GalleryState with _$GalleryState {
   const factory GalleryState({
@@ -11,6 +22,7 @@ class GalleryState with _$GalleryState {
     @Default(false) bool hasMorePhotos,
     @Default(<String>{}) Set<String> selectedAssetIDs,
     @Default(false) bool isLoading,
+    @Default(GridDensity.standard) GridDensity gridDensity,
   }) = _GalleryState;
 
   const GalleryState._();

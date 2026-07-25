@@ -19,6 +19,7 @@ class GalleryPage extends StatelessWidget {
     required this.onToggleSelection,
     required this.onSelectAll,
     required this.onClearSelection,
+    this.onSetGridDensity,
     this.onDownloadSelected,
     this.thumbnailService,
     this.transport,
@@ -31,6 +32,7 @@ class GalleryPage extends StatelessWidget {
   final void Function(String id) onToggleSelection;
   final VoidCallback onSelectAll;
   final VoidCallback onClearSelection;
+  final void Function(GridDensity)? onSetGridDensity;
   final VoidCallback? onDownloadSelected;
   final AssetThumbnailServing? thumbnailService;
   final CameraTransport? transport;
@@ -43,11 +45,44 @@ class GalleryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (onSetGridDensity != null) _toolbar(context),
         _metricBar(context),
         if (state.hasSelection) _selectionBar(context),
         _filterBar(context),
         Expanded(child: _grid(context)),
       ],
+    );
+  }
+
+  Widget _toolbar(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
+    final isStandard = state.gridDensity == GridDensity.standard;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '相册',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: t.t1,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: '密度：${isStandard ? "标准 3 列" : "紧凑 5 列"}',
+            icon: Icon(
+              isStandard ? Icons.grid_view : Icons.grid_on,
+              color: t.t2,
+              size: 20,
+            ),
+            onPressed: () => onSetGridDensity!(
+              isStandard ? GridDensity.compact : GridDensity.standard,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -149,8 +184,8 @@ class GalleryPage extends StatelessWidget {
       onRefresh: () async => onRefresh(),
       child: GridView.builder(
         padding: const EdgeInsets.all(20),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: state.gridDensity.crossAxisCount,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
         ),

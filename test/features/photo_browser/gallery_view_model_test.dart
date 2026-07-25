@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:viewfinder/domain/camera_session.dart';
 import 'package:viewfinder/domain/photo_asset.dart';
 import 'package:viewfinder/features/connection_setup/connection_view_model.dart';
+import 'package:viewfinder/features/photo_browser/gallery_state.dart';
 import 'package:viewfinder/features/photo_browser/gallery_view_model.dart';
 
 import '../../helpers/fake_camera_transport.dart';
@@ -181,6 +182,23 @@ void main() {
       final state = container.read(galleryProvider).requireValue;
       expect(state.photoAssets.length, 1);
       expect(state.photoAssets.first.id, 'real-1');
+    });
+
+    test('setGridDensity 切换 gridDensity 字段', () async {
+      final container = ProviderContainer();
+      addTearDown(() => container.dispose());
+      await container.read(galleryProvider.future);
+
+      expect(container.read(galleryProvider).requireValue.gridDensity,
+          GridDensity.standard);
+
+      container.read(galleryProvider.notifier).setGridDensity(GridDensity.compact);
+      expect(container.read(galleryProvider).requireValue.gridDensity,
+          GridDensity.compact);
+
+      container.read(galleryProvider.notifier).setGridDensity(GridDensity.standard);
+      expect(container.read(galleryProvider).requireValue.gridDensity,
+          GridDensity.standard);
     });
   });
 }

@@ -85,6 +85,13 @@ class GalleryNotifier extends AsyncNotifier<GalleryState> {
     state = AsyncValue.data(current.copyWith(selectedAssetIDs: {}));
   }
 
+  /// 切换网格密度（标准 / 紧凑）
+  void setGridDensity(GridDensity density) {
+    final current = state.asData?.value;
+    if (current == null) return;
+    state = AsyncValue.data(current.copyWith(gridDensity: density));
+  }
+
   Future<void> _loadFromCamera() async {
     final session = ref.read(cameraSessionProvider);
     final transport = ref.read(cameraTransportProvider);

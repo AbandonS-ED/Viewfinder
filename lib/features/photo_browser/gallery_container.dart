@@ -25,6 +25,8 @@ class GalleryContainer extends ConsumerWidget {
           onToggleSelection: (id) => ref.read(galleryProvider.notifier).toggleSelection(id),
           onSelectAll: () => ref.read(galleryProvider.notifier).selectAllAssets(),
           onClearSelection: () => ref.read(galleryProvider.notifier).clearSelection(),
+          onSetGridDensity: (density) =>
+              ref.read(galleryProvider.notifier).setGridDensity(density),
           onDownloadSelected: state.hasSelection
               ? () {
                   final selected = state.photoAssets
