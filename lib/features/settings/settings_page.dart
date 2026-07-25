@@ -5,6 +5,8 @@ import '../shared/shared_components.dart';
 import '../shared/theme_palette.dart';
 import '../shared/viewfinder_theme.dart';
 import 'appearance_section.dart';
+import 'defaults_section.dart';
+import 'support_section.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -77,9 +79,12 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 24),
         _downloadSection(context),
         const SizedBox(height: 24),
-        _defaultsSection(context),
+        DefaultsSection(config: widget.config),
         const SizedBox(height: 24),
-        _supportSection(context),
+        SupportSection(
+          appVersion: 'v0.2.0',
+          onExportLogs: widget.onExportLogs,
+        ),
       ],
     );
   }
@@ -161,77 +166,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _defaultsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader('当前生效值'),
-        const SizedBox(height: 12),
-        CustomCard(
-          child: Column(
-            children: [
-              GridRowItem(
-                label: '目标地址',
-                value: '${widget.config.host}:${widget.config.port}',
-                icon: Icons.wifi,
-              ),
-              const SizedBox(height: 8),
-              GridRowItem(
-                label: '下载后处理',
-                value: widget.config.autoExportToPhotoLibrary
-                    ? '下载后同步到系统相册'
-                    : '仅保留在应用本地',
-                icon: Icons.photo_library_outlined,
-              ),
-              const SizedBox(height: 8),
-              GridRowItem(
-                label: '下载排序',
-                value: widget.config.prioritizeJPEGDownloads
-                    ? 'JPEG / PNG 优先，RAW 后补'
-                    : '保持相机当前顺序',
-                icon: Icons.swap_vert,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _supportSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader('支持与版本'),
-        const SizedBox(height: 12),
-        CustomCard(
-          child: Column(
-            children: [
-              const GridRowItem(
-                label: '版本',
-                value: 'Viewfinder v0.2.0',
-                icon: Icons.info_outline,
-              ),
-              if (widget.onExportLogs != null) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await widget.onExportLogs?.call();
-                    },
-                    icon: const Icon(Icons.file_download_outlined, size: 18),
-                    label: const Text('导出日志'),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
