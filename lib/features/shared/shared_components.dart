@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/active_download_progress.dart';
@@ -93,7 +94,12 @@ class PrimaryActionButton extends StatelessWidget {
     return SizedBox(
       width: expands ? double.infinity : null,
       child: GestureDetector(
-        onTap: enabled ? onPressed : null,
+        onTap: enabled
+            ? () {
+                Haptics.impactLight();
+                onPressed();
+              }
+            : null,
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: expands ? 20 : 18,
@@ -152,7 +158,12 @@ class SecondaryActionButton extends StatelessWidget {
     return SizedBox(
       width: expands ? double.infinity : null,
       child: GestureDetector(
-        onTap: enabled ? onPressed : null,
+        onTap: enabled
+            ? () {
+                Haptics.impactLight();
+                onPressed();
+              }
+            : null,
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: expands ? 20 : 18,
@@ -303,42 +314,123 @@ class DownloadProgressDetails extends StatelessWidget {
 class Haptics {
   Haptics._();
 
-  static void impactLight() {}
-  static void impactMedium() {}
-  static void impactHeavy() {}
-  static void notificationSuccess() {}
-  static void notificationWarning() {}
-  static void notificationError() {}
+  static void impactLight() {
+    HapticFeedback.lightImpact();
+  }
+
+  static void impactMedium() {
+    HapticFeedback.mediumImpact();
+  }
+
+  static void impactHeavy() {
+    HapticFeedback.heavyImpact();
+  }
+
+  static void selection() {
+    HapticFeedback.selectionClick();
+  }
+
+  /// Android 用 vibrate，iOS 上 HapticFeedback 没有原生对应
+  static void vibrate() {
+    HapticFeedback.vibrate();
+  }
+
+  static void notificationSuccess() => vibrate();
+  static void notificationWarning() => vibrate();
+  static void notificationError() => vibrate();
 }
 
-class ShimmerView extends StatelessWidget {
+class ShimmerView extends StatefulWidget {
   const ShimmerView({super.key, this.width, this.height});
 
   final double? width;
   final double? height;
 
   @override
+  State<ShimmerView> createState() => _ShimmerViewState();
+}
+
+class _ShimmerViewState extends State<ShimmerView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = ViewfinderTheme.of(context);
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: t.surfaceMuted,
-        borderRadius: BorderRadius.circular(10),
-      ),
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
+        final v = _ctrl.value;
+        // 用 Color.lerp 在 surfaceMuted ↔ controlBg 之间循环
+        final color = Color.lerp(t.surfaceMuted, t.controlBg, v)!;
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        );
+      },
     );
   }
 }
 
-class LensGlowView extends StatelessWidget {
+class LensGlowView extends StatefulWidget {
   const LensGlowView({super.key, required this.state});
 
   final CameraWorkflowState state;
 
   @override
+  State<LensGlowView> createState() => _LensGlowViewState();
+}
+
+class _LensGlowViewState extends State<LensGlowView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+  late final Animation<double> _scale;
+  late final Animation<double> _alpha;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
+    );
+    _alpha = Tween<double>(begin: 0.06, end: 0.22).animate(
+      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = ViewfinderTheme.of(context);
+    final state = widget.state;
     final glowColor = workflowColor(state);
     final isSearching = switch (state) {
       CameraWorkflowState.connecting => true,
@@ -356,13 +448,18 @@ class LensGlowView extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           if (isSearching)
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: glowColor.withValues(alpha: 0.15),
-              ),
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, child) {
+                return Container(
+                  width: 140 * _scale.value,
+                  height: 140 * _scale.value,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: glowColor.withValues(alpha: _alpha.value),
+                  ),
+                );
+              },
             )
           else
             Container(
