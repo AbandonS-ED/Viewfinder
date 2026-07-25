@@ -11,6 +11,7 @@ import 'features/downloads/downloads_container.dart';
 import 'features/photo_browser/gallery_container.dart';
 import 'features/photo_browser/gallery_view_model.dart';
 import 'features/settings/settings_container.dart';
+import 'features/shared/widgets/global_activity_capsule.dart';
 import 'services/wifi_watcher.dart';
 
 class ViewfinderApp extends ConsumerStatefulWidget {
@@ -138,37 +139,12 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
               ],
             ),
             if (isLoading)
-              Positioned.fill(
-                child: ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  child: Center(
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 64),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2.4),
-                            ),
-                            const SizedBox(width: 16),
-                            Flexible(
-                              child: Text(
-                                shell.globalActivityTitle ?? '加载中…',
-                                style: const TextStyle(fontSize: 15),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: GlobalActivityCapsule(
+                  title: shell.globalActivityTitle ?? '加载中…',
                 ),
               ),
           ],
