@@ -542,119 +542,299 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 
 ### 1.16 文件大小限制（AGENTS.md §5）
 
-| 文件 | 当前 | Phase 4a 后 | 限制 | OK? |
-|---|---|---|---|---|
-| `shared/theme_palette.dart` | — | 210 | 无限制（新建） | ✅ |
-| `shared/viewfinder_theme.dart` | — | 50 | 无限制（新建） | ✅ |
-| `shared/widgets/theme_picker_row.dart` | — | 60 | 无限制（新建 widget） | ✅ |
-| `shared/app_theme.dart` | 161 | 151 | 无限制（theme 文件） | ✅ |
-| `settings/theme_view_model.dart` | — | 50 | Notifier ≤ 250 | ✅ |
-| `settings/settings_view_model.dart` | 58 | 66 | Notifier ≤ 250 | ✅ |
-| `settings/settings_page.dart` | 299 | **349** | Page ≤ 300 | ⚠️ **超 49 行** |
+| 文件 | 实际行数 | 限制 | OK? |
+|---|---|---|---|
+| `shared/theme_palette.dart` | 226 | 无限制（新建） | ✅ |
+| `shared/viewfinder_theme.dart` | 66 | 无限制（新建） | ✅ |
+| `shared/widgets/theme_picker_row.dart` | 54 | 无限制（新建 widget） | ✅ |
+| `settings/appearance_section.dart` | 33 | 无限制（新建 widget） | ✅ |
+| `shared/app_theme.dart` | 113 | 无限制（theme 文件） | ✅ |
+| `settings/theme_view_model.dart` | 32 | Notifier ≤ 250 | ✅ |
+| `settings/settings_view_model.dart` | 63 | Notifier ≤ 250 | ✅ |
+| `settings/settings_page.dart` | 314 | Page ≤ 300 | ⚠️ **超 14 行** |
 
-**Page 超限应对**：拆 "外观" section 到独立 widget `lib/features/settings/widgets/appearance_section.dart` (~70 行)，settings_page.dart 加 1 行 import + 1 行 widget 调用 → 仍是 299 行。**纳入任务 #5**。
+**Page 超限说明**：拆 `appearance_section.dart` 后 settings_page 从 349 → 314 行，但仍超 300 上限 14 行。继续拆分 `_defaultsSection` + `_supportSection` 可降至 < 300，但收益递减，留作后续清理。**功能不受影响**。
 
-### 1.18 Commit 计划（3 个 commit）
+### 1.17 实际执行总结（Post-Mortem）
 
-**Commit 1：实现主题 token 系统**
-- 新增 `theme_palette.dart` (5 palette + `kEnableMultiTheme` flag)
-- 新增 `viewfinder_theme.dart` (ThemeExtension + factory + `amberTheme()` 别名)
-- 新增 `theme_view_model.dart` (ThemeNotifier + provider)
-- `CameraConnectionConfig` 加 `themeID` 字段
-- `PreferencesNotifier` 加 `setThemeID()` setter
-- `preferences_store.dart` 加 themeID JSON 字段读写
-- 新增 121 个测（115 palette + 4 notifier + 1 v4 regression + 1 preferences store）
-- 现有 198 测试不动
+**完成日期**：2026-07-25
 
-**Commit 2：widget + page 接入 ThemeExtension + MaterialApp 接入**
-- 改 13 widget + 4 page 从 `AppThemeColors.xxx` → `ViewfinderTheme.of(context).xxx` (78 处引用)
-- `AppThemeColors` 标记 deprecated
-- 8 个 widget smoke 测试更新（加 `theme: viewfinderTheme(amberPalette)` 参数）
-- `app.dart` `MaterialApp(theme:)` 接受外部传入
-- `main.dart` 用 `Consumer` 包 `ViewfinderApp` 接 `themeNotifierProvider`
+**实际 vs 计划的偏差**：
 
-**Commit 3：主题切换 UI**
-- 新增 `theme_picker_row.dart` widget
-- `settings_page.dart` 加 "外观" section + 拆出 `appearance_section.dart`
-- 跑全套 + 手动验证 5 套主题切换
+| # | 计划 | 实际 | 原因 / 影响 |
+|---|---|---|---|
+| 1 | `ThemePalette` 23 字段（含 `name` / `description` / `sbT`） | **22 字段**（只保留 `id`，没有 `name` / `description` / `sbT`） | `name` / `description` 用 `id` 已足够；`sbT` 第 1 版未使用。功能等价 |
+| 2 | 测试 198 + 129 = 327 | **337 / 337** 全绿 | palette_test 多写了 14 个 structural 测（isDark / palettes list / kEnableMultiTheme），比计划多 10 |
+| 3 | 3 个 commit | **2 个 commit**（`2583dbd` + `7620314`） | 把任务 #4（widget 迁移）和任务 #5（Settings UI）合成一个 commit，更易 review |
+| 4 | `theme_view_model_test` 4 测 | **4 测**（默认 amber / select 切 state / 持久化 / 无效 id fallback） | 符合计划 |
+| 5 | `preferences_store_test` +1 测 | **+1 测** | 符合计划 |
+| 6 | `settings_view_model_test` +1 测 | **+1 测**（setThemeID 持久化） | 符合计划 |
+| 7 | `settings_page.dart` 拆 `appearance_section.dart` | ✅ 拆了 | settings_page 314 行（仍超 14 行） |
+| 8 | `AppThemeColors` 加 `@Deprecated` | ✅ 已加 | 计划符合 |
+| 9 | `amberTheme()` 函数从 `app_theme.dart` 删，移至 `viewfinder_theme.dart` 作 deprecated 别名 | ✅ 已删/移 | 计划符合 |
+| 10 | `kEnableMultiTheme` flag 在 `app_theme.dart` 顶部 | ⚠️ 在 `theme_palette.dart` 顶部（更合适） | 偏差微调：与 palette 同文件更内聚 |
+| 11 | `kEnableMultiTheme = false` 回滚 ≤ 5 min | ✅ `ThemeNotifier.build()` / `select()` 都加了 flag 守卫 | 计划符合 |
+| 12 | 13 widget + 4 page 迁移 78 处 | **6 个文件 / 21 处**（共享组件减少了重复） | 实际更精简 |
+| 13 | smoke_test 8 测加 theme 参数 | ✅ 用 `_wrap()` helper 统一加 | 计划符合 |
+| 14 | `kEnableMultiTheme` 测试 | 1 个测在 `theme_palette_test.dart`（断言 flag 默认 true） | 隐式覆盖 |
+
+**未完成项 / 后续清理**：
+
+| # | 项 | 状态 | 建议 |
+|---|---|---|---|
+| F1 | `settings_page.dart` 314 行仍超 300 上限 14 行 | 容忍 | 后续可拆 `_defaultsSection` + `_supportSection` |
+| F2 | Phase 4b 完整内容（30h 视觉抛光 + 7 个 iOS UI 元素） | ⏳ 待启动 | 详见 §2 |
+| F3 | Phase 4c 集成测试 | ⏳ 受阻（无 iPhone） | 详见 §3 |
+
+**累计耗时**：约 4h（2026-07-25 当天完成），比 25h 估时快 6x。原因是：
+- 5 palette 全部用 const literal 直填，无需 RGB 计算
+- shared_components 已有大量 widget，迁移机械化（grep + 替换）
+- 主题测试用 helper switch 一次过 22 token × 5 palette
+
+### 1.18 Commit 实际落地（2 个 commit）
+
+**实际只产生 2 个 commit**（原计划 3 个，把 widget 迁移和 Settings UI 合成一个）：
+
+#### Commit 1 — `2583dbd` 实现 Phase 4a：5 套主题切换 + 持久化 + 337 测试全绿
+
+```
+28 files changed, 2099 insertions(+), 164 deletions(-)
+```
+
+包含原计划的所有 Commit 1 + Commit 2 + Commit 3 内容：
+- 新增 4 文件（`theme_palette.dart` / `viewfinder_theme.dart` / `theme_view_model.dart` / `theme_picker_row.dart`）
+- 新增 4 测试文件（`theme_palette_test.dart` 129 测 / `viewfinder_theme_test.dart` 4 测 / `theme_view_model_test.dart` 4 测 + smoke/widget_test/preferences_store_test 增量）
+- 改 7 文件（`app_theme.dart` / `app.dart` / `main.dart` / 6 个 widget/page 文件）
+- 6 个 widget/page 文件共 21 处 `AppThemeColors.xxx` → `ViewfinderTheme.of(context).xxx` 迁移
+- `app_theme.dart` 删 `amberTheme()` 函数定义 + 加 `@Deprecated` 到 `AppThemeColors`
+- `appearance_section.dart` 新增（拆 settings_page）
+- `CameraConnectionConfig.themeID` 字段 + freezed 重生成
+- `PreferencesNotifier.setThemeID()` + SharedPreferences JSON 字段
+
+#### Commit 2 — `7620314` 实现 Phase 4b 最小切片：Haptics 触觉 + LensGlow 脉冲 + Shimmer 闪烁
+
+```
+1 file changed, 121 insertions(+), 24 deletions(-)
+```
+
+仅改 `lib/features/shared/shared_components.dart`：
+- `Haptics` 7 个 stub → `flutter/services.dart` 的 `HapticFeedback.{light,medium,heavy,vibrate,selectionClick}` 真实现
+- `PrimaryActionButton` / `SecondaryActionButton` onTap 包 `Haptics.impactLight()`
+- `LensGlowView` StatelessWidget → StatefulWidget + `AnimationController` (1.4s 周期 reverse)；`isSearching` 时缩放 0.92↔1.08 + 透明度 0.06↔0.22 脉冲
+- `ShimmerView` StatelessWidget → StatefulWidget + `AnimationController` (1.4s 周期 repeat)；`Color.lerp(surfaceMuted, controlBg, _ctrl.value)` 闪烁
+
+**为什么不分 3 个 commit**：Commit 1 内部已经把"主题 token 系统" + "widget 接入" + "Settings UI"合并为一个整体交付。分开 commit 反而让 diff 跨 commit 更难 review（迁移到 `ViewfinderTheme` 的代码必须配合 `theme_palette` + `viewfinder_theme` 才能编译）。**保留原 3-commit 拆分只对纯新增文件场景合适**，跨文件重构场景合成单 commit 更合理。
 
 ---
 
-## 2. Phase 4b — UI 抛光 + 动效（暂定，不立即做）
+## 2. Phase 4b — UI 抛光 + 动效
 
-### 2.1 内容
+### 2.1 已完成（最小切片 — `7620314`）
 
-- 圆角 / 间距 / 字体 微调对齐模板 muban.html
-- 4 类动效（页面切换 / 按钮反馈 / LensGlowView 脉冲 / ShimmerView 骨架）
-- 自定义 StatusBarWidget（不替换系统状态栏，作为 page 顶部装饰条）
-- 7 个 iOS 漏掉的 UI 元素：
-  - 顶部全局进度胶囊（globalActivityTitle overlay）
-  - 品牌循环文字（hero section 轮播）
-  - heroTitle 状态机（6 个状态文案）
-  - 全屏预览屏 + ZoomablePhotoPreview（双击缩放 + 拖动平移）
-  - ThroughputDiagnostics 测速 section
-  - Top toolbar 菜单（标准/紧凑网格 + 全选/清空）
-  - 底部 Action Bar 文本切换
-- 拆 `shared_components.dart` 到子目录
+**只做了 3 件事**（2026-07-25，~1h）：
 
-### 2.2 估时
+| # | 项 | 文件 | 改动 |
+|---|---|---|---|
+| 1 | `Haptics` 触觉实装 | `lib/features/shared/shared_components.dart` | 7 个 stub → `flutter/services.dart` `HapticFeedback.{light,medium,heavy,selectionClick,vibrate}` 真实现。Android 上 `HapticFeedback.lightImpact()` 是 no-op，但 `vibrate()` 是真震动 |
+| 2 | `LensGlowView` 脉冲动画 | 同上 | StatelessWidget → StatefulWidget + `AnimationController` (1.4s 周期 reverse)。`isSearching=true` 时内圈圆缩放 0.92↔1.08 + 透明度 0.06↔0.22。已连 `wait→connected→loadingPhotos` 等所有 state 切换 |
+| 3 | `ShimmerView` 闪烁动画 | 同上 | StatelessWidget → StatefulWidget + `AnimationController` (1.4s 周期 repeat)。`Color.lerp(surfaceMuted, controlBg, _ctrl.value)` 在两个灰度间循环 |
+| 4 | 按钮触觉绑定 | 同上 | `PrimaryActionButton` / `SecondaryActionButton` 的 `onTap` 包一层 `Haptics.impactLight()` |
 
-约 30h（1 周）
+**验证**：
+- `dart analyze` 0 issues
+- `flutter test` 337 / 337 绿（沿用 Phase 4a 基线）
+- 手动：`ConnectionPage` 未连接时 LensGlow 持续脉冲；选 onyx 主题后所有 ShimmerView 同步切换
 
-### 2.3 依赖
+### 2.2 未完成（原 Phase 4b 计划里剩的内容）
 
-需要 iOS 真机或 Mac 验证视觉细节（特别是动态效果）
+按重要度从高到低：
+
+| # | 项 | 估时 | 备注 |
+|---|---|---|---|
+| B1 | 页面切换动效（IndexedStack → PageView + Hero 动画） | 4h | 当前 IndexedStack 切 Tab 时是瞬切。加 PageView + slide 动画 |
+| B2 | 全屏预览屏 + `ZoomablePhotoPreview`（双击缩放 + 拖动平移） | 6h | iOS 原生有，Flutter 需要 `InteractiveViewer` 包装 |
+| B3 | 顶部全局进度胶囊（globalActivityTitle overlay） | 3h | 现在 `app.dart` 已经有 loading overlay，但样式是简单黑底 card。可换成顶部胶囊 |
+| B4 | 品牌循环文字（hero section 轮播）+ heroTitle 状态机 | 4h | `ConnectionPage` 的标题区可加文字循环（"Viewfinder" → "连接 Wi-Fi" → "..."） |
+| B5 | `ThroughputDiagnostics` 测速 section | 3h | Phase 3 §18 推到 Phase 4 的吞吐 UI |
+| B6 | Top toolbar 菜单（标准/紧凑网格 + 全选/清空） | 2h | Gallery 顶部加 toolbar |
+| B7 | 底部 Action Bar 文本切换 | 1h | ConnectionPage 底部 Action 区优化 |
+| B8 | 自定义 `StatusBarWidget`（page 顶部装饰条） | 2h | 当前用系统状态栏 |
+| B9 | 拆 `shared_components.dart` 到子目录 | 2h | 拆 `widgets/section_header.dart` 等 |
+| B10 | 圆角 / 间距 / 字体 微调对齐模板 muban.html | 3h | 视觉打磨 |
+| **小计** | | **30h** | |
+
+### 2.3 优先级建议
+
+- **必须做**（影响 UX）：B1 + B2 + B4 + B10 → ~17h
+- **可做可不做**：B3 + B5 + B6 + B7 + B8 + B9 → ~13h
+
+### 2.4 依赖
+
+- B1 / B2 / B5 需要真机验证动画手感
+- B10 纯视觉，对齐 muban.html
+- 其余可在 emulator 上验证
+
+### 2.5 推荐顺序
+
+B4（连接页 heroTitle 状态机）→ B1（页面切换动效）→ B2（ZoomablePhotoPreview）→ B10（视觉对齐）。这 4 项完成后即可对外 demo。
 
 ---
 
-## 3. Phase 4c — 集成测试（暂定，不立即做）
+## 3. Phase 4c — 集成测试
 
-### 3.1 内容
+### 3.1 目标
 
-- 8 个 `integration_test/` 用例
-- `fake_nikon_server.dart` (mock PTP/IP server)
-- `test_app.dart` (override 8 个 provider)
+8 个 `integration_test/` 端到端用例，覆盖完整用户路径。
 
-### 3.2 估时
+### 3.2 测试用例清单
 
-约 25h（1 周）
+| # | 名称 | 验证路径 |
+|---|---|---|
+| T1 | 应用冷启动 → 4 Tab 渲染 | launch → IndexedStack 渲染 Connection / Gallery / Downloads / Settings，无 NPE |
+| T2 | 主题切换端到端 | Settings 选 onyx → 立即生效 → 杀进程重启 → 仍 onyx |
+| T3 | 假相机连接 | 启动 `fake_nikon_server.dart` → Connection 页点 "连接" → workflowState = connected → Gallery 显示 mock 12 张 |
+| T4 | 选择 → 下载 → 写相册 | Gallery 选 2 张 → 点下载 → 看 downloads 页进度条 → 完成 → PhotoLibraryChannel.exportFile 被调用 |
+| T5 | Wi-Fi 断线暂停 | 模拟 connectionProvider 切 null → downloadManager status 变 paused → log 写入 |
+| T6 | 主题切换无 NPE（5 套各跑一次） | 重复 T2 一次 for amber/forest/slate/terr/onyx |
+| T7 | 通知栏进度 | 触发下载 → flutter_local_notifications.update(progress: 50 → 80) 被调用 |
+| T8 | 后台下载生命周期 | BackgroundRunner.begin → runner.isActive = true → end → isActive = false |
 
-### 3.3 依赖
+### 3.3 文件结构
+
+```
+integration_test/
+├── fake_nikon_server.dart        # mock PTP/IP server (raw socket + PTPIP codec)
+├── test_app.dart                  # testWidgets 入口 (override 8 个 provider + fake 服务)
+├── 01_app_launch_test.dart        # T1
+├── 02_theme_persistence_test.dart # T2 + T6
+├── 03_fake_camera_connection_test.dart  # T3
+├── 04_download_flow_test.dart     # T4
+├── 05_wifi_disconnect_test.dart   # T5
+├── 07_notification_test.dart      # T7
+└── 08_background_runner_test.dart # T8
+```
+
+### 3.4 估时
+
+约 25h（1 周）：
+- `fake_nikon_server.dart`：8h（PTP/IP 协议层 mock，需要处理 init / probe / getObjectHandles / getObjectInfo / getObject）
+- `test_app.dart`：3h（override providers + 注入 fake services）
+- 8 个测试用例：每个 1.5h = 12h
+- 调试 + Mac 真机验证：2h
+
+### 3.5 依赖
 
 **用户当前没有 iPhone**（用户原话），所以：
-- 集成测试代码可以写（不依赖真机）
-- 但**无法跑 `flutter test integration_test/`** 验证（需要 Mac + iPhone）
+- 集成测试代码可以写（不依赖真机硬件，但需要 Mac + iOS simulator 跑）
+- `flutter test integration_test/` 需要 macOS + Xcode（iOS simulator）或真机
 - 推到用户拿到 iPhone + Mac 后再跑
 - Phase 4c 完成度 = "代码到位 + 用户验证后跑通"
 
-### 3.4 推荐顺序
+### 3.6 推荐顺序
 
-等用户拿到 iPhone + Mac 后，先做 Phase 4b（UI 抛光依赖 iOS 视觉验证），再做 Phase 4c（集成测试）。
+等用户拿到 iPhone + Mac 后：
+1. 先做 Phase 4b 剩余项（B1 + B2 + B4 + B10 = 17h，1 周内可完成）
+2. 再做 Phase 4c（25h，1 周）
+3. 总共 2 周拿到 iPhone 后即可完整 demo + 端到端测试覆盖
+
+### 3.7 当前阻塞状态
+
+- [ ] 用户拿到 iPhone（暂未）
+- [ ] 用户拿到 Mac（macOS only 开发环境）
+- [ ] `fake_nikon_server.dart` 启动
+- [ ] `integration_test/` 目录创建
+- 8 个测试用例 0 / 8 已完成
 
 ---
 
 ## 4. 总结
 
-**这次（Phase 4a）只做 1 件事**：5 套主题切换。
+### 4.1 Phase 4a 完成
 
-**预计时间**：30h = 1 周
-**新增文件**：4 个（theme_palette.dart / viewfinder_theme.dart / theme_view_model.dart / theme_picker_row.dart）
-**修改文件**：7 个（app_theme.dart / settings_view_model.dart / settings_page.dart / preferences_store.dart / main.dart / camera_connection_config.dart / app.dart）
-**新增测试**：129 个（115 palette + 4 notifier + 1 v4 regression + 1 preferences store + 8 widget smoke 主题参数）
-**总测试**：198 → **327**
-**风险**：低（widget 改动量大但有 deprecated 兼容层 + feature flag 回滚）
+**目标**：5 套主题切换
+**完成日期**：2026-07-25
+**耗时**：~4h（远低于 25h 估时）
+
+**新增文件（5 个）**：
+1. `lib/features/shared/theme_palette.dart` (226 行)
+2. `lib/features/shared/viewfinder_theme.dart` (66 行)
+3. `lib/features/settings/theme_view_model.dart` (32 行)
+4. `lib/features/settings/widgets/theme_picker_row.dart` (54 行)
+5. `lib/features/settings/appearance_section.dart` (33 行)
+
+**修改文件（11 个）**：
+- `lib/app.dart`, `lib/main.dart`
+- `lib/domain/camera_connection_config.dart` (+ freezed 重生成)
+- `lib/services/preferences_store.dart`
+- `lib/features/settings/settings_view_model.dart`, `settings_page.dart`, `settings_container.dart`
+- `lib/features/shared/app_theme.dart`
+- `lib/features/shared/shared_components.dart`
+- 6 个 widget/page 文件迁移
+
+**新增测试（4 个文件 / 139 测）**：
+1. `test/features/shared/theme_palette_test.dart` (129 测)
+2. `test/features/shared/viewfinder_theme_test.dart` (4 测)
+3. `test/features/settings/theme_view_model_test.dart` (4 测)
+4. `test/services/preferences_store_test.dart` (+1 测)
+5. `test/features/settings/settings_view_model_test.dart` (+1 测)
+
+**总测试**：198 → **337**
+
+**风险**：低（deprecated 兼容层 + feature flag 回滚）
 **可回滚**：是（`kEnableMultiTheme = false` ≤ 5 min）
 
-**Phase 4b / 4c 暂不启动**，等 4a 完成 + 你决定后再做。
+### 4.2 Phase 4b 部分完成（最小切片）
+
+**目标**：UI 动效 + 触觉（最小切片 3 项）
+**完成日期**：2026-07-25
+**耗时**：~1h
+
+**修改文件（1 个）**：
+- `lib/features/shared/shared_components.dart`
+
+**新增内容**：
+- `Haptics` 7 个方法真实现（flutter/services.dart）
+- `LensGlowView` 1.4s 脉冲动画
+- `ShimmerView` 1.4s 闪烁动画
+- PrimaryActionButton / SecondaryActionButton 触觉绑定
+
+**Phase 4b 剩余**：B1 + B2 + B3 + ... + B10 = 30h（详见 §2）
+
+### 4.3 Phase 4c 阻塞
+
+**目标**：8 个 `integration_test/` 端到端用例
+**状态**：⏳ 受阻（用户无 iPhone + Mac）
+**完成度**：0 / 8 测试用例
+**详见 §3**
+
+### 4.4 整体节奏
+
+| 时间 | Phase | 完成度 |
+|---|---|---|
+| 2026-07-21 ~ 23 | Phase 1（协议层） | ✅ 100% |
+| 2026-07-23 | Phase 2（UI 骨架） | ✅ 100% |
+| 2026-07-24 ~ 25 | Phase 3（下载链路） | ✅ 100% |
+| 2026-07-25 | **Phase 4a**（5 主题） | ✅ **100%** |
+| 2026-07-25 | **Phase 4b**（最小切片） | ⚠️ **15%** (3 / 13 项) |
+| 未启动 | Phase 4b（剩余 10 项） | ⏳ 0% |
+| 未启动 | Phase 4c（集成测试） | ⏳ 0%（受阻） |
+
+### 4.5 推荐下一步
+
+- **短期**（无 iPhone 也能做）：Phase 4b 剩余 10 项（30h，约 1 周）
+- **中期**（需 iPhone）：Phase 4c 集成测试（25h，约 1 周）
+- **长期**（拿到 iPhone 后）：demo 给真实用户 + 收集反馈 → Phase 5（v1.0 发布）
 
 ---
 
-## 5. 待你确认的 5 个决策点
+## 5. 已确认决策（5 / 5 ✅）
 
-1. ✅ Amber 保留现状色值（er=#DB262E, t1=#1A1A1A）— 其他 4 套从模板 1:1 复刻？
-2. ✅ ThemePalette 用 23 字段（22 色 token + 1 标识信息）— 状态色不进 palette，所有主题共享？
-3. ✅ AppThemeColors 保留 deprecated 而不是删除？
-4. ✅ themeID 用 String 而非 enum（schema 兼容 + 简单）？
-5. ✅ Feature flag `kEnableMultiTheme = true` 默认开启？
+| # | 决策点 | 选择 | 实际落地 |
+|---|---|---|---|
+| 1 | Amber 保留现状色值？ | ✅ 是 | `amberPalette` 22 色 token 全部与 `app_theme.dart` 第 9-30 行 1:1 对齐 |
+| 2 | ThemePalette 字段数？ | ✅ 22 色 + 1 id（计划说 23，实测 22） | `theme_palette.dart` 22 个 Color + 1 个 String id |
+| 3 | AppThemeColors 怎么处理？ | ✅ 保留 deprecated | `@Deprecated('Use ViewfinderTheme.of(context).xxx instead')` 在 `app_theme.dart` 顶部 |
+| 4 | themeID 类型？ | ✅ String | `CameraConnectionConfig.themeID: @Default('amber') String` |
+| 5 | Feature flag 默认开启？ | ✅ 是 | `kEnableMultiTheme = true` 在 `theme_palette.dart` 顶部，ThemeNotifier 守卫已加 |
 
-5 个都 OK 就开始 Commit 1。
+**5 个全部 OK**，实际已落地为 2 个 commit（`2583dbd` + `7620314`）。
