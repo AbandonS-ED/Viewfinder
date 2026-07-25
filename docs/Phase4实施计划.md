@@ -629,183 +629,107 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 
 ## 2. Phase 4b — UI 抛光 + 动效
 
-### 2.1 已完成（最小切片 — `7620314`）
+### 2.1 已完成（最小切片 + 收尾 + 后续 4 项）
 
-**只做了 3 件事**（2026-07-25，~1h）：
+**实际完成 8 项**（2026-07-25 当天连续做完）：
 
-| # | 项 | 文件 | 改动 |
+| # | 项 | 文件 | commit |
 |---|---|---|---|
-| 1 | `Haptics` 触觉实装 | `lib/features/shared/shared_components.dart` | 7 个 stub → `flutter/services.dart` `HapticFeedback.{light,medium,heavy,selectionClick,vibrate}` 真实现。Android 上 `HapticFeedback.lightImpact()` 是 no-op，但 `vibrate()` 是真震动 |
-| 2 | `LensGlowView` 脉冲动画 | 同上 | StatelessWidget → StatefulWidget + `AnimationController` (1.4s 周期 reverse)。`isSearching=true` 时内圈圆缩放 0.92↔1.08 + 透明度 0.06↔0.22。已连 `wait→connected→loadingPhotos` 等所有 state 切换 |
-| 3 | `ShimmerView` 闪烁动画 | 同上 | StatelessWidget → StatefulWidget + `AnimationController` (1.4s 周期 repeat)。`Color.lerp(surfaceMuted, controlBg, _ctrl.value)` 在两个灰度间循环 |
-| 4 | 按钮触觉绑定 | 同上 | `PrimaryActionButton` / `SecondaryActionButton` 的 `onTap` 包一层 `Haptics.impactLight()` |
+| 1 | `Haptics` 触觉实装 | `lib/features/shared/widgets/haptics.dart` | `7620314` |
+| 2 | `LensGlowView` 脉冲动画 | `lib/features/shared/widgets/lens_glow_view.dart` | `7620314` |
+| 3 | `ShimmerView` 闪烁动画 | `lib/features/shared/widgets/shimmer_view.dart` | `7620314` |
+| 4 | Primary/SecondaryActionButton 触觉绑定 | 同 1 | `7620314` |
+| 5 | B9 拆 `shared_components.dart` → `widgets/` 9 文件 | `lib/features/shared/widgets/*.dart` | `ed93228` |
+| 6 | Haptics/LensGlow/ShimmerView 单元测试（13 测） | `test/features/shared/widgets_test.dart` | `ed93228` |
+| 7 | 拆 `defaults_section.dart` + `support_section.dart`，settings_page 314→247 行 | 同 | `78e8f03` |
+| 8 | B1 IndexedStack → PageView + 280ms easeInOutCubic 滑动动画 | `lib/app.dart` | `9741817` |
+| 9 | B5 `ThroughputDiagnostics` section（completed/totalBytes/avgBytesPerItem） | `lib/features/downloads/throughput_diagnostics_section.dart` | `330e890` |
+| 10 | B6 Gallery Top toolbar（GridDensity.standard/compact 切换 3↔5 列） | `lib/features/photo_browser/gallery_page.dart` | `c3e5d9c` |
+| 11 | B7 ConnectionPage 底部 Action 区加 6 状态提示文字 | `lib/features/connection_setup/connection_page.dart` | `8f1f615` |
+| 12 | Phase 4c 代码骨架（8 个端到端 widget test + helpers + fake_nikon_server 占位） | `test/integration/*` + `test/helpers/stubs.dart` | `fa7eb16` |
 
 **验证**：
 - `dart analyze` 0 issues
-- `flutter test` 337 / 337 绿（沿用 Phase 4a 基线）
-- 手动：`ConnectionPage` 未连接时 LensGlow 持续脉冲；选 onyx 主题后所有 ShimmerView 同步切换
+- `flutter test` **368 / 368 绿**（Phase 4b 完成时基线）
 
-### 2.2 未完成（原 Phase 4b 计划里剩的内容）
+### 2.2 未完成（剩余 4 项纯视觉）
 
-按重要度从高到低：
-
-| # | 项 | 估时 | 备注 |
+| # | 项 | 估时 | 依赖 |
 |---|---|---|---|
-| B1 | 页面切换动效（IndexedStack → PageView + Hero 动画） | 4h | 当前 IndexedStack 切 Tab 时是瞬切。加 PageView + slide 动画 |
-| B2 | 全屏预览屏 + `ZoomablePhotoPreview`（双击缩放 + 拖动平移） | 6h | iOS 原生有，Flutter 需要 `InteractiveViewer` 包装 |
-| B3 | 顶部全局进度胶囊（globalActivityTitle overlay） | 3h | 现在 `app.dart` 已经有 loading overlay，但样式是简单黑底 card。可换成顶部胶囊 |
-| B4 | 品牌循环文字（hero section 轮播）+ heroTitle 状态机 | 4h | `ConnectionPage` 的标题区可加文字循环（"Viewfinder" → "连接 Wi-Fi" → "..."） |
-| B5 | `ThroughputDiagnostics` 测速 section | 3h | Phase 3 §18 推到 Phase 4 的吞吐 UI |
-| B6 | Top toolbar 菜单（标准/紧凑网格 + 全选/清空） | 2h | Gallery 顶部加 toolbar |
-| B7 | 底部 Action Bar 文本切换 | 1h | ConnectionPage 底部 Action 区优化 |
-| B8 | 自定义 `StatusBarWidget`（page 顶部装饰条） | 2h | 当前用系统状态栏 |
-| B9 | 拆 `shared_components.dart` 到子目录 | 2h | 拆 `widgets/section_header.dart` 等 |
-| B10 | 圆角 / 间距 / 字体 微调对齐模板 muban.html | 3h | 视觉打磨 |
-| **小计** | | **30h** | |
+| B2 | 全屏预览屏 + `ZoomablePhotoPreview`（双击缩放 + 拖动平移） | 6h | 真机手感 |
+| B3 | 顶部全局进度胶囊（替换当前黑底 Card overlay） | 3h | 视觉对齐 |
+| B4 | 品牌循环文字（hero section 轮播）+ heroTitle 状态机 | 4h | 视觉对齐 |
+| B8 | 自定义 `StatusBarWidget`（page 顶部装饰条） | 2h | iOS 真机 |
+| B10 | 圆角 / 间距 / 字体对齐 muban.html | 3h | 视觉打磨 |
 
-### 2.3 优先级建议
+### 2.3 当前总进度
 
-- **必须做**（影响 UX）：B1 + B2 + B4 + B10 → ~17h
-- **可做可不做**：B3 + B5 + B6 + B7 + B8 + B9 → ~13h
-
-### 2.4 依赖
-
-- B1 / B2 / B5 需要真机验证动画手感
-- B10 纯视觉，对齐 muban.html
-- 其余可在 emulator 上验证
-
-### 2.5 推荐顺序
-
-B4（连接页 heroTitle 状态机）→ B1（页面切换动效）→ B2（ZoomablePhotoPreview）→ B10（视觉对齐）。这 4 项完成后即可对外 demo。
+**完成 8 / 13 项 = 60%**（最小切片 3 + 收尾 1 + 后 4 = 8）
 
 ---
 
 ## 3. Phase 4c — 集成测试
 
-### 3.1 目标
+### 3.1 已完成（`fa7eb16`）
 
-8 个 `integration_test/` 端到端用例，覆盖完整用户路径。
+代码骨架已就位（10 个新文件）。**8 个端到端测试用例 + helpers + 占位 fake server** 全部 commit。但**真实运行需 Mac + iPhone**，当前环境下只能验证 widget pump 不 crash。
 
-### 3.2 测试用例清单
-
-| # | 名称 | 验证路径 |
-|---|---|---|
-| T1 | 应用冷启动 → 4 Tab 渲染 | launch → IndexedStack 渲染 Connection / Gallery / Downloads / Settings，无 NPE |
-| T2 | 主题切换端到端 | Settings 选 onyx → 立即生效 → 杀进程重启 → 仍 onyx |
-| T3 | 假相机连接 | 启动 `fake_nikon_server.dart` → Connection 页点 "连接" → workflowState = connected → Gallery 显示 mock 12 张 |
-| T4 | 选择 → 下载 → 写相册 | Gallery 选 2 张 → 点下载 → 看 downloads 页进度条 → 完成 → PhotoLibraryChannel.exportFile 被调用 |
-| T5 | Wi-Fi 断线暂停 | 模拟 connectionProvider 切 null → downloadManager status 变 paused → log 写入 |
-| T6 | 主题切换无 NPE（5 套各跑一次） | 重复 T2 一次 for amber/forest/slate/terr/onyx |
-| T7 | 通知栏进度 | 触发下载 → flutter_local_notifications.update(progress: 50 → 80) 被调用 |
-| T8 | 后台下载生命周期 | BackgroundRunner.begin → runner.isActive = true → end → isActive = false |
-
-### 3.3 文件结构
+### 3.2 已建文件
 
 ```
-integration_test/
-├── fake_nikon_server.dart        # mock PTP/IP server (raw socket + PTPIP codec)
-├── test_app.dart                  # testWidgets 入口 (override 8 个 provider + fake 服务)
-├── 01_app_launch_test.dart        # T1
-├── 02_theme_persistence_test.dart # T2 + T6
-├── 03_fake_camera_connection_test.dart  # T3
-├── 04_download_flow_test.dart     # T4
-├── 05_wifi_disconnect_test.dart   # T5
-├── 07_notification_test.dart      # T7
-└── 08_background_runner_test.dart # T8
+test/
+├── helpers/
+│   └── stubs.dart                                # StubNotificationService/BackgroundRunner/PhotoLibraryChannel
+└── integration/
+    ├── helpers/
+    │   └── test_app.dart                         # buildTestApp() helper + initTestEnv()
+    ├── fake_nikon_server.dart                    # 占位（未启动真实 socket）
+    ├── 01_app_launch_test.dart                   # T1: 4 Tab pump 不 crash
+    ├── 02_theme_persistence_test.dart            # T2: SettingsContainer pump 不 crash
+    ├── 03_fake_camera_connection_test.dart       # T3 placeholder (5 个 placeholder 都类似)
+    ├── 04_download_flow_test.dart                # T4 placeholder
+    ├── 05_wifi_disconnect_test.dart              # T5 placeholder
+    ├── 06_theme_5x_test.dart                     # T6 placeholder
+    ├── 07_notification_test.dart                 # T7 placeholder
+    └── 08_background_runner_test.dart            # T8 placeholder
 ```
 
-### 3.4 估时
+### 3.3 已知坑
 
-约 25h（1 周）：
-- `fake_nikon_server.dart`：8h（PTP/IP 协议层 mock，需要处理 init / probe / getObjectHandles / getObjectInfo / getObject）
-- `test_app.dart`：3h（override providers + 注入 fake services）
-- 8 个测试用例：每个 1.5h = 12h
-- 调试 + Mac 真机验证：2h
+1. `TextField` 需要 `Material` ancestor — `buildTestApp()` 必须包 `Scaffold`，已在 test 代码里处理
+2. `pumpAndSettle` 跟 `AnimationController.repeat()` 不兼容 — placeholder 测试只用 `pump()`，真机手动验证用 `pumpAndSettle()`
+3. `FakeNikonServer.start()` 当前抛 `UnimplementedError` — 真实实现需 raw socket + Mac 权限
 
-### 3.5 依赖
+### 3.4 待用户 iPhone + Mac 后做
 
-**用户当前没有 iPhone**（用户原话），所以：
-- 集成测试代码可以写（不依赖真机硬件，但需要 Mac + iOS simulator 跑）
-- `flutter test integration_test/` 需要 macOS + Xcode（iOS simulator）或真机
-- 推到用户拿到 iPhone + Mac 后再跑
-- Phase 4c 完成度 = "代码到位 + 用户验证后跑通"
+1. 把 `test/integration/` 移到 Flutter 标准 `integration_test/` 目录
+2. 添加 `pubspec.yaml` dev_dependency: `integration_test: ^5.0.0`
+3. 写 `FakeNikonServer` 真实 raw socket 实现
+4. 把 placeholder 测试换成真 server + simulator 流程
+5. `flutter test integration_test/` 跑通 8 测
 
-### 3.6 推荐顺序
-
-等用户拿到 iPhone + Mac 后：
-1. 先做 Phase 4b 剩余项（B1 + B2 + B4 + B10 = 17h，1 周内可完成）
-2. 再做 Phase 4c（25h，1 周）
-3. 总共 2 周拿到 iPhone 后即可完整 demo + 端到端测试覆盖
-
-### 3.7 当前阻塞状态
-
-- [ ] 用户拿到 iPhone（暂未）
-- [ ] 用户拿到 Mac（macOS only 开发环境）
-- [ ] `fake_nikon_server.dart` 启动
-- [ ] `integration_test/` 目录创建
-- 8 个测试用例 0 / 8 已完成
+**完成度 = 代码到位 + 待真机验证。**
 
 ---
 
 ## 4. 总结
 
-### 4.1 Phase 4a 完成
+### 4.1 Phase 4a 完成（`2583dbd`）
 
-**目标**：5 套主题切换
-**完成日期**：2026-07-25
-**耗时**：~4h（远低于 25h 估时）
+**新增文件（5 个）**：`theme_palette.dart` / `viewfinder_theme.dart` / `theme_view_model.dart` / `theme_picker_row.dart` / `appearance_section.dart`
+**修改文件（11 个）**：app/main/preferences_store/settings_view/settings_page/settings_container/app_theme/shared_components + 6 widget/page 文件 + freezed 重生成
+**测试**：198 → **337**（+139 测：129 palette + 4 viewfinder_theme + 4 themeNotifier + 1 prefs + 1 settings）
+**风险**：低 | **可回滚**：是（`kEnableMultiTheme = false`）
 
-**新增文件（5 个）**：
-1. `lib/features/shared/theme_palette.dart` (226 行)
-2. `lib/features/shared/viewfinder_theme.dart` (66 行)
-3. `lib/features/settings/theme_view_model.dart` (32 行)
-4. `lib/features/settings/widgets/theme_picker_row.dart` (54 行)
-5. `lib/features/settings/appearance_section.dart` (33 行)
+### 4.2 Phase 4b 完成 8 / 13（`7620314` + `ed93228` + `78e8f03` + `9741817` + `330e890` + `c3e5d9c` + `8f1f615`）
 
-**修改文件（11 个）**：
-- `lib/app.dart`, `lib/main.dart`
-- `lib/domain/camera_connection_config.dart` (+ freezed 重生成)
-- `lib/services/preferences_store.dart`
-- `lib/features/settings/settings_view_model.dart`, `settings_page.dart`, `settings_container.dart`
-- `lib/features/shared/app_theme.dart`
-- `lib/features/shared/shared_components.dart`
-- 6 个 widget/page 文件迁移
+**完成项**：Haptics + LensGlow 脉冲 + Shimmer 闪烁 + B9 拆 shared_components + B1 PageView 动效 + B5 ThroughputDiagnostics + B6 Gallery Top toolbar + B7 ConnectionPage 状态提示文字
+**未完成项（5 个）**：B2 ZoomablePhotoPreview + B3 顶部胶囊 + B4 heroTitle 状态机 + B8 自定义 StatusBar + B10 圆角间距对齐（全部纯视觉，需 iPhone）
 
-**新增测试（4 个文件 / 139 测）**：
-1. `test/features/shared/theme_palette_test.dart` (129 测)
-2. `test/features/shared/viewfinder_theme_test.dart` (4 测)
-3. `test/features/settings/theme_view_model_test.dart` (4 测)
-4. `test/services/preferences_store_test.dart` (+1 测)
-5. `test/features/settings/settings_view_model_test.dart` (+1 测)
+### 4.3 Phase 4c 代码骨架完成（`fa7eb16`）
 
-**总测试**：198 → **337**
-
-**风险**：低（deprecated 兼容层 + feature flag 回滚）
-**可回滚**：是（`kEnableMultiTheme = false` ≤ 5 min）
-
-### 4.2 Phase 4b 部分完成（最小切片）
-
-**目标**：UI 动效 + 触觉（最小切片 3 项）
-**完成日期**：2026-07-25
-**耗时**：~1h
-
-**修改文件（1 个）**：
-- `lib/features/shared/shared_components.dart`
-
-**新增内容**：
-- `Haptics` 7 个方法真实现（flutter/services.dart）
-- `LensGlowView` 1.4s 脉冲动画
-- `ShimmerView` 1.4s 闪烁动画
-- PrimaryActionButton / SecondaryActionButton 触觉绑定
-
-**Phase 4b 剩余**：B1 + B2 + B3 + ... + B10 = 30h（详见 §2）
-
-### 4.3 Phase 4c 阻塞
-
-**目标**：8 个 `integration_test/` 端到端用例
-**状态**：⏳ 受阻（用户无 iPhone + Mac）
-**完成度**：0 / 8 测试用例
-**详见 §3**
+**完成项**：10 新文件（helpers/stubs + integration/helpers/test_app + fake_nikon_server + 8 integration_test 文件）
+**待 Mac + iPhone**：把 `test/integration/` 移到标准 `integration_test/` 目录 + 加 `integration_test` pubspec 依赖 + 写真实 FakeNikonServer
 
 ### 4.4 整体节奏
 
@@ -814,16 +738,20 @@ integration_test/
 | 2026-07-21 ~ 23 | Phase 1（协议层） | ✅ 100% |
 | 2026-07-23 | Phase 2（UI 骨架） | ✅ 100% |
 | 2026-07-24 ~ 25 | Phase 3（下载链路） | ✅ 100% |
-| 2026-07-25 | **Phase 4a**（5 主题） | ✅ **100%** |
-| 2026-07-25 | **Phase 4b**（最小切片） | ⚠️ **15%** (3 / 13 项) |
-| 未启动 | Phase 4b（剩余 10 项） | ⏳ 0% |
-| 未启动 | Phase 4c（集成测试） | ⏳ 0%（受阻） |
+| 2026-07-25 | Phase 4a（5 主题） | ✅ 100% |
+| 2026-07-25 | Phase 4b（动效 + 收尾 + B1/B5/B6/B7） | ⚠️ **60%**（8 / 13） |
+| 2026-07-25 | Phase 4c（代码骨架） | ⚠️ **代码到位**（验证待 Mac+iPhone） |
 
-### 4.5 推荐下一步
+### 4.5 累计测试
 
-- **短期**（无 iPhone 也能做）：Phase 4b 剩余 10 项（30h，约 1 周）
-- **中期**（需 iPhone）：Phase 4c 集成测试（25h，约 1 周）
-- **长期**（拿到 iPhone 后）：demo 给真实用户 + 收集反馈 → Phase 5（v1.0 发布）
+| 阶段 | 测数 |
+|---|---|
+| Phase 0+1+2+3 | 198 |
+| Phase 4a | +139 |
+| Phase 4b 收尾 | +13 (widgets_test) |
+| Phase 4c | +8 (integration widget tests) |
+| Phase 4b B5/B6 增量 | +9 (throughput + gridDensity) |
+| **总计** | **368 / 368 绿** |
 
 ---
 
