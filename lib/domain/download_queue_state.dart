@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'active_download_progress.dart';
 import 'download_job.dart';
+import 'download_throughput_stats.dart';
 
 part 'download_queue_state.freezed.dart';
 
@@ -47,6 +48,21 @@ class DownloadQueueState with _$DownloadQueueState {
 
   /// 总数
   int get totalItemCount => jobs.length;
+
+  /// 吞吐诊断数据：已完成项目的总字节数 + 平均
+  DownloadThroughputStats get throughputStats {
+    final completed = completedJobs;
+    final totalBytes = completed.fold<int>(
+      0,
+      (sum, j) => sum + j.byteSize,
+    );
+    final avg = completed.isEmpty ? 0 : (totalBytes / completed.length).round();
+    return DownloadThroughputStats(
+      totalBytes: totalBytes,
+      completedItems: completed.length,
+      avgBytesPerItem: avg,
+    );
+  }
 }
 
 /// 队列状态机

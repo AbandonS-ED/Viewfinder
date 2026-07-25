@@ -8,6 +8,7 @@ import '../shared/app_theme.dart';
 import '../shared/shared_components.dart';
 import '../shared/formatters.dart' as fmt;
 import '../shared/viewfinder_theme.dart';
+import 'throughput_diagnostics_section.dart';
 
 class DownloadsPage extends StatelessWidget {
   const DownloadsPage({
@@ -41,6 +42,8 @@ class DownloadsPage extends StatelessWidget {
         _queueSection(context),
         const SizedBox(height: 24),
         _recordsSection(context),
+        const SizedBox(height: 24),
+        ThroughputDiagnosticsSection(state: state),
       ],
     );
   }
