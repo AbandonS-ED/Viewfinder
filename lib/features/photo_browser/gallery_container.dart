@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/photo_asset.dart';
 import '../connection_setup/connection_view_model.dart';
 import '../downloads/download_manager_view_model.dart';
 import 'gallery_page.dart';
 import 'gallery_view_model.dart';
+import 'zoomable_photo_preview.dart';
 
 class GalleryContainer extends ConsumerWidget {
   const GalleryContainer({super.key});
@@ -27,6 +29,7 @@ class GalleryContainer extends ConsumerWidget {
           onClearSelection: () => ref.read(galleryProvider.notifier).clearSelection(),
           onSetGridDensity: (density) =>
               ref.read(galleryProvider.notifier).setGridDensity(density),
+          onPreview: (asset) => _openPreview(context, asset),
           onDownloadSelected: state.hasSelection
               ? () {
                   final selected = state.photoAssets
@@ -46,6 +49,27 @@ class GalleryContainer extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('$err')),
+    );
+  }
+
+  void _openPreview(BuildContext context, PhotoAsset asset) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => ZoomablePhotoPreview(
+          heroTag: asset.id,
+          image: Container(
+            color: Colors.black,
+            child: Center(
+              child: Text(
+                asset.fileName,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ),
+          ),
+          onClose: () => Navigator.of(context).pop(),
+        ),
+      ),
     );
   }
 }

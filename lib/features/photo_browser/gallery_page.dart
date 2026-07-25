@@ -20,6 +20,7 @@ class GalleryPage extends StatelessWidget {
     required this.onSelectAll,
     required this.onClearSelection,
     this.onSetGridDensity,
+    this.onPreview,
     this.onDownloadSelected,
     this.thumbnailService,
     this.transport,
@@ -33,6 +34,7 @@ class GalleryPage extends StatelessWidget {
   final VoidCallback onSelectAll;
   final VoidCallback onClearSelection;
   final void Function(GridDensity)? onSetGridDensity;
+  final void Function(PhotoAsset)? onPreview;
   final VoidCallback? onDownloadSelected;
   final AssetThumbnailServing? thumbnailService;
   final CameraTransport? transport;
@@ -200,6 +202,7 @@ class GalleryPage extends StatelessWidget {
     final selected = state.selectedAssetIDs.contains(asset.id);
     return GestureDetector(
       onTap: () => onToggleSelection(asset.id),
+      onLongPress: () => onPreview?.call(asset),
       child: Container(
         decoration: BoxDecoration(
           color: t.surfaceMuted,
