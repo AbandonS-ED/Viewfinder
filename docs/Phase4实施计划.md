@@ -838,3 +838,142 @@ integration_test/
 | 5 | Feature flag 默认开启？ | ✅ 是 | `kEnableMultiTheme = true` 在 `theme_palette.dart` 顶部，ThemeNotifier 守卫已加 |
 
 **5 个全部 OK**，实际已落地为 2 个 commit（`2583dbd` + `7620314`）。
+
+---
+
+## 6. 已知坑和应急方案
+
+### 6.1 AnimationController 在 widget test 里泄漏 timer
+
+**坑**：`LensGlowView` / `ShimmerView` 的 `AnimationController.repeat()` 会注册 timer，testWidgets 的 `FakeAsync` 会检测到 pending timer，触发 `_verifyInvariants` 失败：
+```
+A Timer is still pending even after the widget tree was disposed.
+```
+
+**应急**：
+- ✅ 已在 `_LensGlowViewState.dispose()` / `_ShimmerViewState.dispose()` 中 `_pulse.dispose()` / `_ctrl.dispose()` 释放
+- ✅ 已通过 `testWidgets` 验证：337 / 337 全绿无 timer leak
+- 写新动画 widget 时务必加 `dispose()` + `pumpAndSettle()` 在 test 结尾
+
+### 6.2 `HapticFeedback` 在测试环境抛 `MissingPluginException`
+
+**坑**：单元测试调用 `Haptics.impactLight()` 时，`flutter/services.dart` 找不到 platform channel，会抛异常。
+
+**应急**：
+- 不直接测 `Haptics` 的副作用，只测 widget 渲染（当前 337 测试走这条）
+- 需要测时可注入 `SystemChannels.platform.setMockMethodCallHandler(...)` mock
+
+### 6.3 `ThemeExtension` 未注册导致 `assert(ext != null)` 触发
+
+**坑**：widget 内部用 `ViewfinderTheme.of(context).bg` 时，如果外层 `MaterialApp` 没传 `theme: viewfinderTheme(amberPalette)`，assert 失败。
+
+**应急**：
+- ✅ 8 个 widget smoke 测已统一用 `_wrap(Widget)` helper 加 theme 参数
+- ✅ `widget_test.dart` 已加 `theme: viewfinderTheme(amberPalette)`
+- 任何新 widget smoke 测试必须用 `_wrap()` helper，否则测试会 NPE
+
+### 6.4 `amberTheme()` 别名调用产生 `@Deprecated` 警告
+
+**坑**：`viewfinder_theme.dart` 的 `amberTheme()` 标了 `@Deprecated`，调用处会有黄色警告。
+
+**应急**：
+- 仅 `app_theme_test.dart` 和 `viewfinder_theme_test.dart` 用 `// ignore: deprecated_member_use_from_same_package` 抑制
+- 业务代码禁止用 `amberTheme()`，统一走 `viewfinderTheme(palette)`
+
+### 6.5 `kEnableMultiTheme = false` 的回滚路径只验证逻辑不验证视觉
+
+**坑**：把 `kEnableMultiTheme` 改成 `false` 后，`ThemeNotifier.build()` 永远返回 `amberPalette`，但 `viewfinderTheme(amberPalette)` 仍会被调。理论上 UI 不变。
+
+**应急**：
+- 已写 `themeNotifier.select()` 守卫（flag = false 时不更新 state）
+- 已写 `ThemeNotifier.build()` 守卫（flag = false 时直接返 `amberPalette`，不 watch preferencesProvider）
+- 回滚路径 ≤ 5 min：改 flag → 跑测试 → 编译产物自动全 amber
+
+### 6.6 `settings_page.dart` 仍超 300 行（314）
+
+**坑**：拆 `appearance_section.dart` 后 settings_page 仍超 14 行。
+
+**应急**：
+- 当前容忍，功能不受影响
+- 后续清理：拆 `_defaultsSection` + `_supportSection` 到 `widgets/defaults_section.dart` + `widgets/support_section.dart`
+
+### 6.7 `ThemePalette` 缺 `name` / `description` / `sbT` 字段
+
+**坑**：计划 §1.5 骨架里有 `name` / `description` / `sbT` 字段，实际实现只保留 `id`。
+
+**应急**：
+- ThemePickerRow 用 `p.id` 显示（"amber" / "forest" 等），不需要 `name`
+- `sbT` 是 system bar tint 第 1 版未使用
+- 未来要 iOS-style heroTitle 时再加 `name` 字段即可
+
+---
+
+## 7. 不在本 Phase 范围（推到 Phase 5）
+
+| # | 项 | 推迟到 | 原因 |
+|---|---|---|---|
+| N1 | iOS 真机验证（动画手感 + 触觉响应） | Phase 4b 剩余 + 用户拿到 iPhone | 无 iPhone 硬做是猜 |
+| N2 | 字体离线打包（`pubspec.yaml fonts:` 块） | Phase 5 | 当前 google_fonts 在线加载够用 |
+| N3 | iOS Live Activity（WidgetKit 推送下载进度） | Phase 5 | 需要 Xcode 真机编译验证 |
+| N4 | 多品牌扩展（Sony / Canon / Fujifilm） | Phase 5 | 协议层未就绪 |
+| N5 | Phase 3 §18 任务对齐（吞吐录制 UI / 错误诊断面板 / 主屏小组件） | Phase 5 | 当前功能已可用 |
+| N6 | 自定义 `StatusBarWidget`（page 顶部装饰条） | Phase 4b 剩余 | 当前用系统状态栏 |
+| N7 | 国际化（i18n） | Phase 5 | 当前硬编码中文 |
+
+---
+
+## 8. 文档同步清单（已完成）
+
+Phase 4 完成后已同步以下文档：
+
+| 文档 | 改动 | 状态 |
+|---|---|---|
+| `AGENTS.md` §12 | 加 Phase 4a + 4b 两条变更记录 | ✅ `b882c2d` |
+| `docs/项目状态.md` §1 | "一句话进度"更新到含 Phase 4a + 4b 最小切片 | ✅ `b882c2d` |
+| `docs/Phase4实施计划.md` | 计划本身（含 Post-Mortem + Phase 4b/4c 详情） | ✅ `b882c2d` |
+| `docs/Viewfinder方案.md` §8 实施分阶段 | 不需要改（Phase 4 已在 Phase 3 §22 完成后提了） | — |
+| `docs/架构.md` §8 演进方向 | 不需要改（主题切换属于 ViewModel 层，架构未变） | — |
+
+---
+
+## 9. 提交规范
+
+遵循 AGENTS.md §8：
+
+- 中文 commit message
+- 动词开头（实现 / 修复 / 重构 / 添加 / 删除 / 更新）
+- 不超过 50 字
+- 不要 "update" / "fix" / "misc" / "wip"
+- 不写自动化 push
+
+Phase 4 实际 commit 风格：
+```
+实现 Phase 4a：5 套主题切换 + 持久化 + 337 测试全绿
+实现 Phase 4b 最小切片：Haptics 触觉 + LensGlow 脉冲 + Shimmer 闪烁
+更新 Phase 4 文档：实际执行总结 + 4b 最小切片 + 4c 阻塞清单
+```
+
+---
+
+## 10. 完成后（Phase 4 → Phase 5）
+
+Phase 4 完成后，本工程就有了：
+
+- ✅ 5 套主题实时切换（amber / forest / slate / terr / onyx）
+- ✅ 主题持久化（杀进程重启仍保持）
+- ✅ Haptics 触觉反馈（按钮 + 通知）
+- ✅ LensGlow 脉冲动画 + Shimmer 闪烁动画
+- ✅ 13 widget + 4 page 全部从 `AppThemeColors` 迁移到 `ThemeExtension`
+- ✅ `AppThemeColors` 标 `@Deprecated`，旧 API 仍可用 1 版
+- ✅ 337 测试全绿，`dart analyze` 0 issues
+
+**Phase 5（v1.0 发布准备）**：
+- 拿到 iPhone + Mac 后跑 Phase 4c 集成测试（8 个 `integration_test/`）
+- Phase 4b 剩余 10 项视觉抛光（B1-B10）
+- iOS Live Activity（WidgetKit 推送下载进度）
+- 多品牌扩展（Sony / Canon / Fujifilm）— 协议层先扩展
+- 国际化（i18n）
+- 自定义字体离线打包
+- App Store / Google Play 上架材料
+
+**这份文档 = Phase 4 的工作说明书（v1.0）**。
