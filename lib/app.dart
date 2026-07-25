@@ -24,6 +24,10 @@ class ViewfinderApp extends ConsumerStatefulWidget {
 
 class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
     with WidgetsBindingObserver {
+  static const _tabTransitionDuration = Duration(milliseconds: 280);
+  static const _tabTransitionCurve = Curves.easeInOutCubic;
+
+  final PageController _pageController = PageController();
   int _selectedIndex = 0;
   String? _shownAlertId;
 
@@ -35,6 +39,7 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
 
   @override
   void dispose() {
+    _pageController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -42,6 +47,16 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     ref.read(downloadManagerProvider.notifier).handleScenePhaseChange(state);
+  }
+
+  void _onTabSelected(int index) {
+    if (index == _selectedIndex) return;
+    setState(() => _selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: _tabTransitionDuration,
+      curve: _tabTransitionCurve,
+    );
   }
 
   @override
@@ -111,8 +126,10 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
       home: Scaffold(
         body: Stack(
           children: [
-            IndexedStack(
-              index: _selectedIndex,
+            PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (i) => setState(() => _selectedIndex = i),
               children: const [
                 ConnectionContainer(),
                 GalleryContainer(),
@@ -158,7 +175,7 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _selectedIndex,
-          onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+          onDestinationSelected: _onTabSelected,
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.wifi_outlined),
