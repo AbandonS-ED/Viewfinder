@@ -11,11 +11,12 @@ import 'features/downloads/downloads_container.dart';
 import 'features/photo_browser/gallery_container.dart';
 import 'features/photo_browser/gallery_view_model.dart';
 import 'features/settings/settings_container.dart';
-import 'features/shared/app_theme.dart';
 import 'services/wifi_watcher.dart';
 
 class ViewfinderApp extends ConsumerStatefulWidget {
-  const ViewfinderApp({super.key});
+  const ViewfinderApp({super.key, required this.theme});
+
+  final ThemeData theme;
 
   @override
   ConsumerState<ViewfinderApp> createState() => _ViewfinderAppState();
@@ -106,7 +107,7 @@ class _ViewfinderAppState extends ConsumerState<ViewfinderApp>
 
     return MaterialApp(
       title: 'Viewfinder',
-      theme: amberTheme(),
+      theme: widget.theme,
       home: Scaffold(
         body: Stack(
           children: [

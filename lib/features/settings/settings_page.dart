@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/camera_connection_config.dart';
-import '../shared/app_theme.dart';
 import '../shared/shared_components.dart';
+import '../shared/theme_palette.dart';
+import '../shared/viewfinder_theme.dart';
+import 'appearance_section.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -12,6 +14,8 @@ class SettingsPage extends StatefulWidget {
     required this.onSetPort,
     required this.onSetAutoExport,
     required this.onSetPrioritizeJPEG,
+    required this.selectedPalette,
+    required this.onSelectTheme,
     this.onExportLogs,
   });
 
@@ -20,6 +24,8 @@ class SettingsPage extends StatefulWidget {
   final void Function(String) onSetPort;
   final void Function(bool) onSetAutoExport;
   final void Function(bool) onSetPrioritizeJPEG;
+  final ThemePalette selectedPalette;
+  final void Function(String) onSelectTheme;
   final Future<void> Function()? onExportLogs;
 
   @override
@@ -64,6 +70,11 @@ class _SettingsPageState extends State<SettingsPage> {
       children: [
         _connectionSection(context),
         const SizedBox(height: 24),
+        AppearanceSection(
+          selectedPalette: widget.selectedPalette,
+          onSelectTheme: widget.onSelectTheme,
+        ),
+        const SizedBox(height: 24),
         _downloadSection(context),
         const SizedBox(height: 24),
         _defaultsSection(context),
@@ -74,6 +85,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _connectionSection(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -86,7 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Text(
                 '先在相机上启用 Wi-Fi，然后填下面这台相机的 IP 和端口。',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppThemeColors.t2,
+                  color: t.t2,
                 ),
               ),
               const SizedBox(height: 16),
@@ -115,6 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _downloadSection(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -129,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 value: widget.config.autoExportToPhotoLibrary,
                 onChanged: widget.onSetAutoExport,
               ),
-              const Divider(height: 24, color: AppThemeColors.div),
+              Divider(height: 24, color: t.div),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -143,7 +156,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Text(
                     '选中混合格式时，会优先下载 JPEG / PNG，再继续下载 RAW 和视频，体感会更快。',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppThemeColors.t2,
+                      color: t.t2,
                     ),
                   ),
                 ],
@@ -234,6 +247,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required TextInputType keyboardType,
     required void Function(String) onSubmitted,
   }) {
+    final t = ViewfinderTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,7 +256,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppThemeColors.t2,
+              color: t.t2,
             ),
           ),
         ),
@@ -253,13 +267,13 @@ class _SettingsPageState extends State<SettingsPage> {
           textInputAction: TextInputAction.done,
           onSubmitted: onSubmitted,
           onChanged: onSubmitted,
-          style: const TextStyle(fontSize: 16, color: AppThemeColors.t1),
+          style: TextStyle(fontSize: 16, color: t.t1),
           decoration: InputDecoration(
             isDense: true,
             hintText: hint,
-            hintStyle: const TextStyle(color: AppThemeColors.tm),
+            hintStyle: TextStyle(color: t.tm),
             filled: true,
-            fillColor: AppThemeColors.controlBg,
+            fillColor: t.controlBg,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -277,6 +291,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required bool value,
     required void Function(bool) onChanged,
   }) {
+    final t = ViewfinderTheme.of(context);
     return Row(
       children: [
         Expanded(
@@ -289,8 +304,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         Switch(
           value: value,
-          activeTrackColor: AppThemeColors.aL,
-          activeThumbColor: AppThemeColors.aS,
+          activeTrackColor: t.aL,
+          activeThumbColor: t.aS,
           onChanged: onChanged,
         ),
       ],

@@ -27,6 +27,7 @@ class AppPreferencesStore {
             (json['autoExportToPhotoLibrary'] as bool?) ?? false,
         prioritizeJPEGDownloads:
             (json['prioritizeJPEGDownloads'] as bool?) ?? false,
+        themeID: (json['themeID'] as String?) ?? 'amber',
       );
     } catch (_) {
       return const CameraConnectionConfig();
@@ -40,6 +41,7 @@ class AppPreferencesStore {
       'transportMode': config.transportMode.name,
       'autoExportToPhotoLibrary': config.autoExportToPhotoLibrary,
       'prioritizeJPEGDownloads': config.prioritizeJPEGDownloads,
+      'themeID': config.themeID,
     };
     await _sharedPreferences.setString(_configKey, jsonEncode(json));
   }

@@ -7,6 +7,7 @@ import '../../domain/photo_asset.dart';
 import '../shared/app_theme.dart';
 import '../shared/shared_components.dart';
 import '../shared/formatters.dart' as fmt;
+import '../shared/viewfinder_theme.dart';
 
 class DownloadsPage extends StatelessWidget {
   const DownloadsPage({
@@ -45,6 +46,7 @@ class DownloadsPage extends StatelessWidget {
   }
 
   Widget _overviewSection(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -93,7 +95,7 @@ class DownloadsPage extends StatelessWidget {
                 label: '已完成',
                 value: '${state.completedItemCount}',
                 icon: Icons.check_circle_outline,
-                accent: AppThemeColors.ok,
+                accent: t.ok,
               ),
             ),
             const SizedBox(width: 12),
@@ -114,7 +116,7 @@ class DownloadsPage extends StatelessWidget {
     final progress = state.activeDownloadProgress;
     if (progress == null) {
       if (state.status == DownloadQueueStatus.running) {
-        return _sectionPlaceholder('准备中…', Icons.hourglass_bottom);
+        return _sectionPlaceholder(context, '准备中…', Icons.hourglass_bottom);
       }
       return const SizedBox.shrink();
     }
@@ -131,7 +133,7 @@ class DownloadsPage extends StatelessWidget {
   Widget _queueSection(BuildContext context) {
     final pending = state.pendingJobs;
     if (pending.isEmpty) {
-      return _sectionPlaceholder('下载队列', Icons.queue_outlined);
+      return _sectionPlaceholder(context, '下载队列', Icons.queue_outlined);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,6 +146,7 @@ class DownloadsPage extends StatelessWidget {
   }
 
   Widget _jobCard(BuildContext context, DownloadJob job) {
+    final t = ViewfinderTheme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: CustomCard(
@@ -159,13 +162,13 @@ class DownloadsPage extends StatelessWidget {
                           ? Icons.camera_alt_outlined
                           : Icons.movie_outlined,
                   size: 20,
-                  color: AppThemeColors.t2,
+                  color: t.t2,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     job.fileName,
-                    style: const TextStyle(color: AppThemeColors.t1),
+                    style: TextStyle(color: t.t1),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -177,10 +180,10 @@ class DownloadsPage extends StatelessWidget {
               children: [
                 Text(
                   fmt.fileSize(job.byteSize),
-                  style: GoogleFonts.dmMono(fontSize: 12, color: AppThemeColors.t2),
+                  style: GoogleFonts.dmMono(fontSize: 12, color: t.t2),
                 ),
                 const Spacer(),
-                _jobStatusChip(job.status),
+                _jobStatusChip(t, job.status),
                 if (job.status.canResume && onRetry != null) ...[
                   const SizedBox(width: 8),
                   SizedBox(
@@ -213,15 +216,15 @@ class DownloadsPage extends StatelessWidget {
     );
   }
 
-  Widget _jobStatusChip(DownloadJobStatus status) {
+  Widget _jobStatusChip(ViewfinderTheme t, DownloadJobStatus status) {
     final color = switch (status) {
-      DownloadJobStatus.queued => AppThemeColors.t2,
-      DownloadJobStatus.running => AppThemeColors.aS,
-      DownloadJobStatus.paused => AppThemeColors.warn,
-      DownloadJobStatus.interrupted => AppThemeColors.er,
-      DownloadJobStatus.cancelled => AppThemeColors.tm,
-      DownloadJobStatus.completed => AppThemeColors.ok,
-      DownloadJobStatus.failed => AppThemeColors.er,
+      DownloadJobStatus.queued => t.t2,
+      DownloadJobStatus.running => t.aS,
+      DownloadJobStatus.paused => t.t2,
+      DownloadJobStatus.interrupted => t.er,
+      DownloadJobStatus.cancelled => t.tm,
+      DownloadJobStatus.completed => t.ok,
+      DownloadJobStatus.failed => t.er,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -237,9 +240,10 @@ class DownloadsPage extends StatelessWidget {
   }
 
   Widget _recordsSection(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     final completed = state.completedJobs;
     if (completed.isEmpty) {
-      return _sectionPlaceholder('已下载记录', Icons.history_outlined);
+      return _sectionPlaceholder(context, '已下载记录', Icons.history_outlined);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,19 +255,19 @@ class DownloadsPage extends StatelessWidget {
           child: CustomCard(
             child: Row(
               children: [
-                const Icon(Icons.check_circle, size: 18, color: AppThemeColors.ok),
+                Icon(Icons.check_circle, size: 18, color: t.ok),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     job.fileName,
-                    style: const TextStyle(color: AppThemeColors.t1),
+                    style: TextStyle(color: t.t1),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
                   fmt.fileSize(job.byteSize),
-                  style: GoogleFonts.dmMono(fontSize: 12, color: AppThemeColors.t2),
+                  style: GoogleFonts.dmMono(fontSize: 12, color: t.t2),
                 ),
               ],
             ),
@@ -273,17 +277,18 @@ class DownloadsPage extends StatelessWidget {
     );
   }
 
-  Widget _sectionPlaceholder(String title, IconData icon) {
+  Widget _sectionPlaceholder(BuildContext context, String title, IconData icon) {
+    final t = ViewfinderTheme.of(context);
     return CustomCard(
       child: Column(
         children: [
-          Icon(icon, size: 32, color: AppThemeColors.tm),
+          Icon(icon, size: 32, color: t.tm),
           const SizedBox(height: 8),
-          Text(title, style: const TextStyle(color: AppThemeColors.tm)),
+          Text(title, style: TextStyle(color: t.tm)),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             '暂无数据',
-            style: TextStyle(fontSize: 11, color: AppThemeColors.tm),
+            style: TextStyle(fontSize: 11, color: t.tm),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../services/log_file_store.dart';
 import 'settings_page.dart';
 import 'settings_view_model.dart';
+import 'theme_view_model.dart';
 
 final logFileStoreProvider = Provider<LogFileStore>((ref) {
   throw UnimplementedError('override in main.dart');
@@ -17,6 +18,7 @@ class SettingsContainer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(preferencesProvider);
     final notifier = ref.read(preferencesProvider.notifier);
+    final selectedPalette = ref.watch(themeNotifierProvider);
     return SettingsPage(
       config: config,
       onSetHost: notifier.setHost,
@@ -27,6 +29,8 @@ class SettingsContainer extends ConsumerWidget {
       },
       onSetAutoExport: notifier.setAutoExportToPhotoLibrary,
       onSetPrioritizeJPEG: notifier.setPrioritizeJPEGDownloads,
+      selectedPalette: selectedPalette,
+      onSelectTheme: (id) => ref.read(themeNotifierProvider.notifier).select(id),
       onExportLogs: () async {
         final store = ref.read(logFileStoreProvider);
         final file = await store.exportFile();

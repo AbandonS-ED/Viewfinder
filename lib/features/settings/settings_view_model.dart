@@ -51,6 +51,11 @@ class PreferencesNotifier extends Notifier<CameraConnectionConfig> {
     unawaited(_save());
   }
 
+  void setThemeID(String id) {
+    state = state.copyWith(themeID: id);
+    unawaited(_save());
+  }
+
   Future<void> _save() async {
     final store = ref.read(preferencesStoreProvider);
     await store.saveConnectionConfig(state);

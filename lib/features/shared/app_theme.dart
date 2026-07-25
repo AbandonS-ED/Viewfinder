@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/camera_workflow_state.dart';
 
+@Deprecated('Use ViewfinderTheme.of(context).xxx instead')
 class AppThemeColors {
   AppThemeColors._();
 
@@ -60,54 +60,6 @@ class AppThemeRadius {
   static const double m = 12;
   static const double l = 18;
   static const double pill = 100;
-}
-
-ThemeData amberTheme() {
-  final base = ThemeData.light(useMaterial3: true);
-  final instrumentSerif = GoogleFonts.instrumentSerifTextTheme(base.textTheme);
-  final dmMono = GoogleFonts.dmMonoTextTheme(base.textTheme);
-  return base.copyWith(
-    scaffoldBackgroundColor: AppThemeColors.bg,
-    colorScheme: const ColorScheme.light(
-      primary: AppThemeColors.a,
-      onPrimary: AppThemeColors.btnT,
-      secondary: AppThemeColors.aS,
-      surface: AppThemeColors.card,
-      error: AppThemeColors.er,
-    ),
-    textTheme: TextTheme(
-      displayLarge: instrumentSerif.headlineLarge?.copyWith(
-        fontSize: 22,
-        fontWeight: FontWeight.bold,
-        color: AppThemeColors.t1,
-      ),
-      titleLarge: base.textTheme.titleLarge?.copyWith(
-        fontSize: 17,
-        fontWeight: FontWeight.bold,
-        color: AppThemeColors.t1,
-      ),
-      bodyLarge: base.textTheme.bodyLarge?.copyWith(
-        fontSize: 17,
-        fontWeight: FontWeight.normal,
-        color: AppThemeColors.t1,
-      ),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(
-        fontSize: 15,
-        fontWeight: FontWeight.normal,
-        color: AppThemeColors.t2,
-      ),
-      titleMedium: base.textTheme.titleMedium?.copyWith(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: AppThemeColors.t1,
-      ),
-      labelSmall: dmMono.labelSmall?.copyWith(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        color: AppThemeColors.tm,
-      ),
-    ),
-  );
 }
 
 class MetricTile extends StatelessWidget {

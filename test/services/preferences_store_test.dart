@@ -82,5 +82,25 @@ void main() {
       expect(decoded['host'], '1.2.3.4');
       expect(decoded['port'], 15740);
     });
+
+    test('themeID round-trip：保存 forest 后 load 回 forest；缺失字段走 default amber', () async {
+      SharedPreferences.setMockInitialValues({});
+      final sp = await SharedPreferences.getInstance();
+      final store = AppPreferencesStore(sharedPreferences: sp);
+
+      const original = CameraConnectionConfig(themeID: 'forest');
+      await store.saveConnectionConfig(original);
+      final loaded = store.loadConnectionConfig();
+      expect(loaded.themeID, 'forest');
+
+      // 缺失 themeID 字段走默认 amber
+      SharedPreferences.setMockInitialValues({
+        'camera_connection_config': jsonEncode({'host': '10.0.0.5'}),
+      });
+      final sp2 = await SharedPreferences.getInstance();
+      final store2 = AppPreferencesStore(sharedPreferences: sp2);
+      final loaded2 = store2.loadConnectionConfig();
+      expect(loaded2.themeID, 'amber');
+    });
   });
 }

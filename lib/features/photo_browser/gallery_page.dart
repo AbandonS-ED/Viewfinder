@@ -6,6 +6,7 @@ import '../../protocol/camera_transport.dart';
 import '../../services/asset_thumbnail_service.dart';
 import '../shared/app_theme.dart';
 import '../shared/shared_components.dart';
+import '../shared/viewfinder_theme.dart';
 import 'gallery_state.dart';
 import 'thumbnail_widget.dart';
 
@@ -51,6 +52,7 @@ class GalleryPage extends StatelessWidget {
   }
 
   Widget _metricBar(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
@@ -68,7 +70,7 @@ class GalleryPage extends StatelessWidget {
               label: '已选择',
               value: '${state.selectedAssetsCount}',
               icon: Icons.check_circle_outline,
-              accent: AppThemeColors.a,
+              accent: t.a,
             ),
           ),
         ],
@@ -112,27 +114,28 @@ class GalleryPage extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _chip('全部'),
+            _chip(context, '全部'),
             const SizedBox(width: 8),
-            _chip('RAW'),
+            _chip(context, 'RAW'),
             const SizedBox(width: 8),
-            _chip('JPEG'),
+            _chip(context, 'JPEG'),
             const SizedBox(width: 8),
-            _chip('视频'),
+            _chip(context, '视频'),
           ],
         ),
       ),
     );
   }
 
-  Widget _chip(String label) {
+  Widget _chip(BuildContext context, String label) {
+    final t = ViewfinderTheme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppThemeColors.surfaceMuted,
+        color: t.surfaceMuted,
         borderRadius: BorderRadius.circular(AppThemeRadius.pill),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 13, color: AppThemeColors.t2)),
+      child: Text(label, style: TextStyle(fontSize: 13, color: t.t2)),
     );
   }
 
@@ -152,22 +155,21 @@ class GalleryPage extends StatelessWidget {
           mainAxisSpacing: 8,
         ),
         itemCount: state.photoAssets.length,
-        itemBuilder: (context, index) => _thumbnail(state.photoAssets[index]),
+        itemBuilder: (context, index) => _thumbnail(context, state.photoAssets[index]),
       ),
     );
   }
 
-  Widget _thumbnail(PhotoAsset asset) {
+  Widget _thumbnail(BuildContext context, PhotoAsset asset) {
+    final t = ViewfinderTheme.of(context);
     final selected = state.selectedAssetIDs.contains(asset.id);
     return GestureDetector(
       onTap: () => onToggleSelection(asset.id),
       child: Container(
         decoration: BoxDecoration(
-          color: AppThemeColors.surfaceMuted,
+          color: t.surfaceMuted,
           borderRadius: BorderRadius.circular(10),
-          border: selected
-              ? Border.all(color: AppThemeColors.a, width: 2)
-              : null,
+          border: selected ? Border.all(color: t.a, width: 2) : null,
         ),
         child: Stack(
           children: [
@@ -190,7 +192,7 @@ class GalleryPage extends StatelessWidget {
                       asset.kind == PhotoAssetKind.raw
                           ? Icons.camera_alt_outlined
                           : Icons.photo_outlined,
-                      color: AppThemeColors.t2,
+                      color: t.t2,
                       size: 28,
                     ),
                     const SizedBox(height: 4),
@@ -201,7 +203,7 @@ class GalleryPage extends StatelessWidget {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 9, color: AppThemeColors.tm),
+                        style: TextStyle(fontSize: 9, color: t.tm),
                       ),
                     ),
                   ],
@@ -214,11 +216,11 @@ class GalleryPage extends StatelessWidget {
                 child: Container(
                   width: 20,
                   height: 20,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppThemeColors.a,
+                    color: t.a,
                   ),
-                  child: const Icon(Icons.check, size: 14, color: AppThemeColors.btnT),
+                  child: Icon(Icons.check, size: 14, color: t.btnT),
                 ),
               ),
           ],

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../domain/camera_session.dart';
 import '../../domain/camera_workflow_state.dart';
-import '../shared/app_theme.dart';
 import '../shared/shared_components.dart';
 import '../shared/status_badge.dart';
+import '../shared/viewfinder_theme.dart';
 import 'connection_state.dart' as cs;
 
 class ConnectionPage extends StatelessWidget {
@@ -90,7 +90,11 @@ class ConnectionPage extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.camera_alt_outlined, size: 20, color: AppThemeColors.t2),
+              Icon(
+                Icons.camera_alt_outlined,
+                size: 20,
+                color: ViewfinderTheme.of(context).t2,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

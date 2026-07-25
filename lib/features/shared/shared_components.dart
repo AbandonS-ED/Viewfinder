@@ -5,6 +5,7 @@ import '../../domain/active_download_progress.dart';
 import '../../domain/camera_workflow_state.dart';
 import 'app_theme.dart';
 import 'formatters.dart' as fmt;
+import 'viewfinder_theme.dart';
 
 class SectionHeader extends StatelessWidget {
   const SectionHeader(this.title, {super.key});
@@ -13,13 +14,14 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Text(
       title,
       style: GoogleFonts.dmMono(
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 1.5,
-        color: AppThemeColors.tm,
+        color: t.tm,
       ),
     );
   }
@@ -33,6 +35,7 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,7 +46,7 @@ class CustomCard extends StatelessWidget {
               title!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: AppThemeColors.t1,
+                color: t.t1,
               ),
             ),
           ),
@@ -51,13 +54,13 @@ class CustomCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppThemeColors.surfaceElevated,
+            color: t.surfaceElevated,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: AppThemeColors.shadow,
+                color: t.shadow,
                 blurRadius: 18,
-                offset: Offset(0, 8),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -86,6 +89,7 @@ class PrimaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return SizedBox(
       width: expands ? double.infinity : null,
       child: GestureDetector(
@@ -96,7 +100,7 @@ class PrimaryActionButton extends StatelessWidget {
             vertical: 14,
           ),
           decoration: BoxDecoration(
-            color: enabled ? AppThemeColors.btn : AppThemeColors.surfaceMuted,
+            color: enabled ? t.btn : t.surfaceMuted,
             borderRadius: BorderRadius.circular(AppThemeRadius.pill),
           ),
           child: Row(
@@ -104,7 +108,7 @@ class PrimaryActionButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: AppThemeColors.btnT),
+                Icon(icon, size: 18, color: t.btnT),
                 const SizedBox(width: 8),
               ],
               Text(
@@ -112,7 +116,7 @@ class PrimaryActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
-                  color: enabled ? AppThemeColors.btnT : AppThemeColors.t2,
+                  color: enabled ? t.btnT : t.t2,
                 ),
               ),
             ],
@@ -143,7 +147,8 @@ class SecondaryActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = foreground ?? AppThemeColors.t1;
+    final t = ViewfinderTheme.of(context);
+    final fg = foreground ?? t.t1;
     return SizedBox(
       width: expands ? double.infinity : null,
       child: GestureDetector(
@@ -154,9 +159,9 @@ class SecondaryActionButton extends StatelessWidget {
             vertical: 14,
           ),
           decoration: BoxDecoration(
-            color: AppThemeColors.surfaceElevated,
+            color: t.surfaceElevated,
             borderRadius: BorderRadius.circular(AppThemeRadius.pill),
-            border: Border.all(color: AppThemeColors.bdr),
+            border: Border.all(color: t.bdr),
           ),
           child: Row(
             mainAxisSize: expands ? MainAxisSize.max : MainAxisSize.min,
@@ -171,7 +176,7 @@ class SecondaryActionButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
-                  color: enabled ? fg : AppThemeColors.t2,
+                  color: enabled ? fg : t.t2,
                 ),
               ),
             ],
@@ -196,6 +201,7 @@ class GridRowItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -203,7 +209,7 @@ class GridRowItem extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 16, color: AppThemeColors.t2),
+            child: Icon(icon, size: 16, color: t.t2),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -219,7 +225,7 @@ class GridRowItem extends StatelessWidget {
               textAlign: TextAlign.end,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: AppThemeColors.t1,
+                color: t.t1,
               ),
             ),
           ),
@@ -236,6 +242,7 @@ class DownloadProgressDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -266,7 +273,7 @@ class DownloadProgressDetails extends StatelessWidget {
             Text(
               progress.percentageText,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppThemeColors.aS,
+                color: t.aS,
               ),
             ),
           ],
@@ -276,8 +283,8 @@ class DownloadProgressDetails extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: progress.fractionCompleted,
-            backgroundColor: AppThemeColors.surfaceMuted,
-            valueColor: const AlwaysStoppedAnimation(AppThemeColors.aS),
+            backgroundColor: t.surfaceMuted,
+            valueColor: AlwaysStoppedAnimation(t.aS),
             minHeight: 4,
           ),
         ),
@@ -312,11 +319,12 @@ class ShimmerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppThemeColors.surfaceMuted,
+        color: t.surfaceMuted,
         borderRadius: BorderRadius.circular(10),
       ),
     );
@@ -330,6 +338,7 @@ class LensGlowView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     final glowColor = workflowColor(state);
     final isSearching = switch (state) {
       CameraWorkflowState.connecting => true,
@@ -337,9 +346,8 @@ class LensGlowView extends StatelessWidget {
       CameraWorkflowState.downloading => true,
       _ => false,
     };
-    final iconColor = state == CameraWorkflowState.connected
-        ? AppThemeColors.ok
-        : AppThemeColors.t1;
+    final iconColor =
+        state == CameraWorkflowState.connected ? t.ok : t.t1;
 
     return SizedBox(
       width: 200,
@@ -368,14 +376,14 @@ class LensGlowView extends StatelessWidget {
           Container(
             width: 110,
             height: 110,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppThemeColors.surfaceElevated,
+              color: t.surfaceElevated,
               boxShadow: [
                 BoxShadow(
-                  color: AppThemeColors.shadow,
+                  color: t.shadow,
                   blurRadius: 20,
-                  offset: Offset(0, 10),
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),

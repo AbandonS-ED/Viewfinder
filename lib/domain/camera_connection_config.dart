@@ -21,6 +21,9 @@ class CameraConnectionConfig with _$CameraConnectionConfig {
 
     /// 下载队列中 JPEG 是否优先于 RAW
     @Default(false) bool prioritizeJPEGDownloads,
+
+    /// 主题 ID（amber / forest / slate / terr / onyx）
+    @Default('amber') String themeID,
   }) = _CameraConnectionConfig;
 
   const CameraConnectionConfig._();

@@ -6,7 +6,7 @@ import '../../domain/camera_session.dart';
 import '../../domain/photo_asset.dart';
 import '../../protocol/camera_transport.dart';
 import '../../services/asset_thumbnail_service.dart';
-import '../shared/app_theme.dart';
+import '../shared/viewfinder_theme.dart';
 
 class ThumbnailWidget extends StatelessWidget {
   const ThumbnailWidget({
@@ -52,18 +52,19 @@ class ThumbnailWidget extends StatelessWidget {
             ),
           );
         }
-        return _fallbackIcon();
+        return _fallbackIcon(context);
       },
     );
   }
 
-  Widget _fallbackIcon() {
+  Widget _fallbackIcon(BuildContext context) {
+    final t = ViewfinderTheme.of(context);
     return Center(
       child: Icon(
         asset.kind == PhotoAssetKind.raw
             ? Icons.camera_alt_outlined
             : Icons.photo_outlined,
-        color: AppThemeColors.t2,
+        color: t.t2,
         size: 28,
       ),
     );

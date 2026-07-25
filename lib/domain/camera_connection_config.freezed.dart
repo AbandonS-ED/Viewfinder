@@ -32,6 +32,9 @@ mixin _$CameraConnectionConfig {
   /// 下载队列中 JPEG 是否优先于 RAW
   bool get prioritizeJPEGDownloads => throw _privateConstructorUsedError;
 
+  /// 主题 ID（amber / forest / slate / terr / onyx）
+  String get themeID => throw _privateConstructorUsedError;
+
   /// Create a copy of CameraConnectionConfig
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -52,6 +55,7 @@ abstract class $CameraConnectionConfigCopyWith<$Res> {
     CameraTransportMode transportMode,
     bool autoExportToPhotoLibrary,
     bool prioritizeJPEGDownloads,
+    String themeID,
   });
 }
 
@@ -78,6 +82,7 @@ class _$CameraConnectionConfigCopyWithImpl<
     Object? transportMode = null,
     Object? autoExportToPhotoLibrary = null,
     Object? prioritizeJPEGDownloads = null,
+    Object? themeID = null,
   }) {
     return _then(
       _value.copyWith(
@@ -101,6 +106,10 @@ class _$CameraConnectionConfigCopyWithImpl<
                 ? _value.prioritizeJPEGDownloads
                 : prioritizeJPEGDownloads // ignore: cast_nullable_to_non_nullable
                       as bool,
+            themeID: null == themeID
+                ? _value.themeID
+                : themeID // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -122,6 +131,7 @@ abstract class _$$CameraConnectionConfigImplCopyWith<$Res>
     CameraTransportMode transportMode,
     bool autoExportToPhotoLibrary,
     bool prioritizeJPEGDownloads,
+    String themeID,
   });
 }
 
@@ -145,6 +155,7 @@ class __$$CameraConnectionConfigImplCopyWithImpl<$Res>
     Object? transportMode = null,
     Object? autoExportToPhotoLibrary = null,
     Object? prioritizeJPEGDownloads = null,
+    Object? themeID = null,
   }) {
     return _then(
       _$CameraConnectionConfigImpl(
@@ -168,6 +179,10 @@ class __$$CameraConnectionConfigImplCopyWithImpl<$Res>
             ? _value.prioritizeJPEGDownloads
             : prioritizeJPEGDownloads // ignore: cast_nullable_to_non_nullable
                   as bool,
+        themeID: null == themeID
+            ? _value.themeID
+            : themeID // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -182,6 +197,7 @@ class _$CameraConnectionConfigImpl extends _CameraConnectionConfig {
     this.transportMode = CameraTransportMode.experimentalNikon,
     this.autoExportToPhotoLibrary = false,
     this.prioritizeJPEGDownloads = false,
+    this.themeID = 'amber',
   }) : super._();
 
   /// 相机 IP 地址，默认 Nikon 相机热点
@@ -209,9 +225,14 @@ class _$CameraConnectionConfigImpl extends _CameraConnectionConfig {
   @JsonKey()
   final bool prioritizeJPEGDownloads;
 
+  /// 主题 ID（amber / forest / slate / terr / onyx）
+  @override
+  @JsonKey()
+  final String themeID;
+
   @override
   String toString() {
-    return 'CameraConnectionConfig(host: $host, port: $port, transportMode: $transportMode, autoExportToPhotoLibrary: $autoExportToPhotoLibrary, prioritizeJPEGDownloads: $prioritizeJPEGDownloads)';
+    return 'CameraConnectionConfig(host: $host, port: $port, transportMode: $transportMode, autoExportToPhotoLibrary: $autoExportToPhotoLibrary, prioritizeJPEGDownloads: $prioritizeJPEGDownloads, themeID: $themeID)';
   }
 
   @override
@@ -232,7 +253,8 @@ class _$CameraConnectionConfigImpl extends _CameraConnectionConfig {
                   other.prioritizeJPEGDownloads,
                   prioritizeJPEGDownloads,
                 ) ||
-                other.prioritizeJPEGDownloads == prioritizeJPEGDownloads));
+                other.prioritizeJPEGDownloads == prioritizeJPEGDownloads) &&
+            (identical(other.themeID, themeID) || other.themeID == themeID));
   }
 
   @override
@@ -243,6 +265,7 @@ class _$CameraConnectionConfigImpl extends _CameraConnectionConfig {
     transportMode,
     autoExportToPhotoLibrary,
     prioritizeJPEGDownloads,
+    themeID,
   );
 
   /// Create a copy of CameraConnectionConfig
@@ -265,6 +288,7 @@ abstract class _CameraConnectionConfig extends CameraConnectionConfig {
     final CameraTransportMode transportMode,
     final bool autoExportToPhotoLibrary,
     final bool prioritizeJPEGDownloads,
+    final String themeID,
   }) = _$CameraConnectionConfigImpl;
   const _CameraConnectionConfig._() : super._();
 
@@ -287,6 +311,10 @@ abstract class _CameraConnectionConfig extends CameraConnectionConfig {
   /// 下载队列中 JPEG 是否优先于 RAW
   @override
   bool get prioritizeJPEGDownloads;
+
+  /// 主题 ID（amber / forest / slate / terr / onyx）
+  @override
+  String get themeID;
 
   /// Create a copy of CameraConnectionConfig
   /// with the given fields replaced by the non-null parameter values.

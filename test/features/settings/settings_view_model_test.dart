@@ -82,6 +82,24 @@ void main() {
       expect(saved['port'], 11570);
     });
 
+    test('setThemeID 修改 themeID 并持久化', () async {
+      SharedPreferences.setMockInitialValues({});
+      final sp = await SharedPreferences.getInstance();
+      final container = ProviderContainer(overrides: [
+        sharedPreferencesProvider.overrideWithValue(sp),
+      ]);
+      addTearDown(() => container.dispose());
+
+      final notifier = container.read(preferencesProvider.notifier);
+      notifier.setThemeID('forest');
+      expect(container.read(preferencesProvider).themeID, 'forest');
+
+      final raw = sp.getString('camera_connection_config');
+      expect(raw, isNotNull);
+      final saved = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(saved['themeID'], 'forest');
+    });
+
     test('schema 兼容：保存后清空再 load 回正确值', () async {
       SharedPreferences.setMockInitialValues({});
       final sp = await SharedPreferences.getInstance();

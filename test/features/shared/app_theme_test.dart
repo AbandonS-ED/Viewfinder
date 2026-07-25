@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:viewfinder/domain/camera_workflow_state.dart';
 import 'package:viewfinder/features/shared/app_theme.dart';
 import 'package:viewfinder/features/shared/formatters.dart';
+import 'package:viewfinder/features/shared/viewfinder_theme.dart';
 
 void main() {
   group('workflowColor', () {

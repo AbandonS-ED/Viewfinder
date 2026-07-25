@@ -13,6 +13,8 @@ import 'app.dart';
 import 'features/downloads/download_manager_view_model.dart';
 import 'features/settings/settings_container.dart';
 import 'features/settings/settings_view_model.dart';
+import 'features/settings/theme_view_model.dart';
+import 'features/shared/viewfinder_theme.dart';
 import 'platform/photo_library_channel.dart';
 import 'services/asset_thumbnail_service.dart';
 import 'services/background_download_runner.dart';
@@ -55,7 +57,12 @@ void main() async {
           AssetThumbnailService(),
         ),
       ],
-      child: const ViewfinderApp(),
+      child: Consumer(
+        builder: (context, ref, _) {
+          final palette = ref.watch(themeNotifierProvider);
+          return ViewfinderApp(theme: viewfinderTheme(palette));
+        },
+      ),
     ),
   );
 }
