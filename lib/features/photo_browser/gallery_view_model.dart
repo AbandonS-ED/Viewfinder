@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/camera_session.dart';
-import '../../domain/photo_asset.dart';
 import '../app_shell/app_shell_view_model.dart';
 import '../connection_setup/connection_view_model.dart';
 import 'gallery_state.dart';
@@ -12,7 +11,7 @@ final galleryProvider =
 class GalleryNotifier extends AsyncNotifier<GalleryState> {
   @override
   Future<GalleryState> build() async {
-    return _mockState();
+    return _emptyState();
   }
 
   /// Session 状态变化时由外部监听器调用 (避免在 build() 中 ref.listen
@@ -22,7 +21,7 @@ class GalleryNotifier extends AsyncNotifier<GalleryState> {
       // ignore: discarded_futures
       _loadFromCamera();
     } else if (next == null && previous != null) {
-      state = AsyncValue.data(_mockState());
+      state = AsyncValue.data(_emptyState());
     }
   }
 
@@ -96,7 +95,7 @@ class GalleryNotifier extends AsyncNotifier<GalleryState> {
     final session = ref.read(cameraSessionProvider);
     final transport = ref.read(cameraTransportProvider);
     if (session == null || transport == null) {
-      state = AsyncValue.data(_mockState());
+      state = AsyncValue.data(_emptyState());
       return;
     }
     state = const AsyncValue.loading();
@@ -117,17 +116,10 @@ class GalleryNotifier extends AsyncNotifier<GalleryState> {
     }
   }
 
-  GalleryState _mockState() {
-    return GalleryState(
-      photoAssets: List.generate(12, (i) => PhotoAsset(
-        id: 'mock-$i',
-        remoteIdentifier: '$i',
-        fileName: 'DSC_0${i + 100}.NEF',
-        kind: i.isEven ? PhotoAssetKind.raw : PhotoAssetKind.jpeg,
-        byteSize: 1024 * 1024 * (10 + i),
-        captureDate: DateTime.now().subtract(Duration(hours: i)),
-        thumbnailInfo: null,
-      )),
+  /// 空 state：未连接相机或刚断开连接时使用
+  GalleryState _emptyState() {
+    return const GalleryState(
+      photoAssets: [],
       hasMorePhotos: false,
     );
   }

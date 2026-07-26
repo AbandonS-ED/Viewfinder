@@ -27,7 +27,7 @@ class _FakeTransportWithAssets extends FakeCameraTransport {
 
 void main() {
   group('GalleryNotifier', () {
-    test('build() 初始 state：返回 12 个 mock assets', () async {
+    test('build() 无 session：返回空 photoAssets（无 mock fallback）', () async {
       final container = ProviderContainer(
         overrides: [
           cameraSessionProvider.overrideWith((ref) => null),
@@ -37,13 +37,13 @@ void main() {
       addTearDown(() => container.dispose());
 
       final state = await container.read(galleryProvider.future);
-      expect(state.photoAssets.length, 12);
+      expect(state.photoAssets, isEmpty);
       expect(state.isLoading, isFalse);
       expect(state.hasMorePhotos, isFalse);
       expect(state.hasSelection, isFalse);
     });
 
-    test('refresh() 无 session 时回退 mock 12 张', () async {
+    test('refresh() 无 session：返回空（无 mock fallback）', () async {
       final container = ProviderContainer(
         overrides: [
           cameraSessionProvider.overrideWith((ref) => null),
@@ -57,10 +57,10 @@ void main() {
 
       await notifier.refresh();
       final state = container.read(galleryProvider).requireValue;
-      expect(state.photoAssets.length, 12);
+      expect(state.photoAssets, isEmpty);
     });
 
-    test('loadMore() 无 session 时 hasMorePhotos = false', () async {
+    test('loadMore() 无 session 时保持空，hasMorePhotos = false', () async {
       final container = ProviderContainer(
         overrides: [
           cameraSessionProvider.overrideWith((ref) => null),
@@ -74,47 +74,118 @@ void main() {
 
       await notifier.loadMore();
       final state = container.read(galleryProvider).requireValue;
+      expect(state.photoAssets, isEmpty);
       expect(state.hasMorePhotos, isFalse);
     });
 
-    test('toggleSelection(id)：选/取消改 selectedAssetIDs', () async {
-      final container = ProviderContainer(
-        overrides: [
-          cameraSessionProvider.overrideWith((ref) => null),
-          cameraTransportProvider.overrideWith((ref) => null),
+    test('onSessionChanged(session → null)：清空 photoAssets（断开相机）',
+        () async {
+      final transport = _FakeTransportWithAssets(
+        assets: [
+          PhotoAsset(
+            id: 'real-1',
+            remoteIdentifier: '1',
+            fileName: 'REAL_1.NEF',
+            kind: PhotoAssetKind.jpeg,
+            byteSize: 2048,
+            captureDate: DateTime(2026, 7, 24, 12),
+          ),
         ],
       );
-      addTearDown(() => container.dispose());
-
-      final state = await container.read(galleryProvider.future);
-      expect(state.hasSelection, isFalse);
-
-      final notifier = container.read(galleryProvider.notifier);
-      notifier.toggleSelection('mock-0');
-      expect(container.read(galleryProvider).requireValue.selectedAssetIDs, contains('mock-0'));
-      expect(container.read(galleryProvider).requireValue.selectedAssetsCount, 1);
-
-      notifier.toggleSelection('mock-0');
-      expect(container.read(galleryProvider).requireValue.selectedAssetIDs, isNot(contains('mock-0')));
-      expect(container.read(galleryProvider).requireValue.selectedAssetsCount, 0);
-    });
-
-    test('selectAllAssets() / clearSelection() 边界', () async {
       final container = ProviderContainer(
         overrides: [
-          cameraSessionProvider.overrideWith((ref) => null),
-          cameraTransportProvider.overrideWith((ref) => null),
+          cameraSessionProvider.overrideWith((ref) =>
+              CameraSession(id: 'session-1', connectedAt: DateTime.now())),
+          cameraTransportProvider.overrideWith((ref) => transport),
         ],
       );
       addTearDown(() => container.dispose());
 
       await container.read(galleryProvider.future);
+      await container.read(galleryProvider.notifier).refresh();
+      expect(container.read(galleryProvider).requireValue.photoAssets.length, 1);
+
+      container.read(galleryProvider.notifier).onSessionChanged(
+            CameraSession(id: 'session-1', connectedAt: DateTime.now()),
+            null,
+          );
+      final state = container.read(galleryProvider).requireValue;
+      expect(state.photoAssets, isEmpty);
+      expect(state.hasMorePhotos, isFalse);
+    });
+
+    test('toggleSelection(id)：选/取消改 selectedAssetIDs', () async {
+      final transport = _FakeTransportWithAssets(
+        assets: [
+          PhotoAsset(
+            id: 'real-0',
+            remoteIdentifier: '0',
+            fileName: 'REAL_0.NEF',
+            kind: PhotoAssetKind.raw,
+            byteSize: 1024,
+            captureDate: DateTime(2026, 7, 24, 12),
+          ),
+        ],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          cameraSessionProvider.overrideWith((ref) =>
+              CameraSession(id: 'session-1', connectedAt: DateTime.now())),
+          cameraTransportProvider.overrideWith((ref) => transport),
+        ],
+      );
+      addTearDown(() => container.dispose());
+
+      await container.read(galleryProvider.future);
+      await container.read(galleryProvider.notifier).refresh();
+      expect(
+          container.read(galleryProvider).requireValue.hasSelection, isFalse);
+
+      final notifier = container.read(galleryProvider.notifier);
+      notifier.toggleSelection('real-0');
+      expect(container.read(galleryProvider).requireValue.selectedAssetIDs,
+          contains('real-0'));
+      expect(
+          container.read(galleryProvider).requireValue.selectedAssetsCount, 1);
+
+      notifier.toggleSelection('real-0');
+      expect(container.read(galleryProvider).requireValue.selectedAssetIDs,
+          isNot(contains('real-0')));
+      expect(
+          container.read(galleryProvider).requireValue.selectedAssetsCount, 0);
+    });
+
+    test('selectAllAssets() / clearSelection() 边界', () async {
+      final transport = _FakeTransportWithAssets(
+        assets: List.generate(
+          5,
+          (i) => PhotoAsset(
+            id: 'real-$i',
+            remoteIdentifier: '$i',
+            fileName: 'REAL_$i.NEF',
+            kind: PhotoAssetKind.raw,
+            byteSize: 1024,
+            captureDate: DateTime(2026, 7, 24, 12),
+          ),
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          cameraSessionProvider.overrideWith((ref) =>
+              CameraSession(id: 'session-1', connectedAt: DateTime.now())),
+          cameraTransportProvider.overrideWith((ref) => transport),
+        ],
+      );
+      addTearDown(() => container.dispose());
+
+      await container.read(galleryProvider.future);
+      await container.read(galleryProvider.notifier).refresh();
       final notifier = container.read(galleryProvider.notifier);
 
       notifier.selectAllAssets();
       expect(
         container.read(galleryProvider).requireValue.selectedAssetIDs.length,
-        12,
+        5,
       );
 
       notifier.clearSelection();
