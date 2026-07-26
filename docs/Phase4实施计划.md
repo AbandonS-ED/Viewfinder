@@ -648,10 +648,11 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 | 11 | B7 ConnectionPage 底部 Action 区加 6 状态提示文字 | `lib/features/connection_setup/connection_page.dart` | `8f1f615` |
 | 12 | Phase 4c 代码骨架（8 个端到端 widget test + helpers + fake_nikon_server 占位） | `test/integration/*` + `test/helpers/stubs.dart` | `fa7eb16` |
 | 13 | B2 补全：`ZoomablePhotoPreview` 脚手架 → 完整实现（双击缩放 1x↔2.5x + close 控件淡入淡出 + 单击关闭仅 1x）+ Gallery mock fallback 移除（用户实测未连相机仍见 12 张假照片 → 删 `_mockState()` 返空 state，GalleryPage '暂无照片' 接管）| `lib/features/photo_browser/zoomable_photo_preview.dart` + `gallery_view_model.dart` + 对应测试 | (待 commit) |
+| 14 | B4 补全（轮播）：`HeroTitle` 加 brand 文本轮播。waitingForWifi 状态在 `['Viewfinder', '取景器', '为 Nikon 而生']` 间每 3s 切换；其他 5 state 走静态文案；切 state 时 timer cancel + 重启，brandIndex 归零；dispose 取消 timer | `lib/features/connection_setup/hero_title.dart` + `test/features/connection_setup/hero_title_test.dart` | (待 commit) |
 
 **验证**：
 - `dart analyze` 0 issues
-- `flutter test` **392 / 392 绿**（2026-07-26 B2 + Gallery mock 移除后基线）
+- `flutter test` **398 / 398 绿**（2026-07-26 B4 轮播后基线）
 - emulator ✅ 未连相机 → 「相册」tab 显示「暂无照片」空 state
 
 ### 2.2 未完成（剩余 4 项纯视觉）
@@ -666,7 +667,7 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 
 ### 2.3 当前总进度
 
-**完成 9 / 13 项 = 69%**（最小切片 3 + 收尾 1 + 后 4 + 2026-07-26 B2 补全 + Gallery 修复 = 9）
+**完成 11 / 13 项 = 85%**（最小切片 3 + 收尾 1 + 后 4 + 2026-07-26 B2 补全 + Gallery 修复 + B4 轮播 = 11。B3 顶部胶囊之前 commit `e4d17e7` 已完成（此复查确认））
 
 ---
 
@@ -723,10 +724,10 @@ test/
 **测试**：198 → **337**（+139 测：129 palette + 4 viewfinder_theme + 4 themeNotifier + 1 prefs + 1 settings）
 **风险**：低 | **可回滚**：是（`kEnableMultiTheme = false`）
 
-### 4.2 Phase 4b 完成 9 / 13（`7620314` + `ed93228` + `78e8f03` + `9741817` + `330e890` + `c3e5d9c` + `8f1f615` + 2026-07-26 B2/Gallery 修复）
+### 4.2 Phase 4b 完成 11 / 13（`7620314` + `ed93228` + `78e8f03` + `9741817` + `330e890` + `c3e5d9c` + `8f1f615` + `e4d17e7` + 2026-07-26 B2/Gallery/B4）
 
-**完成项**：Haptics + LensGlow 脉冲 + Shimmer 闪烁 + B9 拆 shared_components + B1 PageView 动效 + B5 ThroughputDiagnostics + B6 Gallery Top toolbar + B7 ConnectionPage 状态提示文字 + **B2 ZoomablePhotoPreview 双击缩放** (2026-07-26 补全) + **Gallery mock fallback 移除** (2026-07-26 用户报告 UX bug)
-**未完成项（4 个）**：B3 顶部胶囊 + B4 heroTitle 状态机 + B8 自定义 StatusBar + B10 圆角间距对齐（全部纯视觉，需 iPhone）
+**完成项**：Haptics + LensGlow 脉冲 + Shimmer 闪烁 + B9 拆 shared_components + B1 PageView 动效 + B5 ThroughputDiagnostics + B6 Gallery Top toolbar + B7 ConnectionPage 状态提示文字 + **B3 顶部 GlobalActivityCapsule** (`e4d17e7` 替换全屏 loading overlay) + **B2 ZoomablePhotoPreview 双击缩放** (2026-07-26 补全) + **Gallery mock fallback 移除** (2026-07-26 用户报告 UX bug) + **B4 HeroTitle 轮播** (2026-07-26 waitingForWifi 状态 brand 文本 3s 切换)
+**未完成项（2 个）**：B8 自定义 StatusBar + B10 圆角间距对齐（全部纯视觉，需 iPhone）
 
 ### 4.3 Phase 4c 代码骨架完成（`fa7eb16`）
 
@@ -756,7 +757,8 @@ test/
 | Phase 4b B5/B6 增量 | +9 (throughput + gridDensity) |
 | Phase 4b B2 补全 (2026-07-26) | +5 (ZoomablePhotoPreview 手势/缩放) |
 | Phase 3 Gallery mock 移除 (2026-07-26) | +1 净 (4 改写 + 1 新回归 - 0 删) |
-| **总计** | **392 / 392 绿** |
+| Phase 4b B4 轮播 (2026-07-26) | +6 (HeroTitle brand 轮播 timer/状态切换) |
+| **总计** | **398 / 398 绿** |
 
 ---
 
