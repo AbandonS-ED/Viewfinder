@@ -73,7 +73,7 @@ class ThemePalette {
 }
 
 // ────────────────────────────────────────────────────────
-//  Amber — 暖白底 + 琥珀金（现有 UI 1:1）
+//  Amber — 暖白底 + 琥珀金（muban.html 1:1）
 // ────────────────────────────────────────────────────────
 const amberPalette = ThemePalette(
   id: 'amber',
@@ -82,27 +82,27 @@ const amberPalette = ThemePalette(
   surfaceElevated: Color(0xFFFFFFFF),
   surfaceMuted: Color(0xFFF5F5F5),
   controlBg: Color(0xFFF2F2F3),
-  bdr: Color(0x12000000),
+  bdr: Color(0xFFE8E4DD),
   div: Color(0x0A000000),
   sep: Color(0x14000000),
   shadow: Color(0x0D000000),
-  t1: Color(0xFF1A1A1A),
-  t2: Color(0xFF6B7079),
+  t1: Color(0xFF2D2D2D),
+  t2: Color(0xFF7A756E),
   tm: Color(0xFFB5AFA6),
   a: Color(0xFFD4A24E),
   aL: Color(0xFFF5E6C8),
   aS: Color(0xFFE8B84B),
   ok: Color(0xFF5B8C5A),
-  er: Color(0xFFDB262E),
+  er: Color(0xFFC45B4A),
   btn: Color(0xFF1A1A1A),
   btnT: Color(0xFFFFFFFF),
   nbBg: Color(0xFFFFFFFF),
-  nbBdr: Color(0x12000000),
+  nbBdr: Color(0xFFE8E4DD),
   niC: Color(0xFFB5AFA6),
 );
 
 // ────────────────────────────────────────────────────────
-//  Forest — 深绿底 + 翠绿强调 (dark)
+//  Forest — 深绿底 + 翠绿强调 (dark, muban.html 1:1)
 // ────────────────────────────────────────────────────────
 const forestPalette = ThemePalette(
   id: 'forest',
@@ -111,27 +111,27 @@ const forestPalette = ThemePalette(
   surfaceElevated: Color(0xFF1A2E1E),
   surfaceMuted: Color(0xFF243E2A),
   controlBg: Color(0xFF2A4A30),
-  bdr: Color(0x1AFFFFFF),
+  bdr: Color(0xFF2A4A30),
   div: Color(0x0DFFFFFF),
   sep: Color(0x1AFFFFFF),
   shadow: Color(0x80000000),
   t1: Color(0xFFD8E8D8),
   t2: Color(0xFF7A9A7A),
   tm: Color(0xFF4A6A4A),
-  a: Color(0xFF5A8A5A),
-  aL: Color(0xFFB8D8B8),
-  aS: Color(0xFF6AA86A),
-  ok: Color(0xFF72B872),
-  er: Color(0xFFEF6B6B),
-  btn: Color(0xFF5A8A5A),
-  btnT: Color(0xFFFFFFFF),
+  a: Color(0xFF7CC9A0),
+  aL: Color(0x267CC9A0),
+  aS: Color(0xFF5BB088),
+  ok: Color(0xFF7CC9A0),
+  er: Color(0xFFD47A6A),
+  btn: Color(0xFF7CC9A0),
+  btnT: Color(0xFF111F14),
   nbBg: Color(0xFF1A2E1E),
-  nbBdr: Color(0x1AFFFFFF),
+  nbBdr: Color(0xFF2A4A30),
   niC: Color(0xFF4A6A4A),
 );
 
 // ────────────────────────────────────────────────────────
-//  Slate — 冷灰底 + 蓝灰强调 (light)
+//  Slate — 冷灰底 + 蓝灰强调 (light, muban.html 1:1)
 // ────────────────────────────────────────────────────────
 const slatePalette = ThemePalette(
   id: 'slate',
@@ -140,27 +140,27 @@ const slatePalette = ThemePalette(
   surfaceElevated: Color(0xFFFAFBFC),
   surfaceMuted: Color(0xFFE8EAED),
   controlBg: Color(0xFFE5E8EB),
-  bdr: Color(0x0F000000),
+  bdr: Color(0xFFDDE0E4),
   div: Color(0x08000000),
   sep: Color(0x0F000000),
   shadow: Color(0x0F000000),
   t1: Color(0xFF2C3E50),
   t2: Color(0xFF7F8C9B),
   tm: Color(0xFFA8B2BC),
-  a: Color(0xFF3D5A80),
-  aL: Color(0xFFB8CCE0),
-  aS: Color(0xFF5A88B0),
+  a: Color(0xFF6B8DAD),
+  aL: Color(0x1F6B8DAD),
+  aS: Color(0xFF557FA0),
   ok: Color(0xFF5A8060),
-  er: Color(0xFFD04040),
+  er: Color(0xFFC0574A),
   btn: Color(0xFF2C3E50),
   btnT: Color(0xFFFFFFFF),
   nbBg: Color(0xFFFAFBFC),
-  nbBdr: Color(0x0F000000),
+  nbBdr: Color(0xFFDDE0E4),
   niC: Color(0xFFA8B2BC),
 );
 
 // ────────────────────────────────────────────────────────
-//  Terr — 暖沙底 + 陶土橙强调 (light)
+//  Terr — 暖沙底 + 陶土橙强调 (light, muban.html 1:1)
 // ────────────────────────────────────────────────────────
 const terrPalette = ThemePalette(
   id: 'terr',
@@ -169,27 +169,27 @@ const terrPalette = ThemePalette(
   surfaceElevated: Color(0xFFFFFCF8),
   surfaceMuted: Color(0xFFF0E8DC),
   controlBg: Color(0xFFE8DDD0),
-  bdr: Color(0x14000000),
+  bdr: Color(0xFFE8DDD0),
   div: Color(0x0A000000),
   sep: Color(0x14000000),
   shadow: Color(0x0D000000),
   t1: Color(0xFF3D2B1F),
   t2: Color(0xFF8A7060),
   tm: Color(0xFFBBA898),
-  a: Color(0xFFC0693A),
-  aL: Color(0xFFE8C8A8),
-  aS: Color(0xFFD88550),
+  a: Color(0xFFC2703E),
+  aL: Color(0xFFF0D8C4),
+  aS: Color(0xFFA85F2E),
   ok: Color(0xFF7A9060),
-  er: Color(0xFFCC3333),
+  er: Color(0xFFC45B4A),
   btn: Color(0xFF3D2B1F),
   btnT: Color(0xFFFFFFFF),
   nbBg: Color(0xFFFFFCF8),
-  nbBdr: Color(0x14000000),
+  nbBdr: Color(0xFFE8DDD0),
   niC: Color(0xFFBBA898),
 );
 
 // ────────────────────────────────────────────────────────
-//  Onyx — 纯黑底 + 银灰强调 (dark)
+//  Onyx — 纯黑底 + 暗金强调 (dark, muban.html 1:1)
 // ────────────────────────────────────────────────────────
 const onyxPalette = ThemePalette(
   id: 'onyx',
@@ -198,22 +198,22 @@ const onyxPalette = ThemePalette(
   surfaceElevated: Color(0xFF161618),
   surfaceMuted: Color(0xFF1E1E20),
   controlBg: Color(0xFF262629),
-  bdr: Color(0x1EFFFFFF),
+  bdr: Color(0xFF262629),
   div: Color(0x0DFFFFFF),
   sep: Color(0x1EFFFFFF),
   shadow: Color(0x99000000),
   t1: Color(0xFFE8E8E8),
   t2: Color(0xFF7A7A7E),
   tm: Color(0xFF4A4A4E),
-  a: Color(0xFF9A9AAA),
-  aL: Color(0xFFC8C8D8),
-  aS: Color(0xFFB0B0C0),
-  ok: Color(0xFF6A9A6A),
-  er: Color(0xFFEE6666),
-  btn: Color(0xFF9A9AAA),
-  btnT: Color(0xFFFFFFFF),
+  a: Color(0xFFE8B84B),
+  aL: Color(0x1FE8B84B),
+  aS: Color(0xFFB8932F),
+  ok: Color(0xFF5ADA80),
+  er: Color(0xFFF07070),
+  btn: Color(0xFFE8B84B),
+  btnT: Color(0xFF0C0C0E),
   nbBg: Color(0xFF161618),
-  nbBdr: Color(0x1EFFFFFF),
+  nbBdr: Color(0xFF262629),
   niC: Color(0xFF4A4A4E),
 );
 
