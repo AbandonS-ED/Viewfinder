@@ -27,9 +27,19 @@
 - **改 UI 风格**：用户没说要换风格，复用现有设计
 - **改无关逻辑**：比如让 A 功能能跑，别顺手把 B 功能的代码也改了
 - **改 pubspec 依赖**：除非用户明确同意；依赖改动需先说明替代方案
-- **commit / push**：永远由用户决定何时 commit、写什么 message、是否 push
+- **commit / push (默认)**：AI 不得自行 commit 或 push
 - **删除已有文件**：永远不要，除非用户明确说"删 X"
 - **编造 API**：不知道的 PTP/IP opcode / Flutter API / Dart 方法，**必须查文档**，不能脑补
+
+### 🔓 commit / push 临时授权条款
+
+当用户在同一会话内**明确声明**「授权你处理 commit / push」（或类似措辞）时，AI 可代为执行，但必须遵守：
+
+1. **每次 commit 前**：输出拟 commit 的文件清单 + commit message，等用户确认后再执行
+2. **push 前**：必须用户**当场**说"push"才执行（不允许 AI 自动 push）
+3. **commit message**：必须由用户提供或显式确认，AI 不得擅自编造
+4. **授权范围**：仅限当次会话有效；新开会话需重新授权
+5. **可撤回**：用户随时说"停止代 commit"，AI 立刻停下
 
 ### ❓ 拿不准时
 
@@ -246,6 +256,8 @@ reference/
 | 2026-07-25 | **Phase 4a 完成**：5 套主题切换（amber/forest/slate/terr/onyx）+ ThemeExtension + ViewfinderTheme.of(context) + ThemeNotifier 反应式 + themeID 持久化 + Settings "外观" section + kEnableMultiTheme feature flag 守卫 + AppThemeColors 标 @Deprecated + 6 widget/page 全迁移 (21 处 `AppThemeColors.xxx` → `ViewfinderTheme.of(context).xxx`) + **139 新测** (129 palette 色值 + 4 viewfinder_theme + 4 themeNotifier + 1 prefs round-trip + 1 settings setThemeID) = **337 / 337 全绿**, `dart analyze` 0 issues. 详见 [`Phase4实施计划.md §1.17`](docs/Phase4实施计划.md) (commit `2583dbd`) |
 | 2026-07-25 | **Phase 4b 最小切片**（仅 3 项）：Haptics 触觉反馈实装（flutter/services.dart HapticFeedback）+ LensGlowView 1.4s 脉冲动画 (AnimationController reverse, scale 0.92↔1.08, alpha 0.06↔0.22) + ShimmerView 1.4s 闪烁动画 (Color.lerp surfaceMuted↔controlBg) + PrimaryActionButton/SecondaryActionButton onTap 包 Haptics.impactLight(). Phase 4b 剩余 10 项（页面切换动效 / 全屏预览 / 顶部胶囊 / heroTitle 状态机 / 测速 section / 视觉对齐 etc）= 30h 待启动. 详见 [`Phase4实施计划.md §2`](docs/Phase4实施计划.md) (commit `7620314`) |
 | 2026-07-25 | **Phase 4b 收尾 + B1/B5/B6/B7 + Phase 4c 代码骨架**：(1) 拆 shared_components.dart 到 widgets/ 子目录 9 文件（SectionHeader/CustomCard/PrimaryActionButton/SecondaryActionButton/GridRowItem/DownloadProgressDetails/Haptics/ShimmerView/LensGlowView）+ 13 widgets_test (Haptics 6 + ShimmerView 2 + LensGlowView 5) `ed93228`; (2) 拆 defaults_section.dart + support_section.dart, settings_page 314→247 行 `78e8f03`; (3) IndexedStack → PageView + 280ms easeInOutCubic 滑动动效 (B1) `9741817`; (4) DownloadThroughputStats + throughput_diagnostics_section (B5, 完成项目/totalBytes/avgBytesPerItem) `330e890`; (5) GalleryState 加 GridDensity enum + GridDensity.standard/compact (3↔5 列) + Top toolbar (B6) `c3e5d9c`; (6) ConnectionPage 底部 Action 区加 6 workflow state 提示文字 (B7) `8f1f615`; (7) Phase 4c 代码骨架 8 个端到端 widget test + test_app helper + fake_nikon_server 占位 `fa7eb16`. Phase 4b 现 60% (8 / 13 项); 剩余 B2 ZoomablePhotoPreview / B3 顶部胶囊 / B4 heroTitle / B8 自定义 StatusBar / B10 视觉对齐 5 项全视觉需 iPhone. **测试 337 → 368** (+31: 13 widgets + 9 throughput/gridDensity + 8 integration + 1 gridDensity), `dart analyze` 0 issues. 详见 [`Phase4实施计划.md §2.1`](docs/Phase4实施计划.md) |
+| 2026-07-26 | **B2 补全**：`ZoomablePhotoPreview` 从脚手架升级为完整实现。StatelessWidget → StatefulWidget；新增 `TransformationController` + `_isZoomed` 状态；**双击缩放切换 1x ↔ 2.5x**（Matrix4 scaleByDouble，以屏幕为中心，跟 iOS Photos 一致）；**缩放时 close 按钮 AnimatedOpacity 淡出**（300ms）；**单击关闭仅在 1x 时触发**（缩放态空 tap 不响应，避免误触）；GestureDetector `onTap` + `onDoubleTap` 共存走双击检测窗口 (~300ms 延迟, 同 iOS Photos UX); 补 5 widget 测 (初始 scale 1.0 / 双击→2.5x / 缩放后单击不关闭 / 1x close opacity 1.0 / 缩放时 close opacity 0.0) | 测试 368 → 373 (+5), `dart analyze` 0 issues |
+| 2026-07-26 | **修复 Gallery 未连相机显示 mock 假照片**：移除 `gallery_view_model.dart` 的 `_mockState()` fallback（12 张 DSC_0100.NEF 等假数据）。`build()` / `_loadFromCamera()` 无 session 时返 `const GalleryState()` 空 state；`onSessionChanged(session → null)` 也返空（断开相机清空）；4 个 mock 依赖测试改用 `_FakeTransportWithAssets` 真数据；+1 回归测 `onSessionChanged(session → null)` 清空。GalleryPage 已有的 empty state ('暂无照片') 自然接管 | 测试 373 → 392 (+1 净: 4 改 + 1 新 - 0 删), `dart analyze` 0 issues; emulator 验证 ✅ ('暂无照片' 空 state 显示正常) |
 
 ### 12.1 Phase 3 关键决策 (新增)
 
@@ -277,7 +289,7 @@ reference/
 
 | 偏离项 | 计划要求 | 实际实现 | 原因 / 状态 |
 |---|---|---|---|
-| Gallery 默认 fallback 仍用 mock | §1.1 §16 #4 "12+ 张真实缩略图（从相机拉的，不是 mock）" | `build()` 返 12 张 mock，外部 `onSessionChanged(null→session)` 触发 `refresh()` 切真实 | mock 保留用于 (a) 测试环境 (b) 未连接相机的 demo；连接后立刻切真实数据。**Phase 4 评估是否需要去掉 mock fallback** |
+| Gallery 默认 fallback 仍用 mock | §1.1 §16 #4 "12+ 张真实缩略图（从相机拉的，不是 mock）" | `build()` 返 12 张 mock，外部 `onSessionChanged(null→session)` 触发 `refresh()` 切真实 | **2026-07-26 已修**：移除 `_mockState()`，无 session 时返 `const GalleryState()` 空 state；`onSessionChanged(session → null)` 断开时也返空；GalleryPage '暂无照片' empty state 接管。mock 移除后 4 个测试改用 `_FakeTransportWithAssets` 真数据，+1 回归测锁住 session→null 清空行为 |
 | `AssetThumbnailService` 磁盘 cache | §3.6 列了 5 个测含 "磁盘 cache hit" | 纯内存 cache (Line 11 注释明确); 测试 8 个全部内存路径 | Android 文件系统小文件随机读性能不适合；iOS 端有 NSURLCache 兜底。**Phase 4 评估 iOS 端磁盘 cache 价值** |
 | 持久化 JSON 文件数 | §4.1 "3 JSON 文件" | 2 JSON 文件 (`downloads-manifest.json` + `download-jobs.json`) | 取消独立的 throughput 文件 (Phase 3 简化为 memory only, 计划 §18 推到 Phase 4) |
 | `WRITE_EXTERNAL_STORAGE` maxSdkVersion | §12.1 写 "32" | 实际 "29" | 28+ scoped storage 引入，WRITE_EXTERNAL_STORAGE 仅 Android 9 及以下需要 |
