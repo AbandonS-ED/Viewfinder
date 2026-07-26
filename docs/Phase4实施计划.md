@@ -729,6 +729,8 @@ test/
 **完成项**：Haptics + LensGlow 脉冲 + Shimmer 闪烁 + B9 拆 shared_components + B1 PageView 动效 + B5 ThroughputDiagnostics + B6 Gallery Top toolbar + B7 ConnectionPage 状态提示文字 + **B3 顶部 GlobalActivityCapsule** (`e4d17e7` 替换全屏 loading overlay) + **B2 ZoomablePhotoPreview 双击缩放** (2026-07-26 补全) + **Gallery mock fallback 移除** (2026-07-26 用户报告 UX bug) + **B4 HeroTitle 轮播** (2026-07-26 waitingForWifi 状态 brand 文本 3s 切换)
 **未完成项（2 个）**：B8 自定义 StatusBar + B10 圆角间距对齐（全部纯视觉，需 iPhone）
 
+> B10 详细 diff 报告：[`B10_visual_audit.md`](B10_visual_audit.md) — 27 处颜色不一致 + 缺 7 间距 / 4 圆角 / 11 字号 token + 页面布局微调。推荐先做颜色 (HIGH, 1 commit) 后等 iPhone 再做布局。
+
 ### 4.3 Phase 4c 代码骨架完成（`fa7eb16`）
 
 **完成项**：10 新文件（helpers/stubs + integration/helpers/test_app + fake_nikon_server + 8 integration_test 文件）
