@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../domain/camera_workflow_state.dart';
@@ -7,11 +9,27 @@ import '../shared/viewfinder_theme.dart';
 class HeroTitleStateMachine {
   const HeroTitleStateMachine._();
 
+  /// waitingForWifi 时循环显示的品牌文案（每 3s 切换）
+  static const brandTexts = <String>[
+    'Viewfinder',
+    '取景器',
+    '为 Nikon 而生',
+  ];
+
+  /// 轮播间隔
+  static const brandRotationInterval = Duration(seconds: 3);
+
   /// 取当前状态的 hero 标题
-  static String titleFor(CameraWorkflowState state) {
+  ///
+  /// waitingForWifi 状态由 [brandIndex] 决定具体显示哪个品牌文案（轮播用），
+  /// 其他状态走静态文案。
+  static String titleFor(CameraWorkflowState state, {int brandIndex = 0}) {
+    if (state == CameraWorkflowState.waitingForWifi) {
+      return brandTexts[brandIndex % brandTexts.length];
+    }
     switch (state) {
       case CameraWorkflowState.waitingForWifi:
-        return 'Viewfinder';
+        return brandTexts[0];
       case CameraWorkflowState.connecting:
         return '搜索相机…';
       case CameraWorkflowState.loadingPhotos:
@@ -44,16 +62,65 @@ class HeroTitleStateMachine {
   }
 }
 
-/// HeroSection 标题：随状态切换文案 + 淡入淡出
-class HeroTitle extends StatelessWidget {
+/// HeroSection 标题：
+/// - waitingForWifi 时在 [HeroTitleStateMachine.brandTexts] 间每 3s 轮播
+/// - 其他 state 走静态文案 + 淡入淡出切换
+class HeroTitle extends StatefulWidget {
   const HeroTitle({super.key, required this.state});
 
   final CameraWorkflowState state;
 
   @override
+  State<HeroTitle> createState() => _HeroTitleState();
+}
+
+class _HeroTitleState extends State<HeroTitle> {
+  int _brandIndex = 0;
+  Timer? _brandTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncTimer();
+  }
+
+  @override
+  void didUpdateWidget(HeroTitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state != oldWidget.state) {
+      setState(() => _brandIndex = 0);
+      _syncTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _brandTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncTimer() {
+    _brandTimer?.cancel();
+    if (widget.state == CameraWorkflowState.waitingForWifi) {
+      _brandTimer = Timer.periodic(
+        HeroTitleStateMachine.brandRotationInterval,
+        (_) {
+          if (!mounted) return;
+          setState(() => _brandIndex = (_brandIndex + 1) %
+              HeroTitleStateMachine.brandTexts.length);
+        },
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = ViewfinderTheme.of(context);
-    final title = HeroTitleStateMachine.titleFor(state);
+    final title = HeroTitleStateMachine.titleFor(
+      widget.state,
+      brandIndex: _brandIndex,
+    );
+    final subtitle = HeroTitleStateMachine.subtitleFor(widget.state);
     return Column(
       children: [
         AnimatedSwitcher(
@@ -70,7 +137,7 @@ class HeroTitle extends StatelessWidget {
           ),
           child: Text(
             title,
-            key: ValueKey(title),
+            key: ValueKey('title_${widget.state.name}_$_brandIndex'),
             style: Theme.of(context).textTheme.displayLarge?.copyWith(
               color: t.t1,
             ),
@@ -80,8 +147,8 @@ class HeroTitle extends StatelessWidget {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           child: Text(
-            HeroTitleStateMachine.subtitleFor(state),
-            key: ValueKey('subtitle_${state.name}'),
+            subtitle,
+            key: ValueKey('subtitle_${widget.state.name}'),
             style: TextStyle(fontSize: 13, color: t.t2),
           ),
         ),
