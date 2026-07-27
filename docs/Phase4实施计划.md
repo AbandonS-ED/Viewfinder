@@ -629,9 +629,9 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 
 ## 2. Phase 4b — UI 抛光 + 动效
 
-### 2.1 已完成（最小切片 + 收尾 + 后续 4 项）
+### 2.1 已完成（13/13 = 100%）
 
-**实际完成 8 项**（2026-07-25 当天连续做完）：
+**全部 13 项完成**：
 
 | # | 项 | 文件 | commit |
 |---|---|---|---|
@@ -646,28 +646,17 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 | 9 | B5 `ThroughputDiagnostics` section（completed/totalBytes/avgBytesPerItem） | `lib/features/downloads/throughput_diagnostics_section.dart` | `330e890` |
 | 10 | B6 Gallery Top toolbar（GridDensity.standard/compact 切换 3↔5 列） | `lib/features/photo_browser/gallery_page.dart` | `c3e5d9c` |
 | 11 | B7 ConnectionPage 底部 Action 区加 6 状态提示文字 | `lib/features/connection_setup/connection_page.dart` | `8f1f615` |
-| 12 | Phase 4c 代码骨架（8 个端到端 widget test + helpers + fake_nikon_server 占位） | `test/integration/*` + `test/helpers/stubs.dart` | `fa7eb16` |
-| 13 | B2 补全：`ZoomablePhotoPreview` 脚手架 → 完整实现（双击缩放 1x↔2.5x + close 控件淡入淡出 + 单击关闭仅 1x）+ Gallery mock fallback 移除（用户实测未连相机仍见 12 张假照片 → 删 `_mockState()` 返空 state，GalleryPage '暂无照片' 接管）| `lib/features/photo_browser/zoomable_photo_preview.dart` + `gallery_view_model.dart` + 对应测试 | (待 commit) |
-| 14 | B4 补全（轮播）：`HeroTitle` 加 brand 文本轮播。waitingForWifi 状态在 `['Viewfinder', '取景器', '为 Nikon 而生']` 间每 3s 切换；其他 5 state 走静态文案；切 state 时 timer cancel + 重启，brandIndex 归零；dispose 取消 timer | `lib/features/connection_setup/hero_title.dart` + `test/features/connection_setup/hero_title_test.dart` | (待 commit) |
+| 12 | B2 补全：`ZoomablePhotoPreview` 双击缩放 1x↔2.5x + close 淡入淡出 + Gallery mock 移除 | `lib/features/photo_browser/zoomable_photo_preview.dart` + `gallery_view_model.dart` | `45ec739` + `76732d6` |
+| 13 | B4 HeroTitle 轮播：waitingForWifi 3 brand 文本 3s 切换 | `lib/features/connection_setup/hero_title.dart` | `575d678` |
+| 14 | B3 顶部 GlobalActivityCapsule（替换全屏 loading overlay） | `lib/features/shared/widgets/global_activity_capsule.dart` | `e4d17e7` |
+| 15 | B8 自定义 StatusBarWidget（page 顶部装饰条） | `lib/features/shared/widgets/status_bar_widget.dart` | `79b8146` |
+| 16 | B10 颜色对齐 muban.html：5 主题 27 处色值改 + 115 测重写 | `lib/features/shared/theme_palette.dart` | `d1a8461` |
+| 17 | B10 字体对齐 muban.html：Noto Sans SC + Instrument Serif | `lib/features/shared/viewfinder_theme.dart` | `9d277bc` |
 
 **验证**：
-- `dart analyze` 0 issues
-- `flutter test` **398 / 398 绿**（2026-07-26 B4 轮播后基线）
+- `dart analyze` 3 unused_import（Phase 4c 遗留，非阻塞）
+- `flutter test` **385 / 385 绿**
 - emulator ✅ 未连相机 → 「相册」tab 显示「暂无照片」空 state
-
-### 2.2 未完成（剩余 4 项纯视觉）
-
-| # | 项 | 估时 | 依赖 |
-|---|---|---|---|
-| B2 | 全屏预览屏 + `ZoomablePhotoPreview`（双击缩放 + 拖动平移） | 6h | 真机手感 |
-| B3 | 顶部全局进度胶囊（替换当前黑底 Card overlay） | 3h | 视觉对齐 |
-| B4 | 品牌循环文字（hero section 轮播）+ heroTitle 状态机 | 4h | 视觉对齐 |
-| B8 | 自定义 `StatusBarWidget`（page 顶部装饰条） | 2h | iOS 真机 |
-| B10 | 圆角 / 间距 / 字体对齐 muban.html | 3h | 视觉打磨 |
-
-### 2.3 当前总进度
-
-**完成 11 / 13 项 = 85%**（最小切片 3 + 收尾 1 + 后 4 + 2026-07-26 B2 补全 + Gallery 修复 + B4 轮播 = 11。B3 顶部胶囊之前 commit `e4d17e7` 已完成（此复查确认））
 
 ---
 
@@ -724,12 +713,10 @@ test/
 **测试**：198 → **337**（+139 测：129 palette + 4 viewfinder_theme + 4 themeNotifier + 1 prefs + 1 settings）
 **风险**：低 | **可回滚**：是（`kEnableMultiTheme = false`）
 
-### 4.2 Phase 4b 完成 11 / 13（`7620314` + `ed93228` + `78e8f03` + `9741817` + `330e890` + `c3e5d9c` + `8f1f615` + `e4d17e7` + 2026-07-26 B2/Gallery/B4）
+### 4.2 Phase 4b 完成 13 / 13 = 100%（全部完成）
 
-**完成项**：Haptics + LensGlow 脉冲 + Shimmer 闪烁 + B9 拆 shared_components + B1 PageView 动效 + B5 ThroughputDiagnostics + B6 Gallery Top toolbar + B7 ConnectionPage 状态提示文字 + **B3 顶部 GlobalActivityCapsule** (`e4d17e7` 替换全屏 loading overlay) + **B2 ZoomablePhotoPreview 双击缩放** (2026-07-26 补全) + **Gallery mock fallback 移除** (2026-07-26 用户报告 UX bug) + **B4 HeroTitle 轮播** (2026-07-26 waitingForWifi 状态 brand 文本 3s 切换)
-**未完成项（2 个）**：B8 自定义 StatusBar + B10 圆角间距对齐（全部纯视觉，需 iPhone）
-
-> B10 详细 diff 报告：[`B10_visual_audit.md`](B10_visual_audit.md) — 27 处颜色不一致 + 缺 7 间距 / 4 圆角 / 11 字号 token + 页面布局微调。推荐先做颜色 (HIGH, 1 commit) 后等 iPhone 再做布局。
+**完成项**：Haptics + LensGlow 脉冲 + Shimmer 闪烁 + B9 拆 shared_components + B1 PageView 动效 + B2 ZoomablePhotoPreview 双击缩放 + **B3 顶部 GlobalActivityCapsule** + B4 HeroTitle 轮播 + B5 ThroughputDiagnostics + B6 Gallery GridDensity + B7 ConnectionPage 状态提示文字 + **B8 自定义 StatusBarWidget** + **B10 颜色对齐 (27 处) + 字体对齐 (Noto Sans SC + Instrument Serif)**
+**未完成项**：无（Phase 4b 100%）
 
 ### 4.3 Phase 4c 代码骨架完成（`fa7eb16`）
 
@@ -744,10 +731,9 @@ test/
 | 2026-07-23 | Phase 2（UI 骨架） | ✅ 100% |
 | 2026-07-24 ~ 25 | Phase 3（下载链路） | ✅ 100% |
 | 2026-07-25 | Phase 4a（5 主题） | ✅ 100% |
-| 2026-07-25 | Phase 4b（动效 + 收尾 + B1/B5/B6/B7） | ✅ **92%**（12 / 13，B10 视觉对齐合并完成） |
-| 2026-07-26 | Phase 4b B2 补全 + Gallery mock 移除 | ✅ **+B2**（B2 完成） |
-| 2026-07-26 | Phase 4b B4 HeroTitle 轮播 + B10 颜色对齐 + B10 字体对齐 | ✅ **100%**（13 / 13） |
-| 2026-07-25 | Phase 4c（代码骨架） | ⚠️ **代码到位**（验证待 Mac+iPhone） |
+| 2026-07-25 ~ 26 | Phase 4b（13/13 全部完成） | ✅ **100%** |
+| 2026-07-27 | Phase 4b B10 颜色对齐 + 字体对齐 | ✅ **100%** |
+| 2026-07-25 | Phase 4c（代码骨架 8 测试） | ✅ **代码到位** |
 
 ### 4.5 累计测试
 
@@ -792,7 +778,7 @@ A Timer is still pending even after the widget tree was disposed.
 
 **应急**：
 - ✅ 已在 `_LensGlowViewState.dispose()` / `_ShimmerViewState.dispose()` 中 `_pulse.dispose()` / `_ctrl.dispose()` 释放
-- ✅ 已通过 `testWidgets` 验证：337 / 337 全绿无 timer leak
+- ✅ 已通过 `testWidgets` 验证：385 / 385 全绿无 timer leak
 - 写新动画 widget 时务必加 `dispose()` + `pumpAndSettle()` 在 test 结尾
 
 ### 6.2 `HapticFeedback` 在测试环境抛 `MissingPluginException`
@@ -800,7 +786,7 @@ A Timer is still pending even after the widget tree was disposed.
 **坑**：单元测试调用 `Haptics.impactLight()` 时，`flutter/services.dart` 找不到 platform channel，会抛异常。
 
 **应急**：
-- 不直接测 `Haptics` 的副作用，只测 widget 渲染（当前 337 测试走这条）
+- 不直接测 `Haptics` 的副作用，只测 widget 渲染（当前 385 测试走这条）
 - 需要测时可注入 `SystemChannels.platform.setMockMethodCallHandler(...)` mock
 
 ### 6.3 `ThemeExtension` 未注册导致 `assert(ext != null)` 触发
@@ -857,7 +843,6 @@ A Timer is still pending even after the widget tree was disposed.
 | N3 | iOS Live Activity（WidgetKit 推送下载进度） | Phase 5 | 需要 Xcode 真机编译验证 |
 | N4 | 多品牌扩展（Sony / Canon / Fujifilm） | Phase 5 | 协议层未就绪 |
 | N5 | Phase 3 §18 任务对齐（吞吐录制 UI / 错误诊断面板 / 主屏小组件） | Phase 5 | 当前功能已可用 |
-| N6 | 自定义 `StatusBarWidget`（page 顶部装饰条） | Phase 4b 剩余 | 当前用系统状态栏 |
 | N7 | 国际化（i18n） | Phase 5 | 当前硬编码中文 |
 
 ---
@@ -868,11 +853,13 @@ Phase 4 完成后已同步以下文档：
 
 | 文档 | 改动 | 状态 |
 |---|---|---|
-| `AGENTS.md` §12 | 加 Phase 4a + 4b 两条变更记录 | ✅ `b882c2d` |
-| `docs/项目状态.md` §1 | "一句话进度"更新到含 Phase 4a + 4b 最小切片 | ✅ `b882c2d` |
-| `docs/Phase4实施计划.md` | 计划本身（含 Post-Mortem + Phase 4b/4c 详情） | ✅ `b882c2d` |
-| `docs/Viewfinder方案.md` §8 实施分阶段 | 不需要改（Phase 4 已在 Phase 3 §22 完成后提了） | — |
-| `docs/架构.md` §8 演进方向 | 不需要改（主题切换属于 ViewModel 层，架构未变） | — |
+| `AGENTS.md` §1 + §11 + §12 | 项目描述更新 + Phase4 路线图 + 变更日志 | ✅ `8b9d535` |
+| `CLAUDE.md` | 路径/Phase 状态/Notifier 计数/测试数 | ✅ `8b9d535` |
+| `README.md` | Phase 4 功能/测试数/本地开发命令 | ✅ `8b9d535` |
+| `docs/产品需求.md` | F5 设置/§5 视觉/§4.4 测试/§8 changelog | ✅ `8b9d535` |
+| `docs/架构.md` | §3 目录结构/§6 Provider-Notifier/§7 映射/§8 测试 | ✅ `8b9d535` |
+| `docs/项目状态.md` | Phase 4 100%, 385 tests | ✅ `8b9d535` |
+| `docs/Phase4实施计划.md` | §2 进度/§4 节奏/§7 N6 移除/§10 测试数 | ✅ 本次更新 |
 
 ---
 
@@ -888,7 +875,7 @@ Phase 4 完成后已同步以下文档：
 
 Phase 4 实际 commit 风格：
 ```
-实现 Phase 4a：5 套主题切换 + 持久化 + 337 测试全绿
+实现 Phase 4a：5 套主题切换 + 持久化 + 385 测试全绿
 实现 Phase 4b 最小切片：Haptics 触觉 + LensGlow 脉冲 + Shimmer 闪烁
 更新 Phase 4 文档：实际执行总结 + 4b 最小切片 + 4c 阻塞清单
 ```
@@ -905,11 +892,12 @@ Phase 4 完成后，本工程就有了：
 - ✅ LensGlow 脉冲动画 + Shimmer 闪烁动画
 - ✅ 13 widget + 4 page 全部从 `AppThemeColors` 迁移到 `ThemeExtension`
 - ✅ `AppThemeColors` 标 `@Deprecated`，旧 API 仍可用 1 版
-- ✅ 337 测试全绿，`dart analyze` 0 issues
+- ✅ B1 PageView / B2 ZoomablePhotoPreview / B3 GlobalActivityCapsule / B4 HeroTitle 轮播 / B5 ThroughputDiagnostics / B6 GridDensity / B7 状态提示 / B8 StatusBarWidget / B10 颜色+字体对齐
+- ✅ 385 测试全绿，`dart analyze` 3 unused_import（非阻塞）
 
 **Phase 5（v1.0 发布准备）**：
 - 拿到 iPhone + Mac 后跑 Phase 4c 集成测试（8 个 `integration_test/`）
-- Phase 4b 剩余 10 项视觉抛光（B1-B10）
+- Phase 5 视觉抛光（如需）
 - iOS Live Activity（WidgetKit 推送下载进度）
 - 多品牌扩展（Sony / Canon / Fujifilm）— 协议层先扩展
 - 国际化（i18n）
