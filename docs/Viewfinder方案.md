@@ -178,7 +178,7 @@ Viewfinder/                           # Flutter 工程根
 │   │   └── shared/                  # 共享 widget + 主题 (Phase 2 + 4 扩展)
 │   │       ├── app_theme.dart              # @Deprecated AppThemeColors (Phase 4a 迁移完)
 │   │       ├── shared_components.dart      # barrel → widgets/ (11 文件)
-│   │       ├── theme_palette.dart          # Phase 4a: 5 palette × 23 色 + kEnableMultiTheme
+│   │       ├── theme_palette.dart          # Phase 4a: 5 palette × 22 色 + kEnableMultiTheme
 │   │       ├── viewfinder_theme.dart       # Phase 4a: ThemeExtension + _buildTextTheme
 │   │       ├── status_badge.dart
 │   │       ├── formatters.dart
@@ -199,39 +199,16 @@ Viewfinder/                           # Flutter 工程根
 │       └── photo_library_channel.dart        # abstract + IO + Android + iOS + factory
 │
 ├── test/                              # flutter_test — 385 测 (2026-07-27)
-│   ├── protocol/                       # 51 测
-│   │   ├── primitives_test.dart              # 29 测 (编解码 + sealed error + DeviceInfo)
-│   │   ├── experimental_nikon_transport_test.dart  # 7 测 (错误路径 + onProgress + handle)
-│   │   ├── session_test.dart                 # 5 测
-│   │   ├── transport/ptpip_connection_test.dart # 7 测
-│   │   └── get_object_to_temp_file_test.dart # 3 测
-│   ├── domain/                         # 26 测 (DownloadQueueState + DownloadThroughputStats)
-│   ├── services/                       # 53 测
-│   │   ├── preferences_store_test.dart       # 5 测
-│   │   ├── download_asset_prioritizer_test.dart  # 5 测
-│   │   ├── asset_thumbnail_service_test.dart # 9 测 (并发 + cache + 错误)
-│   │   ├── wifi_watcher_test.dart            # 7 测
-│   │   ├── log_file_store_test.dart          # 9 测 (rotation 2MB)
-│   │   ├── download_notification_service_test.dart  # 4 测
-│   │   ├── background_download_runner_test.dart  # 3 测
-│   │   └── download_store_test.dart          # 13 测
-│   ├── features/                       # 111 测
-│   │   ├── app_shell/app_shell_view_model_test.dart       # 5 测
-│   │   ├── connection_setup/connection_view_model_test.dart  # 6 测
-│   │   ├── connection_setup/hero_title_test.dart          # 6 测 (Phase 4b B4)
-│   │   ├── photo_browser/gallery_view_model_test.dart  # 8 测 (mock 移除)
-│   │   ├── photo_browser/zoomable_photo_preview_test.dart  # 5 测 (Phase 4b B2)
-│   │   ├── downloads/download_manager_view_model_test.dart  # 17 测
-│   │   ├── settings/settings_view_model_test.dart        # 5 测
-│   │   ├── settings/theme_view_model_test.dart           # 4 测 (Phase 4a)
-│   │   ├── shared/app_theme_test.dart                    # 17 测
-│   │   ├── shared/theme_palette_test.dart                # 115 测 (5 palette × 23 色)
-│   │   ├── shared/viewfinder_theme_test.dart             # 5 测 (字体分工)
-│   │   ├── shared/global_activity_capsule_test.dart      # Phase 4b B3
-│   │   ├── shared/status_bar_widget_test.dart            # Phase 4b B8
-│   │   └── shared/widgets_test.dart                      # 13 测 (Haptics/Shimmer/LensGlow)
-│   ├── platform/                       # 15 测
-│   │   └── photo_library_channel_test.dart
+│   ├── protocol/                       # PTP/IP 编解码 + 传输 + 会话 + Transport
+│   │   ├── primitives_test.dart
+│   │   ├── experimental_nikon_transport_test.dart
+│   │   ├── session_test.dart
+│   │   ├── transport/ptpip_connection_test.dart
+│   │   └── get_object_to_temp_file_test.dart
+│   ├── domain/                         # DownloadQueueState + DownloadThroughputStats
+│   ├── services/                       # PreferencesStore / ThumbnailService / WifiWatcher / LogFileStore / Notification / BackgroundRunner / DownloadStore
+│   ├── features/                       # 6 Notifier + 主题 + widgets + Gallery + HeroTitle + Zoomable
+│   ├── platform/                       # PhotoLibraryChannel 3 端实现
 │   ├── integration/                    # 8 端到端 widget test (Phase 4c 代码骨架)
 │   │   ├── 01_app_launch_test.dart
 │   │   ├── 02_theme_persistence_test.dart
@@ -241,15 +218,15 @@ Viewfinder/                           # Flutter 工程根
 │   │   ├── 06_theme_5x_test.dart
 │   │   ├── 07_notification_test.dart
 │   │   ├── 08_background_runner_test.dart
-│   │   ├── fake_nikon_server.dart        # fake server placeholder
-│   │   └── helpers/test_app.dart         # buildTestApp() + initTestEnv() (清理后 0 warnings)
+│   │   ├── fake_nikon_server.dart
+│   │   └── helpers/test_app.dart
 │   └── helpers/                        # 共享 fake
-│       ├── fake_ptpip_socket.dart            # Phase 1
-│       ├── fake_camera_transport.dart        # Phase 2
-│       └── stubs.dart                        # Phase 4c 端到端 stub services
+│       ├── fake_ptpip_socket.dart
+│       ├── fake_camera_transport.dart
+│       └── stubs.dart
 │
-├── widget_test.dart                    # App 启动 smoke (1 测)
-├── smoke_test.dart                     # 8 测 (4 页面 happy/error)
+├── widget_test.dart                    # App 启动 smoke
+├── smoke_test.dart                     # 4 页面 happy/error widget smoke
 │
 ├── android/
 │   └── app/src/main/kotlin/.../
@@ -527,7 +504,7 @@ v2 让 GalleryContainer 读 `connectionProvider`, 但 `ConnectionNotifier.build(
 
 **实际交付**（**+187 测试 → 385/385 全绿**，零警告，详情见 [`Phase4实施计划.md`](Phase4实施计划.md)）：
 
-- **4a 主题（+139 测）**：5 套主题 (amber/forest/slate/terr/onyx) × 23 色 token + `ThemePalette` + `ThemeExtension` (ViewfinderTheme.of(context)) + `ThemeNotifier` 反应式 + themeID 持久化 + `kEnableMultiTheme` 回滚 flag + `AppearanceSection` UI + `AppThemeColors` 标 `@Deprecated` + 6 widget/page 全迁移 (21 处)
+- **4a 主题（+139 测）**：5 套主题 (amber/forest/slate/terr/onyx) × 22 色 token + `ThemePalette` + `ThemeExtension` (ViewfinderTheme.of(context)) + `ThemeNotifier` 反应式 + themeID 持久化 + `kEnableMultiTheme` 回滚 flag + `AppearanceSection` UI + `AppThemeColors` 标 `@Deprecated` + 6 widget/page 全迁移 (21 处)
 - **4b UI 抛光（+31 测）**：
   - B1 IndexedStack → PageView + 280ms easeInOutCubic 滑动
   - B2 ZoomablePhotoPreview 双击缩放 1x↔2.5x + close 淡入淡出 + 单击 1x 关闭
@@ -676,7 +653,7 @@ iOS 的 Swift 单文件常包含多个类型。**Phase 2/3 落地策略**：抽�
 | `DownloadLiveActivityController` | `Services/DownloadLiveActivityController.swift` | ❌ 删除 → `lib/services/download_notification_service.dart`（跨端不实现 Live Activity） | ✅ 已替换 |
 | `DownloadActivityAttributes` (特殊 - widget + app 共用结构) | `Domain/DownloadActivityAttributes.swift` | ⚠️ iOS 原文要在 WidgetKit + 主 app 双端共用 Live Activity；Flutter 端 Phase 3 **改为** `DownloadTransferProgress` (`protocol/camera_transport.dart:12-28`)，由 `CameraTransport.downloadAssetToTemporaryFile(onProgress)` 直接传给 `DownloadManagerNotifier._handleProgressUpdate()` 写到 `DownloadNotificationService`。**不单独建 model**（无 widget 后无需独立文件） | ✅ 已替换 |
 
-**校准总结**：8 个 abstract class 全部落地（`CameraTransport` / `PtpipSocket` / `DownloadStoring` / `AssetThumbnailServing` / `WifiWatcher` / `DownloadNotificationService` / `BackgroundDownloadRunner` / `PhotoLibraryChannel`）；3 个直接 concrete（`AppPreferencesStore` / `CameraTransportFactory` / `DownloadAssetPrioritizer` enum）；1 个 iOS 协议被替换（`DownloadLiveActivityController` → `DownloadNotificationService`，跨端不实现 Live Activity）。
+**校准总结**：9 个 abstract class 全部落地（`CameraTransport` / `PtpipSocket` / `DownloadStoring` / `AssetThumbnailServing` / `WifiWatcher` / `DownloadNotificationService` / `BackgroundDownloadRunner` / `PhotoLibraryChannel` / `LogFileStore`）；3 个直接 concrete（`AppPreferencesStore` / `CameraTransportFactory` / `DownloadAssetPrioritizer` enum）；1 个 iOS 协议被替换（`DownloadLiveActivityController` → `DownloadNotificationService`，跨端不实现 Live Activity）。
 
 ---
 

@@ -481,7 +481,7 @@ runApp(
 
 | 文件 | 测数 | 内容 |
 |---|---|---|
-| `test/features/shared/theme_palette_test.dart` 🆕 | **115** | 23 token × 5 palette = 115 色值断言 |
+| `test/features/shared/theme_palette_test.dart` 🆕 | **115** | 22 token × 5 palette + 5 structural = 115 测试 |
 | `test/features/settings/theme_view_model_test.dart` 🆕 | **4** | 默认 amber / select 切 state / select 持久化到 preferencesProvider / 重启场景 |
 | `test/features/settings/settings_view_model_test.dart` | **+1** | v4 fix: themeID 字段持久化 + 默认 amber + 反序列化兼容（含 mock JSON 加 themeID 字段） |
 | `test/services/preferences_store_test.dart` | **+1** | 旧 JSON（无 themeID）反序列化 → 默认 amber；新 JSON 含 themeID 正确读写 |
@@ -551,9 +551,9 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 | `shared/app_theme.dart` | 113 | 无限制（theme 文件） | ✅ |
 | `settings/theme_view_model.dart` | 32 | Notifier ≤ 250 | ✅ |
 | `settings/settings_view_model.dart` | 63 | Notifier ≤ 250 | ✅ |
-| `settings/settings_page.dart` | 314 | Page ≤ 300 | ⚠️ **超 14 行** |
+| `settings/settings_page.dart` | 248 | Page ≤ 300 | ✅ |
 
-**Page 超限说明**：拆 `appearance_section.dart` 后 settings_page 从 349 → 314 行，但仍超 300 上限 14 行。继续拆分 `_defaultsSection` + `_supportSection` 可降至 < 300，但收益递减，留作后续清理。**功能不受影响**。
+**Page 超限说明**（已解决）：拆 `appearance_section.dart` 后 settings_page 从 349 → 314 → 248 行（Phase 4b 拆出 `defaults_section.dart` + `support_section.dart`），现已 ≤ 300 ✅。
 
 ### 1.17 实际执行总结（Post-Mortem）
 
@@ -563,13 +563,13 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 
 | # | 计划 | 实际 | 原因 / 影响 |
 |---|---|---|---|
-| 1 | `ThemePalette` 23 字段（含 `name` / `description` / `sbT`） | **22 字段**（只保留 `id`，没有 `name` / `description` / `sbT`） | `name` / `description` 用 `id` 已足够；`sbT` 第 1 版未使用。功能等价 |
+| 1 | `ThemePalette` 23 字段（含 `name` / `description` / `sbT`） | **23 字段**（22 色 + 1 id） | `name` / `description` 用 `id` 已足够；`sbT` 第 1 版未使用。功能等价 |
 | 2 | 测试 198 + 129 = 327 | **337 / 337** 全绿 | palette_test 多写了 14 个 structural 测（isDark / palettes list / kEnableMultiTheme），比计划多 10 |
 | 3 | 3 个 commit | **2 个 commit**（`2583dbd` + `7620314`） | 把任务 #4（widget 迁移）和任务 #5（Settings UI）合成一个 commit，更易 review |
 | 4 | `theme_view_model_test` 4 测 | **4 测**（默认 amber / select 切 state / 持久化 / 无效 id fallback） | 符合计划 |
 | 5 | `preferences_store_test` +1 测 | **+1 测** | 符合计划 |
 | 6 | `settings_view_model_test` +1 测 | **+1 测**（setThemeID 持久化） | 符合计划 |
-| 7 | `settings_page.dart` 拆 `appearance_section.dart` | ✅ 拆了 | settings_page 314 行（仍超 14 行） |
+| 7 | `settings_page.dart` 拆 `appearance_section.dart` | ✅ 拆了 | settings_page 314→248 行（Phase 4b 进一步拆 defaults_section + support_section） |
 | 8 | `AppThemeColors` 加 `@Deprecated` | ✅ 已加 | 计划符合 |
 | 9 | `amberTheme()` 函数从 `app_theme.dart` 删，移至 `viewfinder_theme.dart` 作 deprecated 别名 | ✅ 已删/移 | 计划符合 |
 | 10 | `kEnableMultiTheme` flag 在 `app_theme.dart` 顶部 | ⚠️ 在 `theme_palette.dart` 顶部（更合适） | 偏差微调：与 palette 同文件更内聚 |
@@ -582,7 +582,7 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 
 | # | 项 | 状态 | 建议 |
 |---|---|---|---|
-| F1 | `settings_page.dart` 314 行仍超 300 上限 14 行 | 容忍 | 后续可拆 `_defaultsSection` + `_supportSection` |
+| F1 | ~~`settings_page.dart` 314 行仍超 300 上限 14 行~~ | ✅ 已解决 | Phase 4b 拆出 defaults_section + support_section，现 248 行 |
 | F2 | Phase 4b 完整内容（30h 视觉抛光 + 7 个 iOS UI 元素） | ⏳ 待启动 | 详见 §2 |
 | F3 | Phase 4c 集成测试 | ⏳ 受阻（无 iPhone） | 详见 §3 |
 
@@ -641,7 +641,7 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 | 4 | Primary/SecondaryActionButton 触觉绑定 | 同 1 | `7620314` |
 | 5 | B9 拆 `shared_components.dart` → `widgets/` 9 文件 | `lib/features/shared/widgets/*.dart` | `ed93228` |
 | 6 | Haptics/LensGlow/ShimmerView 单元测试（13 测） | `test/features/shared/widgets_test.dart` | `ed93228` |
-| 7 | 拆 `defaults_section.dart` + `support_section.dart`，settings_page 314→247 行 | 同 | `78e8f03` |
+| 7 | 拆 `defaults_section.dart` + `support_section.dart`，settings_page 314→248 行 | 同 | `78e8f03` |
 | 8 | B1 IndexedStack → PageView + 280ms easeInOutCubic 滑动动画 | `lib/app.dart` | `9741817` |
 | 9 | B5 `ThroughputDiagnostics` section（completed/totalBytes/avgBytesPerItem） | `lib/features/downloads/throughput_diagnostics_section.dart` | `330e890` |
 | 10 | B6 Gallery Top toolbar（GridDensity.standard/compact 切换 3↔5 列） | `lib/features/photo_browser/gallery_page.dart` | `c3e5d9c` |
@@ -815,13 +815,12 @@ A Timer is still pending even after the widget tree was disposed.
 - 已写 `ThemeNotifier.build()` 守卫（flag = false 时直接返 `amberPalette`，不 watch preferencesProvider）
 - 回滚路径 ≤ 5 min：改 flag → 跑测试 → 编译产物自动全 amber
 
-### 6.6 `settings_page.dart` 仍超 300 行（314）
+### 6.6 ~~`settings_page.dart` 仍超 300 行（314）~~ ✅ 已解决
 
 **坑**：拆 `appearance_section.dart` 后 settings_page 仍超 14 行。
 
 **应急**：
-- 当前容忍，功能不受影响
-- 后续清理：拆 `_defaultsSection` + `_supportSection` 到 `widgets/defaults_section.dart` + `widgets/support_section.dart`
+- ✅ Phase 4b 拆 `_defaultsSection` + `_supportSection` 到 `widgets/defaults_section.dart` + `widgets/support_section.dart`，现 248 行 ≤ 300 ✅
 
 ### 6.7 `ThemePalette` 缺 `name` / `description` / `sbT` 字段
 

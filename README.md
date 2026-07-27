@@ -77,17 +77,17 @@ flutter run                        # Android 真机需要 USB 调试开启
 
 ## 测试统计 (2026-07-27 Phase 4 完成)
 
-| 类别 | 测试数 | 覆盖 |
-|---|---|---|
-| `test/protocol/` | 51 | PTP/IP 编解码 / 传输 / 会话 / Transport 实现 + onProgress 流式 |
-| `test/features/` | 111 | 6 个 Notifier + 5 主题 palette (115) + viewfinder_theme (5) + formatters + Gallery + 队列持久化 + HeroTitle 轮播 + ZoomablePhotoPreview + GlobalActivityCapsule + StatusBarWidget + widgets (13) |
-| `test/services/` | 53 | PreferencesStore / DownloadAssetPrioritizer / AssetThumbnailService / WifiWatcher / LogFileStore / NotificationService / BackgroundRunner / DownloadStore |
-| `test/domain/` | 26 | DownloadQueueState + DownloadThroughputStats + 派生 getter + status 转换 |
-| `test/platform/` | 15 | PhotoLibraryChannel 3 端实现 + mapIosResult/mapAndroidResult |
-| `test/integration/` | 8 | Phase 4c 端到端 widget test 骨架 |
-| `test/widget_test.dart` | 1 | App 启动 smoke |
-| `test/smoke_test.dart` | 8 | 4 页面 happy/error widget smoke |
-| **总计** | **385** | **全绿** |
+| 类别 | 覆盖 |
+|---|---|
+| `test/protocol/` | PTP/IP 编解码 / 传输 / 会话 / Transport 实现 + onProgress 流式 |
+| `test/features/` | 6 个 Notifier + 主题 palette + viewfinder_theme + formatters + Gallery + 队列持久化 + HeroTitle 轮播 + ZoomablePhotoPreview + GlobalActivityCapsule + StatusBarWidget + widgets |
+| `test/services/` | PreferencesStore / DownloadAssetPrioritizer / AssetThumbnailService / WifiWatcher / LogFileStore / NotificationService / BackgroundRunner / DownloadStore |
+| `test/domain/` | DownloadQueueState + DownloadThroughputStats + 派生 getter + status 转换 |
+| `test/platform/` | PhotoLibraryChannel 3 端实现 + mapIosResult/mapAndroidResult |
+| `test/integration/` | Phase 4c 端到端 widget test 骨架 |
+| `test/widget_test.dart` | App 启动 smoke |
+| `test/smoke_test.dart` | 4 页面 happy/error widget smoke |
+| **总计** | **385 个测试全绿** |
 
 ### Phase 4 增量 (385 - 198 = +187)
 

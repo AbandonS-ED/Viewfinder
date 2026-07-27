@@ -167,7 +167,7 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 ## 测试规则
 
 - 测试目录 `test/` 镜像 `lib/`。协议层 `test/protocol/`，helpers `test/helpers/`，集成测试 `test/integration/`。
-- 当前 385 个测试全绿（51 协议 + 111 features + 53 服务 + 26 Domain + 15 平台 + 8 integration + 1 App + 8 smoke + 其他）。
+- 当前 385 个测试全绿（协议层 + features + 服务 + Domain + 平台 + 集成测试 + smoke 测试）。
 - 不要 mock 整个相机（用 fake socket server）；不要测私有方法（通过公开 API 测）；不要写脆弱的 snapshot test。
 - `dart analyze` 0 warnings（剩 12 个 info 提示：8 个 integration test 文件命名 + 4 个 const 构造提示，非阻塞）+ `flutter test` 全绿，是 commit 前的最低门槛。
 

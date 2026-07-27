@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:viewfinder/features/shared/theme_palette.dart';
 
-/// 23 色 token 列表（muban.html 23 个 public 字段）
+/// 22 色 token 列表（muban.html 22 个 public 色字段）
 const _tokens = <String>[
   'bg',
   'card',
@@ -172,12 +172,12 @@ ThemePalette _paletteById(String id) {
 
 void main() {
   // ─────────────────────────────────────────
-  // 23 token × 5 palette = 115 色值断言
+  // 22 token × 5 palette + 5 structural = 115 测试
   // 数据驱动：遍历 _mubanColors 权威表
   // ─────────────────────────────────────────
   group('ThemePalette 字段完整性', () {
     for (final paletteId in _mubanColors.keys) {
-      test('$paletteId 23 色 token 各自非 null', () {
+      test('$paletteId 22 色 token 各自非 null', () {
         final palette = _paletteById(paletteId);
         for (final t in _tokens) {
           expect(_fieldByName(palette, t), isA<Color>(),

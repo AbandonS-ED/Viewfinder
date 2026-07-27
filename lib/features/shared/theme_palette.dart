@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Feature flag：关闭后 ThemeNotifier.build() 永远返回 amberPalette
 const bool kEnableMultiTheme = true;
 
-/// 主题色板：23 色 + 1 标识 (id)
+/// 主题色板：22 色 + 1 标识 (id)
 class ThemePalette {
   const ThemePalette({
     required this.id,
