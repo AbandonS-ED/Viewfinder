@@ -13,7 +13,7 @@
 | 项目名 (中文) | **取景器** (相机取景器 / 摄影师透过它构图) |
 | Flutter package 名 | `viewfinder` (Flutter 强制 snake_case lowercase) |
 | 工程根路径 | `D:\Nikon_connect\Viewfinder\` |
-| 来源 iOS 项目 | `D:\桌面\Nikon_connect\` (本仓的上级目录，现已不在 active 目录) |
+| 来源 iOS 项目 | `D:\Nikon_connect\` (同级目录的 NikonConnectIOS iOS 仓，仅作协议参考) |
 | Bundle ID (iOS) | `com.yaoyihan.viewfinder` |
 | Application ID (Android) | `com.yaoyihan.viewfinder` |
 | 原 iOS bundle id | `com.yaoyihan.NikonConnectIOS` (仅作对照) |

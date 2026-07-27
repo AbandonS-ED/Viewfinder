@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 项目与工作区
 
 - 这是一个 Flutter 跨端 app **Viewfinder (取景器)**，通过相机自带 Wi-Fi 热点和 CIPA PTP/IP 协议浏览、下载尼康相机中的照片。首版只实现 Nikon；Sony/Canon/Fujifilm 留作 Phase 5 占位。
-- 配套参考资料：源 iOS Swift 项目 `D:\桌面\Nikon_connect\` (上级目录)，只作协议参考，不复用代码。
-- 项目路径：`D:\Nikon_connect\Viewfinder`（已从中文路径迁移）。
+- 配套参考资料：源 iOS Swift 项目 `D:\Nikon_connect\` (同级目录的 iOS 仓，`NikonConnectIOS`)，只作协议参考，不复用代码。
+- 项目路径：`D:\Nikon_connect\Viewfinder\`（2026-07-27 从 `D:\桌面\Nikon_connect\Viewfinder\` 迁出，绕开 aapt 中文路径 `Illegal byte sequence`）。
 - 文档宪法：`README.md`（导航）+ `AGENTS.md`（AI 工作守则）+ `docs/产品需求.md` + `docs/架构.md` + `docs/项目状态.md` + `docs/Viewfinder方案.md` + `docs/Phase1实施计划.md` + `docs/Phase2实施计划.md`。进入任何 Phase 前先把对应文档读一遍。
 - 项目成员：GitHub `AbandonS-ED/Viewfinder`，main 分支，远程 `https://github.com/AbandonS-ED/Viewfinder.git`。所有 commit 推到这；**commit / push 由人决定，AI 不要自动化**。
 - `.gitignore` 是 Flutter 标准模板。`.dart_tool/`、`build/`、`.idea/`、`viewfinder.iml` 都在忽略列表内。

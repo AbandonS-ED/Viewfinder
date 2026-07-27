@@ -263,7 +263,7 @@ reference/
 | 2026-07-26 | **B8 StatusBarWidget**：自定义 page 顶部装饰条（24px 高，底部 0.5px border，可选 title 文字） | 测试不变 |
 | 2026-07-26 | **B10 颜色对齐 muban.html**：5 套主题 27 处色值改（Amber 5/Forest 7/Slate 4/Terr 4/Onyx 7），重写 129 palette_test 减 14 | 测试 398 → 385 (palette 重写减少断言), `dart analyze` 0 issues |
 | 2026-07-27 | **B10 字体对齐 muban.html**：`_buildTextTheme(brightness)` 工厂 — display/headline/titleLarge 用 Instrument Serif（衬线标题），其他用 Noto Sans SC（中文正文）。+5 viewfinder_theme_test 字体断言 | 测试 385 不变 |
-| 2026-07-27 | **Phase 4 完成 13/13=100%**：Phase 4a (5 主题) + Phase 4b (B1-B10 全部) + Phase 4c (代码骨架)。项目路径从 `D:\桌面\Nikon_connect\Viewfinder` 迁到 `D:\Nikon_connect\Viewfinder` (绕开 aapt 中文路径 `Illegal byte sequence`) | **385/385 tests**, `dart analyze` 3 unused_import (Phase 4c 遗留) |
+| 2026-07-27 | **Phase 4 完成 13/13=100%**：Phase 4a (5 主题) + Phase 4b (B1-B10 全部) + Phase 4c (代码骨架)。项目路径：`D:\Nikon_connect\Viewfinder\`（2026-07-27 从 `D:\桌面\Nikon_connect\Viewfinder\` 迁出，绕开 aapt 中文路径 `Illegal byte sequence`）| **385/385 tests**, `dart analyze` 3 unused_import (Phase 4c 遗留) |
 | 2026-07-27 | **清理 test_app.dart 3 个 unused_import**：`notificationServiceProvider` / `backgroundRunnerProvider` / `photoLibraryChannelProvider` 都定义在 `download_manager_view_model.dart`，service 文件的 import 是多余的（Provider 通过既有 import 已可见）。 | **385/385 tests**, `dart analyze` 0 warnings (剩 12 info：8 个集成测试文件命名约定 + 4 个 prefer_const_constructors，非阻塞) |
 
 ### 12.1 Phase 3 关键决策 (新增)

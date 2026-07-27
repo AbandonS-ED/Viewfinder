@@ -78,13 +78,15 @@
 
 ### 2.4 协议调研（前置，必做）
 
+> ⚠️ **2026-07-27 重要发现**：原 iOS Nikon transport 实际**只用 12 个标准 CIPA PTP/IP v1.1 opcode + 1 个 Nikon 私有 opcode**（`0x9434 getObjectsMetaData`，代码里并未调用）。Sony/Canon/Fuji 大概率也走同一套标准协议。完整论证见 [`Ptp协议标准性发现.md`](Ptp协议标准性发现.md)。本节调研清单是**Plan B**（若目标品牌不走标准 PTP 则启用）。
+
 | 来源 | 内容 | 用法 |
 |---|---|---|
-| `libptp2` (`http://libptp.sourceforge.net/`) | 标准 PTP/IP opcode | 基础子集 |
-| `libgphoto2` 项目 (`https://github.com/gphoto/libgphoto2`) | Sony backend (`camlibs/ptp2/`) | Sony 私有 opcode 实现参考 |
+| `libptp2` (`http://libptp.sourceforge.net/`) | 标准 PTP/IP opcode | 基础子集（**首选**）|
+| `libgphoto2` 项目 (`https://github.com/gphoto/libgphoto2`) | Sony backend (`camlibs/ptp2/`) | 仅当标准 PTP 不够时的 fallback |
 | Sony Developer World（注册） | Sony Camera Remote API（HTTP）文档 | 仅在 PTP/IP 不够时用 |
 | CIPA 标准文档 | PTP/IP v1.1 spec | 协议根 |
-| Sony A7 III / A7 IV 实机测试 | 验证私有 opcode 在不同固件表现 | 5a.5 端到端 |
+| Sony A7 III / A7 IV 实机测试 | 验证 opcode + 格式码在不同固件表现 | 5a.5 端到端 |
 
 **调研产物**：`docs/Phase5a协议调研.md`（独立文档，类似 `B10_visual_audit.md`），包含：
 - Sony 设备 GetDeviceInfo 返回值示例
