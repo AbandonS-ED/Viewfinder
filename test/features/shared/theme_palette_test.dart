@@ -28,7 +28,7 @@ const _tokens = <String>[
   'niC',
 ];
 
-/// muban.html 权威色值（5 套主题 × 23 token）
+/// muban.html 权威色值（5 套主题 × 22 token）
 /// 2026-07-26 与 `D:\桌面\muban\muban.html` 1:1 对齐
 const Map<String, Map<String, Color>> _mubanColors = {
   'amber': {

@@ -602,7 +602,7 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | `Domain/*.swift` (15 个 = 14 普通 + 1 特殊) | `lib/domain/*.dart` (freezed) |
 | `Features/ConnectionSetup/*` | `lib/features/connection_setup/*` |
 | `Features/PhotoBrowser/*` | `lib/features/photo_browser/*` |
-| `Features/Downloads/*` | `lib/features/downloads/*` + `lib/services/download_manager_notifier.dart` |
+| `Features/Downloads/*` | `lib/features/downloads/*` (含 `download_manager_view_model.dart`) |
 | `Features/Settings/*` | `lib/features/settings/*` |
 | `Features/Shared/SharedComponents.swift` | `lib/features/shared/shared_components.dart` |
 | `Infrastructure/AppLogger.swift` | `lib/services/logger.dart` (包装 `package:logging`) |

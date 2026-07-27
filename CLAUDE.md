@@ -130,7 +130,7 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 - `lib/services/`：10 文件 — `preferences_store.dart` / `download_store.dart` / `asset_thumbnail_service.dart` / `download_notification_service.dart` / `background_download_runner.dart` / `wifi_watcher.dart` / `log_file_store.dart` / `logger.dart` / `download_asset_prioritizer.dart` + `.gitkeep`。
 - `lib/platform/`：`photo_library_channel.dart` (interface + Android + iOS + IO stub)。
 - `lib/features/`：6 个子目录 — `connection_setup/` / `photo_browser/` / `downloads/` / `settings/` (含 `widgets/`) / `app_shell/` / `shared/` (含 `widgets/` 11 文件)。
-- `lib/features/shared/theme_palette.dart`：5 套主题色板 (amber/forest/slate/terr/onyx) × 23 色 + `kEnableMultiTheme` feature flag。
+- `lib/features/shared/theme_palette.dart`：5 套主题色板 (amber/forest/slate/terr/onyx) × 22 色 + `kEnableMultiTheme` feature flag。
 - `lib/features/shared/viewfinder_theme.dart`：`ThemeExtension` + `viewfinderTheme(p)` 工厂 + `_buildTextTheme()` (Instrument Serif + Noto Sans SC)。
 
 ## Riverpod 状态管理

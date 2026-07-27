@@ -59,9 +59,9 @@
 | ThemePalette 字段 | **共 23 个字段**（参 §1.4 表）| 完整覆盖现有 AppThemeColors 21 token + 2 新增（sep 已存在代码 + nbBg/nbBdr/niC 新增）|
 | themeID 字段类型 | `String`（不是 enum） | 简单，自由度高；schema 兼容好 |
 
-### 1.4 ThemePalette 完整字段（23 个）
+### 1.4 ThemePalette 完整字段（22 个）
 
-**色值（23 个）**（amber 沿用现状，其他 4 套从模板 1:1 复刻）：
+**色值（22 个）**（amber 沿用现状，其他 4 套从模板 1:1 复刻）：
 | 字段 | amber (现状) | forest | slate | terr | onyx |
 |---|---|---|---|---|---|
 | `bg` | #F9F9F8 | #111F14 | #F0F1F3 | #F8F3ED | #0C0C0E |
@@ -89,6 +89,8 @@
 | `niC` | #B5AFA6 | #4A6A4A | #A8B2BC | #BBA898 | #4A4A4E |
 
 > 注：`nbBdr` 当前 5 套主题都跟 `bdr` 同一值。保留独立字段是为以后主题扩展（如某个暗主题需要 nav bar 更明显的边框）留余地。**第 1 版不强制分离**。
+>
+> **实装偏差**（2026-07-25）：实际 ThemePalette 仅 22 色（本表去掉 `sbT`），表头与表格根数差异源于初版计划含 `sbT` 但 1 版未使用。详见 §1.17 偏差表第 1 行 + §5 决策表第 2 行。
 
 **workflow state 色（2 个，所有主题共享，不进 palette）**：
 - `info = Color(0xFF4069B3)` 蓝
@@ -122,14 +124,13 @@ class ThemePalette {
   final String name;      // 暖阳琥珀 / 深林暗绿 / 石板灰 / 赤陶暗房 / 曜石黑金
   final String description;
 
-  // 23 个色 token（参 §1.4 表）
+  // 22 个 Color 色 token（参 §1.4 表）
   final Color bg, card, surfaceElevated, surfaceMuted, controlBg;
   final Color bdr, div, sep, shadow;
   final Color t1, t2, tm;
   final Color a, aL, aS;
   final Color ok, er;
   final Color btn, btnT;
-  final Color sbT;
   final Color nbBg, nbBdr, niC;
 
   const ThemePalette({
@@ -758,7 +759,7 @@ test/
 | # | 决策点 | 选择 | 实际落地 |
 |---|---|---|---|
 | 1 | Amber 保留现状色值？ | ✅ 是 | `amberPalette` 22 色 token 全部与 `app_theme.dart` 第 9-30 行 1:1 对齐 |
-| 2 | ThemePalette 字段数？ | ✅ 22 色 + 1 id（计划说 23，实测 22） | `theme_palette.dart` 22 个 Color + 1 个 String id |
+| 2 | ThemePalette 字段数？ | ✅ 22 色 + 1 id = 23 字段 | `theme_palette.dart` 22 个 Color + 1 个 String id |
 | 3 | AppThemeColors 怎么处理？ | ✅ 保留 deprecated | `@Deprecated('Use ViewfinderTheme.of(context).xxx instead')` 在 `app_theme.dart` 顶部 |
 | 4 | themeID 类型？ | ✅ String | `CameraConnectionConfig.themeID: @Default('amber') String` |
 | 5 | Feature flag 默认开启？ | ✅ 是 | `kEnableMultiTheme = true` 在 `theme_palette.dart` 顶部，ThemeNotifier 守卫已加 |
