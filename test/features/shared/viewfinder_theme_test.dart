@@ -85,5 +85,28 @@ void main() {
       // terr (light)
       expect(viewfinderTheme(terrPalette).brightness, Brightness.light);
     });
+
+    testWidgets('textTheme: 标题用 Instrument Serif，正文用 Noto Sans SC',
+        (tester) async {
+      final theme = viewfinderTheme(amberPalette);
+      // 显示/标题类用 Instrument Serif (muban.html 衬线)
+      // google_fonts 在 fontFamily 后追加 `_regular` / `_bold` 等变体后缀
+      expect(theme.textTheme.displayLarge?.fontFamily, startsWith('InstrumentSerif'));
+      expect(theme.textTheme.displayMedium?.fontFamily, startsWith('InstrumentSerif'));
+      expect(theme.textTheme.displaySmall?.fontFamily, startsWith('InstrumentSerif'));
+      expect(theme.textTheme.headlineLarge?.fontFamily, startsWith('InstrumentSerif'));
+      expect(theme.textTheme.headlineMedium?.fontFamily, startsWith('InstrumentSerif'));
+      expect(theme.textTheme.headlineSmall?.fontFamily, startsWith('InstrumentSerif'));
+      expect(theme.textTheme.titleLarge?.fontFamily, startsWith('InstrumentSerif'));
+      // 正文类用 Noto Sans SC (muban.html 中文一致)
+      expect(theme.textTheme.bodyLarge?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.bodyMedium?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.bodySmall?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.titleMedium?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.titleSmall?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.labelLarge?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.labelMedium?.fontFamily, startsWith('NotoSansSC'));
+      expect(theme.textTheme.labelSmall?.fontFamily, startsWith('NotoSansSC'));
+    });
   });
 }

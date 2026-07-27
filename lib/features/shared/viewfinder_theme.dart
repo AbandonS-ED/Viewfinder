@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'theme_palette.dart';
 
@@ -49,6 +50,36 @@ class ViewfinderTheme extends ThemeExtension<ViewfinderTheme> {
       this; // 色板是离散切换，lerp 不做插值
 }
 
+/// 字体策略（muban.html 1:1）：
+/// - **正文（中文）**：Noto Sans SC — 中文 fallback 一致
+/// - **标题（英文/数字）**：Instrument Serif — 衬线古典感
+/// - **等宽**：DM Mono — 在 3 个已有 widget 显式 `GoogleFonts.dmMono(...)` 使用
+///
+/// Instrument Serif 出现在 display + headline + titleLarge（覆盖 hero 标题 +
+/// page title 22px + 卡片标题 18px 等所有衬线场景）。其他用 Noto Sans SC。
+TextTheme _buildTextTheme(Brightness brightness) {
+  final base = ThemeData(brightness: brightness).textTheme;
+  TextStyle sc(TextStyle? s) => GoogleFonts.notoSansSc(textStyle: s);
+  TextStyle serif(TextStyle? s) => GoogleFonts.instrumentSerif(textStyle: s);
+  return base.copyWith(
+    displayLarge: serif(base.displayLarge),
+    displayMedium: serif(base.displayMedium),
+    displaySmall: serif(base.displaySmall),
+    headlineLarge: serif(base.headlineLarge),
+    headlineMedium: serif(base.headlineMedium),
+    headlineSmall: serif(base.headlineSmall),
+    titleLarge: serif(base.titleLarge),
+    titleMedium: sc(base.titleMedium),
+    titleSmall: sc(base.titleSmall),
+    bodyLarge: sc(base.bodyLarge),
+    bodyMedium: sc(base.bodyMedium),
+    bodySmall: sc(base.bodySmall),
+    labelLarge: sc(base.labelLarge),
+    labelMedium: sc(base.labelMedium),
+    labelSmall: sc(base.labelSmall),
+  );
+}
+
 /// 将 ThemePalette 注册进 ThemeData
 ThemeData viewfinderTheme(ThemePalette p) {
   final brightness = p.isDark ? Brightness.dark : Brightness.light;
@@ -60,6 +91,7 @@ ThemeData viewfinderTheme(ThemePalette p) {
       seedColor: p.a,
       brightness: brightness,
     ),
+    textTheme: _buildTextTheme(brightness),
     extensions: [ViewfinderTheme(p)],
   );
 }
