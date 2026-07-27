@@ -104,7 +104,7 @@
 | 5a.5 | `FakeSonyPtpipSocket` + 8+ 单测 | `test/protocol/experimental_sony_transport_test.dart` + `test/helpers/fake_sony_ptpip_socket.dart` | 3 天 |
 | 5a.6 | emulator 真机端到端 | 外部真机 | 2 天 |
 | 5a.7 | Sony 私有错误码 → `CameraAppError.sonySpecific(...)` | `lib/domain/camera_app_error.dart` + sealed factory | 1 天 |
-| 5a.8 | `lib/protocol/experimental_sony_transport.dart` 文档注释 + Architecture section sync | `lib/architecture.md` §6.1 | 0.5 天 |
+| 5a.8 | `lib/protocol/experimental_sony_transport.dart` 文档注释 + Architecture section sync | `docs/架构.md` §6.1 | 0.5 天 |
 | 5a.9 | README 标 Phase 5a 状态 + 更新 Viewfinder方案.md §8 进度表 | 多文件 | 0.5 天 |
 | **5a 总计** | | | **~16 天** |
 

@@ -84,7 +84,7 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
   - 不导入 Flutter / `dart:io`，仅依赖 `dart:core` + `freezed_annotation`。
   - `CameraAppError` 是 sealed class，调用方用 `switch` 模式匹配做穷举处理。
   - `PhotoAssetMerge.preservingCameraOrder(...)` 是**静态工具方法**（不是 data class），签名见 `lib/domain/photo_asset_merge.dart`。
-- `DownloadActivityAttributes` 在 iOS 是 widget + app 共用结构，本项目**折叠到 `services/download_progress_notifier.dart`** 作为私有 state class，不单独建 model。
+- `DownloadActivityAttributes` 在 iOS 是 widget + app 共用结构，本项目**折叠到 `lib/protocol/camera_transport.dart` 的 `DownloadTransferProgress`** 作为 `@freezed` 公开类型（不经 Notifier 持有，见 §6.2 onProgress 回调链）。
 
 ### Protocol 层（已落地，可读）
 

@@ -172,9 +172,10 @@ Viewfinder/                           # Flutter 工程根
 │   │   │   ├── theme_view_model.dart        # Phase 4a ThemeNotifier
 │   │   │   └── widgets/
 │   │   │       └── theme_picker_row.dart    # Phase 4a 5 主题选择器
-│   │   ├── app_shell/                      # 单一 AppShellNotifier
-│   │   │   ├── app_shell_state.dart
-│   │   │   └── app_shell_view_model.dart    # ref.listen connection/gallery
+    │   │   ├── app_shell/                      # 单一 AppShellNotifier
+    │   │   │   ├── app_shell_state.dart
+    │   │   │   ├── app_shell_state.freezed.dart
+    │   │   │   └── app_shell_view_model.dart    # ref.listen connection/gallery
 │   │   └── shared/                  # 共享 widget + 主题 (Phase 2 + 4 扩展)
 │   │       ├── app_theme.dart              # @Deprecated AppThemeColors (Phase 4a 迁移完)
 │   │       ├── shared_components.dart      # barrel → widgets/ (11 文件)

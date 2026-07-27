@@ -338,7 +338,7 @@ void setThemeID(String id) {
 ### 1.9 ThemePickerRow widget
 
 ```dart
-// lib/features/shared/widgets/theme_picker_row.dart
+// lib/features/settings/widgets/theme_picker_row.dart
 class ThemePickerRow extends ConsumerWidget {
   const ThemePickerRow({super.key});
 
@@ -398,7 +398,7 @@ class ThemePickerRow extends ConsumerWidget {
 |---|---|---|
 | `lib/features/shared/theme_palette.dart` | 🆕 新增（5 个 palette + const list + `kEnableMultiTheme` flag） | +220 |
 | `lib/features/shared/viewfinder_theme.dart` | 🆕 新增（ThemeExtension + factory + **`amberTheme()` 别名在此文件内**） | +70 |
-| `lib/features/shared/widgets/theme_picker_row.dart` | 🆕 新增 widget | +60 |
+| `lib/features/settings/widgets/theme_picker_row.dart` | 🆕 新增 widget | +60 |
 | `lib/features/settings/theme_view_model.dart` | 🆕 新增（ThemeNotifier + provider） | +50 |
 | `lib/features/shared/app_theme.dart` | 删 `amberTheme()` 函数定义（移去 viewfinder_theme.dart）；保留 `AppThemeColors` deprecated；保留 `MetricTile` / `AppThemeSpacing` / `AppThemeRadius` / `workflowColor()` | -10 |
 | `lib/features/settings/settings_view_model.dart` | 加 `setThemeID()` setter | +8 |
@@ -547,7 +547,7 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 |---|---|---|---|
 | `shared/theme_palette.dart` | 226 | 无限制（新建） | ✅ |
 | `shared/viewfinder_theme.dart` | 66 | 无限制（新建） | ✅ |
-| `shared/widgets/theme_picker_row.dart` | 54 | 无限制（新建 widget） | ✅ |
+| `settings/widgets/theme_picker_row.dart` | 54 | 无限制（新建 widget） | ✅ |
 | `settings/appearance_section.dart` | 33 | 无限制（新建 widget） | ✅ |
 | `shared/app_theme.dart` | 113 | 无限制（theme 文件） | ✅ |
 | `settings/theme_view_model.dart` | 32 | Notifier ≤ 250 | ✅ |
