@@ -390,7 +390,7 @@ Android: Foreground Service + NotificationCompat.Builder.setProgress()
 | Phase 2 — UI 骨架阶段 | ✅ 已完成 (2026-07-23) | +55 → 102 测 | 见下文 §8.2 |
 | Phase 3 — Android 端到端 + 下载完整链路 | ✅ 已完成 (2026-07-24; v2/v3 全审修正 2026-07-25) | +96 → 198 测 | 见下文 §8.3 |
 | Phase 4 — UI 抛光 + 5 主题 + B10 视觉对齐 | ✅ 已完成 (2026-07-26 ~ 27) | +187 → **385 测** | 见 [`Phase4实施计划.md`](Phase4实施计划.md) |
-| Phase 5 — 多品牌扩展 (Sony / Canon / Fujifilm) | ⏳ 未开始 (占位) | — | 规划见 [`Phase5规划.md`](Phase5规划.md)（未落地） |
+| Phase 5 — 多品牌扩展 (Sony / Canon / Fujifilm) | ⏳ 未开始 (占位) | — | 详见 [`Phase5实施计划.md`](Phase5实施计划.md)（待 D1~D10 拍板后启动） |
 
 > 各阶段详细测试基线见 [`项目状态.md §3.4 - §3.5 + §5`](项目状态.md)。
 
@@ -553,7 +553,7 @@ v2 让 GalleryContainer 读 `connectionProvider`, 但 `ConnectionNotifier.build(
   2. 有对应品牌的 PTP/IP opcode / 私有协议文档
   3. 决策先做哪个品牌（推荐 Sony：Sony Remote API 公开，相对好入手）
 
-详细规划见 [`Phase5规划.md`](Phase5规划.md)（占位文件，待启动时创建）。
+详细规划见 [`Phase5实施计划.md`](Phase5实施计划.md)（待 D1~D10 拍板后启动）。
 
 ---
 
@@ -684,6 +684,6 @@ iOS 的 Swift 单文件常包含多个类型。**注意**：原方案列出的 `
 
 ### 12.3 用户决策项
 
-1. **下一步动作**：第 1 个候选是 Phase 5 规划 ([`Phase5规划.md`](Phase5规划.md)) — 拍板先做哪个品牌后启动协议调研
+1. **下一步动作**：第 1 个候选是 Phase 5a 启动 ([`Phase5实施计划.md`](Phase5实施计划.md)) — 拍板 D1~D10 后启动协议调研
 2. **i18n 优先级**：当前硬编码中文，仅服务中文用户。如需英文等其他语言要单独做 Phase
 3. **iOS Live Activity 回滚**：是否要加回 iOS 锁屏进度条（与 §9 表同行）
