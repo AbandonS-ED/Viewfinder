@@ -9,10 +9,7 @@ import 'package:viewfinder/features/settings/settings_container.dart';
 import 'package:viewfinder/features/settings/settings_view_model.dart';
 import 'package:viewfinder/features/shared/theme_palette.dart';
 import 'package:viewfinder/features/shared/viewfinder_theme.dart';
-import 'package:viewfinder/platform/photo_library_channel.dart';
 import 'package:viewfinder/services/asset_thumbnail_service.dart';
-import 'package:viewfinder/services/background_download_runner.dart';
-import 'package:viewfinder/services/download_notification_service.dart';
 import 'package:viewfinder/services/download_store.dart';
 import 'package:viewfinder/services/log_file_store.dart';
 

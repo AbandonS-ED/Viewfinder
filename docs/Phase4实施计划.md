@@ -654,7 +654,7 @@ const bool kEnableMultiTheme = true;  // ← 改 false 即回滚
 | 17 | B10 字体对齐 muban.html：Noto Sans SC + Instrument Serif | `lib/features/shared/viewfinder_theme.dart` | `9d277bc` |
 
 **验证**：
-- `dart analyze` 3 unused_import（Phase 4c 遗留，非阻塞）
+- `dart analyze` 0 warnings（剩 12 info：集成测试命名 + const 提示，非阻塞）
 - `flutter test` **385 / 385 绿**
 - emulator ✅ 未连相机 → 「相册」tab 显示「暂无照片」空 state
 
@@ -893,7 +893,7 @@ Phase 4 完成后，本工程就有了：
 - ✅ 13 widget + 4 page 全部从 `AppThemeColors` 迁移到 `ThemeExtension`
 - ✅ `AppThemeColors` 标 `@Deprecated`，旧 API 仍可用 1 版
 - ✅ B1 PageView / B2 ZoomablePhotoPreview / B3 GlobalActivityCapsule / B4 HeroTitle 轮播 / B5 ThroughputDiagnostics / B6 GridDensity / B7 状态提示 / B8 StatusBarWidget / B10 颜色+字体对齐
-- ✅ 385 测试全绿，`dart analyze` 3 unused_import（非阻塞）
+- ✅ 385 测试全绿，`dart analyze` 0 warnings（剩 12 info 非阻塞）
 
 **Phase 5（v1.0 发布准备）**：
 - 拿到 iPhone + Mac 后跑 Phase 4c 集成测试（8 个 `integration_test/`）

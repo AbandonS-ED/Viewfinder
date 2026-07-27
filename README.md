@@ -8,7 +8,7 @@
 - **目标平台**：iOS 16.0+ / Android API 24+
 - **协议**：CIPA PTP/IP (TCP)，默认端点 `192.168.1.1:15740`
 - **技术栈**：Dart 3 + Flutter stable + Riverpod 2.x + freezed 2.x + `dart:io` Socket + `google_fonts`
-- **状态**：Phase 0-4 全部完成；385 个单测全绿；`dart analyze` 3 unused_import 警告（Phase 4c 遗留，非阻塞）
+- **状态**：Phase 0-4 全部完成；385 个单测全绿；`dart analyze` 0 warnings（剩 12 个 info 提示：8 个 integration test 文件命名 + 4 个 const 构造提示，非阻塞）
 
 ## 当前能力 (Phase 4 完成)
 
@@ -63,7 +63,7 @@ $env:FLUTTER_STORAGE_BASE_URL = "https://storage.flutter-io.cn"
 flutter pub get
 
 # 静态检查 + 单测
-dart analyze                       # 3 unused_import 警告 (Phase 4c 遗留)
+dart analyze                       # 0 warnings (剩 12 info：集成测试命名 + const 提示)
 flutter test                       # 385/385 全绿
 flutter test test/protocol         # 协议层
 flutter test test/features         # UI + Notifier + 主题

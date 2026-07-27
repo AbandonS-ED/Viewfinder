@@ -78,7 +78,7 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 
 ### Domain 层
 
-- `lib/domain/` 下 26 个文件（含 `.freezed.dart`），14 个 `@freezed` data class + 5 个独立 enum / 工具类 + 1 个 `sealed class CameraAppError`（8 个 case）+ `download_throughput_stats.dart`。详细字段表见 `docs/架构.md` §4。
+- `lib/domain/` 下 26 个文件（含 `.freezed.dart`），10 个 `@freezed` data class + 6 个独立 enum / 工具类 / sealed class（`CameraAppError` 8 case + `CameraCapability` 3 + `CameraTransportMode` 1 + `CameraWorkflowState` 6 + `DownloadThroughputStats` + `PhotoAssetMerge`）。详细字段表见 `docs/架构.md` §4。
 - 关键不变量：
   - 所有 class `final` + immutable；JSON 反序列化用 `decodeIfPresent`，**新增字段必须有默认值**（schema 向后兼容）。
   - 不导入 Flutter / `dart:io`，仅依赖 `dart:core` + `freezed_annotation`。
@@ -169,7 +169,7 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 - 测试目录 `test/` 镜像 `lib/`。协议层 `test/protocol/`，helpers `test/helpers/`，集成测试 `test/integration/`。
 - 当前 385 个测试全绿（51 协议 + 111 features + 53 服务 + 26 Domain + 15 平台 + 8 integration + 1 App + 8 smoke + 其他）。
 - 不要 mock 整个相机（用 fake socket server）；不要测私有方法（通过公开 API 测）；不要写脆弱的 snapshot test。
-- `dart analyze`（3 unused_import 警告可接受）+ `flutter test` 全绿，是 commit 前的最低门槛。
+- `dart analyze` 0 warnings（剩 12 个 info 提示：8 个 integration test 文件命名 + 4 个 const 构造提示，非阻塞）+ `flutter test` 全绿，是 commit 前的最低门槛。
 
 ## 文档同步规则
 
