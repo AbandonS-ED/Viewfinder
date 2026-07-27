@@ -44,27 +44,29 @@
 
 ## 2. 技术栈选型
 
-| 层 | 选型 | 理由 |
-|---|---|---|
-| 语言 | Dart 3.x | Flutter 默认 |
-| Framework | Flutter stable channel | 用户已选 Flutter |
-| 最低 iOS | 16.0 | 与原项目对齐 |
-| 最低 Android | API 24 (Android 7.0) | 覆盖 `WorkManager` / scoped storage 现代 API |
-| 状态管理 | **Riverpod 2.x** (flutter_riverpod) | 编译期安全、对 async 友好、易测试；用户在前一轮已点名 |
-| 数据类 | **freezed + json_serializable** | 替代手写 `==` / `hashCode` / `copyWith` / `fromJson` |
-| 网络层 | `dart:io` Socket (裸 TCP) | PTP/IP 是二进制协议，无 HTTP 层可用 |
-| 序列化 | `dart:convert` + `package:typed_data` | 直接操作 `Uint8List` / `ByteData`，与原 `PTPIPPrimitives` 对位 |
-| 本地存储 (KV) | `shared_preferences` | 替代 `UserDefaults` |
-| 本地存储 (文件) | `path_provider` + `dart:io` | 替代 `FileManager` |
-| 相册写入 | `gal` 或原生 channel | Android 13+ scoped storage 必须处理 |
-| 通知 / 进度 | `flutter_local_notifications` + `flutter_background_service` | 双端前台进度提示 |
-| Wi-Fi 监听 | `connectivity_plus` + `network_info_plus` | 监听相机热点断线 |
-| 日志 | `package:logging` | 替代 `AppLogger` |
-| 国际化 | `flutter_localizations` + `intl` | 与原项目中文界面一致 |
-| 测试 | `flutter_test` + `mocktail` | 替代 XCTest |
-| Lint | `flutter_lints` (官方) + `very_good_analysis` (可选) | 比原项目多一步 lint |
-| 依赖版本 | **全部锁主版本号** | 例：`flutter_riverpod: ^2.5.0` / `freezed: ^2.4.0` / `flutter_local_notifications: ^17.0.0` / `flutter_background_service: ^5.0.0` / `gal: ^2.2.0` / `connectivity_plus: ^6.0.0` / `mocktail: ^1.0.0` 等。Phase 0 写 pubspec 时统一锁，避免升级引入 breaking change |
-| 格式化 | `dart format` (官方) | 替换 SwiftFormat 缺失 |
+> **2026-07-27 校准**：`pubspec.yaml` 是真来源，本节是当初 Phase 0 选型；其中 `gal` / `mocktail` / `json_serializable` / `very_good_analysis` **最终未采用**（Phase 2/3 评估后替代方案见备注），但保留记录便于追溯。
+
+| 层 | 选型 | 实际落地 | 备注 |
+|---|---|---|---|
+| 语言 | Dart 3.x | ✅ Flutter 默认 | |
+| Framework | Flutter stable channel | ✅ | 用户已选 Flutter |
+| 最低 iOS | 16.0 | ✅ | 与原项目对齐 |
+| 最低 Android | API 24 (Android 7.0) | ✅ | |
+| 状态管理 | **Riverpod 2.x** (`flutter_riverpod: ^2.5.0`) | ✅ | 编译期安全、对 async 友好 |
+| 数据类 | **freezed** (`^2.4.0`) | ✅ | 替代手写 `==` / `hashCode` / `copyWith`；JSON 手写 codec（见下） |
+| 网络层 | `dart:io` Socket (裸 TCP) | ✅ | PTP/IP 是二进制协议 |
+| 序列化 | `dart:convert` + `dart:typed_data` (SDK 内置) | ✅ | 直接操作 `Uint8List` / `ByteData`，与 iOS `PTPIPPrimitives` 1:1 |
+| 本地存储 (KV) | `shared_preferences` (^2.3.0) | ✅ | 替代 `UserDefaults` |
+| 本地存储 (文件) | `path_provider` (^2.1.0) + `dart:io` | ✅ | |
+| 相册写入 | ❌ `gal` + ✅ 自写 platform channel | ✅ 自写 | Phase 3 评估 `gal` 不支持 RAW，写 `PhotoLibraryPlugin.kt` (Android MediaStore) + `PhotoLibraryPlugin.swift` (iOS PHPhotoLibrary.addOnly) + Dart 端 IO stub |
+| 通知 / 进度 | `flutter_local_notifications` (^17.0.0) + `flutter_background_service` (^5.0.0) | ✅ | Android 进度条 + Foreground Service；iOS 仅静态文字通知 |
+| Wi-Fi 监听 | `connectivity_plus` (^6.0.0) + `network_info_plus` (^4.0.0) | ✅ | BSSID + SSID 双指标 |
+| 日志 | `logging` (^1.2.0) | ✅ | AppLogger 包装 |
+| 国际化 | 暂未实装 | ❌ | Phase 5 评估（不影响首发） |
+| 测试 | `flutter_test` (SDK) + 自写 fake | ✅ | ❌ 未装 `mocktail`；用 `test/helpers/fake_ptpip_socket.dart` + `fake_camera_transport.dart` 自写 fake |
+| 序列化工具 | ❌ `json_serializable` / ✅ 手写 codec | ✅ 手写 | `DownloadStore` `_encodeRecord`/`_decodeRecord` + `_encodeJob`/`_decodeJob` 手写 |
+| Lint | `flutter_lints` (^6.0.0) + 11 条 Phase 2 加强 | ✅ | ❌ 未装 `very_good_analysis`；`analysis_options.yaml` 11 条加强规则 + 排除 `**/*.freezed.dart` 即可 |
+| 依赖版本 | **全部锁主版本号** | ✅ | 见 pubspec.yaml |
 
 ---
 
@@ -72,16 +74,17 @@
 
 | 原 iOS 能力 | Flutter / Dart 实现 | 备注 |
 |---|---|---|
-| `Network.framework` TCP | `dart:io.Socket` | BSD socket 跨端，零桥接 |
-| `UserDefaults` JSON | `shared_preferences` + JSON 字符串 | 需手写 codec |
-| `FileManager` | `dart:io.File` + `path_provider` | 一致 |
-| `PHPhotoLibrary` (写入) | `gal` 包 (Android 13+ 受限) + 自写 channel | Android scoped storage 是难点 |
-| `ActivityKit` Live Activity | ❌ 不实现 | Android 无对应，跨端统一降级 |
-| `UIImpactFeedbackGenerator` | `HapticFeedback.lightImpact()` 等 | API 较粗，足够用 |
-| `Local Network` 权限弹窗 | iOS: `NSLocalNetworkUsageDescription`；Android: `ACCESS_WIFI_STATE` + `CHANGE_WIFI_MULTICAST_STATE` | iOS 一句话；Android 静默 |
-| 后台下载 | iOS **当前未实现** (Network.framework 裸 TCP 不支持 background session，需另设计机制)；Android Foreground Service (`dataSync` type, Android 14+) | Android 用 `flutter_background_service` 封装；**iOS 端 Phase 3 待评估** |
-| 相机热点网络监测 | `connectivity_plus` + `network_info_plus` | 监听断线重试 |
+| `Network.framework` TCP | `dart:io.Socket` (`IoPtpipSocket`) | BSD socket 跨端，零桥接 |
+| `UserDefaults` JSON | `shared_preferences` + 手写 codec (`AppPreferencesStore`) | 见 §11 |
+| `FileManager` | `dart:io.File` + `path_provider` | |
+| `PHPhotoLibrary` (写入) | **自写 platform channel**（`PhotoLibraryPlugin.kt` Android + `.swift` iOS + Dart IO stub）；❌ **未用 `gal`** | Phase 3 评估 `gal` 不支持 RAW，自写 channel 已落地 |
+| `ActivityKit` Live Activity | ❌ 不实现 | Android 无对应；跨端统一降级为本地通知 |
+| `UIImpactFeedbackGenerator` | `HapticFeedback.lightImpact()` 等 + `Haptics` 封装 | API 较粗，足够用 |
+| `Local Network` 权限弹窗 | iOS: `NSLocalNetworkUsageDescription`；Android: `ACCESS_WIFI_STATE` + `ACCESS_NETWORK_STATE` | Android `CHANGE_WIFI_MULTICAST_STATE` 注销（无 mDNS 发现） |
+| 后台下载 | iOS `IosBackgroundDownloadRunner`（MethodChannel `'viewfinder/background_download'` 占位，需 Mac 真机编）；Android `AndroidBackgroundDownloadRunner` (`dataSync` type, `flutter_background_service`) | iOS 仅占位，**Phase 3 后**真机验证未做 |
+| 相机热点网络监测 | `connectivity_plus` + `network_info_plus`（`WifiWatcher` / `DefaultWifiWatcher`）+ 反应式 `cameraWifiConnectedProvider` | BSSID + SSID 双指标检测 Nikon Wi-Fi，含反应式镜像 |
 | XcodeGen / xcodebuild | `flutter build ios / apk / appbundle` | Flutter 自带 |
+| **错误抽象** | `CameraAppError` sealed class (8 case) + `PTPIPError` sealed class (10 case) | 错误不向上混 |
 
 ---
 
@@ -641,29 +644,39 @@ CI 未规划，可后续补 GitHub Actions；本地开发依赖以上命令。
 | `DownloadActivityWidget/*` | ❌ 删除 (跨端不实现 Live Activity) |
 | `Tests/*.swift` (7 个) | `test/**/*.dart` (重写为 Dart 单测，198 测全绿) |
 
-### 11.1 补充映射 (嵌套类型 + 接口协议) — 2026-07-27 实代码校准
+### 11.1 补充映射 (嵌套类型 + 接口协议) — 2026-07-27 实代码审计校准
 
-iOS 的 Swift 单文件常包含多个类型。**注意**：原方案列出的 `preferences_storing.dart` / `download_storing.dart` / `asset_thumbnail_serving.dart` 等**接口 abstract class 没有实际落地**——Phase 2/3 走的是 concrete class + Riverpod override 注入而不是 abstract interface；这是务实简化，可在 Phase 5 如有需要再补。
+iOS 的 Swift 单文件常包含多个类型。**Phase 2/3 落地策略**：抽象边界用 `abstract class` 定义接口（让实现可替），concrete class 走 Riverpod override 注入实现。下方"✅ 已落地 (abstract class)"指实际有 `abstract class` 定义；"❌ 未落地"指没抽象类（concrete class 直用）。
 
-| 原 iOS 内容 | 所在文件 | Flutter 端落点 |
-|---|---|---|
-| `PhotoAssetKind` enum (raw/jpeg/png/movie) | `Domain/PhotoAsset.swift` | `lib/domain/photo_asset.dart` 同文件 |
-| `PhotoAssetThumbnailInfo` struct | `Domain/PhotoAsset.swift` | 同上 |
-| `PhotoAssetPage` struct (分页返回) | `Domain/PhotoAsset.swift` | 同上 |
-| `CameraCapability` enum | `Domain/CameraSession.swift` | `lib/domain/camera_capability.dart` 独立文件 |
-| `CameraTransportMode` enum | `Domain/CameraTransportMode.swift` | `lib/domain/camera_transport_mode.dart` 独立文件 |
-| `CameraWorkflowState` enum | `Domain/CameraWorkflowState.swift` | `lib/domain/camera_workflow_state.dart` 独立文件 + getter 走顶级函数 |
-| `DownloadJobStatus` enum (queued/running/.../failed) | `Domain/DownloadJob.swift` | `lib/domain/download_job.dart` 同文件 |
-| `DownloadQueueStatus` enum | `Domain/DownloadQueueState.swift` | 同文件 |
-| `DownloadThroughputTransferMode` enum (fullObject/partialObject/unknown) | `Domain/DownloadThroughputDiagnostics.swift` | 同文件 |
-| `DownloadThroughputStats` (派生 getter 用) | iOS 在 ViewModel 里现算 | `lib/domain/download_throughput_stats.dart` 独立 class |
-| `DownloadTransferProgress` struct (进度回调类型) | `Services/CameraTransport.swift` | `lib/protocol/camera_transport.dart` 同文件 |
-| `DownloadAssetPrioritizer` enum (JPEG 优先排序) | `Features/Downloads/DownloadManagerViewModel.swift` | `lib/services/download_asset_prioritizer.dart` 单独抽出 |
-| `CameraTransportFactoryProtocol` (工厂接口) | `Services/CameraTransportFactoryProtocol.swift` | `lib/protocol/camera_transport_factory.dart` (abstract class) |
-| **`AppPreferencesStoring` (接口)** | `Services/AppPreferencesStoring.swift` | **❌ 未落地**：`AppPreferencesStore` 是 concrete class，Riverpod override 注入 |
-| **`DownloadStoring` (接口)** | `Services/DownloadStoring.swift` | **❌ 未落地**：`DownloadStore` 是 concrete class |
-| **`AssetThumbnailServing` (接口)** | `Services/AssetThumbnailServing.swift` | **❌ 未落地**：`AssetThumbnailService` 是 concrete class |
-| **`DownloadActivityAttributes` (特殊)** | `Domain/DownloadActivityAttributes.swift` | **❌ 未落地**：iOS 是 widget + app 共用结构；Flutter 端 Phase 3 把进度通过 `DownloadManagerNotifier._handleProgressUpdate()` 直接写到 `DownloadNotificationService`，不单独建 model |
+| 原 iOS 内容 | 所在文件 | Flutter 端落点 | 抽象边界 |
+|---|---|---|---|
+| `PhotoAssetKind` enum (raw/jpeg/png/movie) | `Domain/PhotoAsset.swift` | `lib/domain/photo_asset.dart` 同文件 | — |
+| `PhotoAssetThumbnailInfo` struct | `Domain/PhotoAsset.swift` | 同上 | `@freezed class PhotoAssetThumbnailInfo` |
+| `PhotoAssetPage` struct (分页返回) | `Domain/PhotoAsset.swift` | 同上 | `@freezed class PhotoAssetPage` |
+| `CameraCapability` enum (3 值) | `Domain/CameraSession.swift` | `lib/domain/camera_capability.dart` 独立文件 | — |
+| `CameraTransportMode` enum (1 值, 预留 Sony/Canon/Fuji) | `Domain/CameraTransportMode.swift` | `lib/domain/camera_transport_mode.dart` 独立文件 + 4 getter | — |
+| `CameraWorkflowState` enum (6 值) | `Domain/CameraWorkflowState.swift` | `lib/domain/camera_workflow_state.dart` 独立文件 + 顶级函数 getter | — |
+| `DownloadJobStatus` enum (7 值) | `Domain/DownloadJob.swift` | `lib/domain/download_job.dart` 同文件 + `isTerminal`/`canResume`/`displayTitle` getter | — |
+| `DownloadQueueStatus` enum (4 值) | `Domain/DownloadQueueState.swift` | 同文件 + `displayTitle` getter | — |
+| `DownloadThroughputTransferMode` / `Scene` / `ChunkSample` / `Report` | `Domain/DownloadThroughputDiagnostics.swift` | `lib/domain/download_throughput_diagnostics.dart` 同文件 | — |
+| `DownloadThroughputStats` (派生 getter) | iOS ViewModel 内联 | `lib/domain/download_throughput_stats.dart` **独立文件, 非 freezed**（不需 copyWith） | — |
+| `DownloadTransferProgress` (5 字段, `bytesTransferred`/`totalBytes`/`resumedCount`/`currentOffset`/`chunkSize` + `fractionCompleted`) | `Services/CameraTransport.swift` | `lib/protocol/camera_transport.dart:12-28` 同文件 `@freezed class DownloadTransferProgress` | — |
+| `DownloadAssetPrioritizer` enum (JPEG 优先排序) | `Features/Downloads/DownloadManagerViewModel.swift` | `lib/services/download_asset_prioritizer.dart` 单独抽出（按 enum 对位） | — |
+| `CameraTransportFactory` (工厂类) | `Services/CameraTransportFactoryProtocol.swift` | `lib/protocol/camera_transport_factory.dart` concrete class；签名 `CameraTransport makeTransport()`（**无参数**，按需可改） | ⚠️ **当前不抽象**：仅 concreate class，无 abstract；Phase 5 启动时改 abstract + mode-aware |
+| `CameraTransport` (品牌抽象协议) | `Services/CameraTransport.swift` | `lib/protocol/camera_transport.dart` | ✅ 已落地 abstract class（line 30）：`connect`/`fetchAssetsPage`/`downloadAsset`/`downloadThumbnail`/`downloadAssetToTemporaryFile`/`downloadTransferMode`/`consumeDiagnostics`/`disconnect` 8 个方法 |
+| `PtpipSocket` (socket 抽象) | `Services/PTPIPTCPConnection.swift` | `lib/protocol/transport/ptpip_socket.dart` | ✅ 已落地 abstract class（line 6）：`connect`/`send`/`receivePacket`/`close`/`isConnected` |
+| `AppPreferencesStoring` (接口) | `Services/AppPreferencesStoring.swift` | `lib/services/preferences_store.dart` 直接 `AppPreferencesStore` concrete | ❌ **未抽象**（仅 concrete class）；Phase 5 如需 fake-Preferences 注入可改 abstract |
+| `DownloadStoring` (接口) | `Services/DownloadStoring.swift` | `lib/services/download_store.dart:15` `abstract class DownloadStoring` | ✅ **已落地**（line 15-36）：`downloadsDirectoryURL`/`listRecords`/`storeDownloadedFile`/`markExported`/`loadQueueState`/`saveQueueState`/`upsertDownloadJob`/`removeDownloadJobs`/`markInterruptedRunningJobs` 9 个方法 |
+| `AssetThumbnailServing` (接口) | `Services/AssetThumbnailServing.swift` | `lib/services/asset_thumbnail_service.dart:12` `abstract class AssetThumbnailServing` | ✅ **已落地**（line 12-21）：`thumbnailData({asset, transport, session})` + `clear()` |
+| `WifiWatcher` (接口) | `Services/WifiWatcher.swift` | `lib/services/wifi_watcher.dart:9` `abstract class WifiWatcher` | ✅ **已落地**（line 9-13）：`isCameraWifiConnected` getter + `connectionStream` + `dispose()`；`DefaultWifiWatcher` concrete，BSSID+SSID 双指标匹配 `Nikon` |
+| `DownloadNotificationService` (接口) | `Services/DownloadNotificationService.swift` | `lib/services/download_notification_service.dart:3` `abstract class DownloadNotificationService` | ✅ **已落地**（line 3-21）：`show({notificationId, title, body, progress, channelId, categoryId, payload})` + `update({notificationId, title?, body?, progress?})` + `cancel({notificationId})` + `cancelAll()` |
+| `BackgroundDownloadRunner` (接口) | `Services/BackgroundDownloadExecutionService.swift` | `lib/services/background_download_runner.dart:12` `abstract class BackgroundDownloadRunner` | ✅ **已落地**（line 12-16）：`begin({name, onExpiration?})` + `end()` + `Future<bool> isActive`；`AndroidBackgroundDownloadRunner` + `IosBackgroundDownloadRunner` 两个 concrete |
+| `PhotoLibraryChannel` (接口 + iOS/Android/IO 三实现) | `Services/PhotoLibraryExportService.swift` | `lib/platform/photo_library_channel.dart` 同文件 `abstract class PhotoLibraryChannel` | ✅ **已落地**（line 6-16）：`requestPermission()` + `exportFile({filePath})` + 平台感知 factory + `mapAndroidResult`/`mapIosResult` 两个 static 映射 |
+| `PhotoLibraryPermission` enum (granted/limited/denied/neverAskAgain) | iOS PHPhotoLibrary 原生 enum | `lib/platform/photo_library_channel.dart:4` 同文件 | — |
+| `DownloadLiveActivityController` | `Services/DownloadLiveActivityController.swift` | ❌ 删除 → `lib/services/download_notification_service.dart`（跨端不实现 Live Activity） | ✅ 已替换 |
+| `DownloadActivityAttributes` (特殊 - widget + app 共用结构) | `Domain/DownloadActivityAttributes.swift` | ⚠️ iOS 原文要在 WidgetKit + 主 app 双端共用 Live Activity；Flutter 端 Phase 3 **改为** `DownloadTransferProgress` (`protocol/camera_transport.dart:12-28`)，由 `CameraTransport.downloadAssetToTemporaryFile(onProgress)` 直接传给 `DownloadManagerNotifier._handleProgressUpdate()` 写到 `DownloadNotificationService`。**不单独建 model**（无 widget 后无需独立文件） | ✅ 已替换 |
+
+**校准总结**：8 个 abstract class 全部落地（`CameraTransport` / `PtpipSocket` / `DownloadStoring` / `AssetThumbnailServing` / `WifiWatcher` / `DownloadNotificationService` / `BackgroundDownloadRunner` / `PhotoLibraryChannel`）；3 个直接 concrete（`AppPreferencesStore` / `CameraTransportFactory` / `DownloadAssetPrioritizer` enum）；1 个 iOS 协议被替换（`DownloadLiveActivityController` → `DownloadNotificationService`，跨端不实现 Live Activity）。
 
 ---
 

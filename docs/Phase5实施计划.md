@@ -110,26 +110,50 @@
 
 ### 2.6 `CameraTransportMode` 扩展（D5=A）
 
+> 当前 `CameraTransportMode` 只有 `experimentalNikon`，且 4 个 getter (`title`/`detail`/`defaultHost`/`defaultPort`) 写死 Nikon 值。**每加品牌需扩展 switch 4 个 getter**（不要直接写死）。
+
 ```dart
 // lib/domain/camera_transport_mode.dart (扩展)
 enum CameraTransportMode {
-  @Deprecated('Use ExperimentalNikon for new connections') experimentalNikon,
-  experimentalSony,    // ✅ 新增
-  experimentalCanon,   // 5b
-  experimentalFuji,    // 5c
-  ;
+  experimentalNikon,    // 现有
+  experimentalSony,     // ✅ 5a 新增
+  experimentalCanon,    // 5b 新增
+  experimentalFuji;     // 5c 新增
 
-  String get detail { ... 默认值 ... }
-  String get defaultHost { ... 192.168.1.1 ... }
-  int get defaultPort { ... 15740 ... }
+  String get title {
+    switch (this) {
+      case CameraTransportMode.experimentalNikon: return 'Nikon Wi-Fi';
+      case CameraTransportMode.experimentalSony:  return 'Sony Wi-Fi';
+      case CameraTransportMode.experimentalCanon: return 'Canon Wi-Fi';
+      case CameraTransportMode.experimentalFuji:  return 'Fujifilm Wi-Fi';
+    }
+  }
+
+  String get detail {
+    switch (this) {
+      case CameraTransportMode.experimentalNikon: return '使用尼康相机 Wi-Fi 地址 192.168.1.1:15740 建立连接。';
+      case CameraTransportMode.experimentalSony:  return '使用 Sony 相机 Wi-Fi 地址 192.168.1.1:15740 建立连接。';
+      // ...
+    }
+  }
+
+  String? get defaultHost => '192.168.1.1';
+  int get defaultPort => 15740;
 }
 ```
 
-### 2.7 factory dispatch（D5=A）
+### 2.7 factory dispatch（D5=A，**签名变更**）
+
+> **注**：当前 factory 签名是 `CameraTransport makeTransport()`（无参数）。要做 mode-aware dispatch 必须 **改 factory 签名**为接受 `CameraConnectionConfig`，与之同时需修改 `connection_view_model.dart:78` 的 `factory.makeTransport()` 调用点和测试 fake。
 
 ```dart
 // lib/protocol/camera_transport_factory.dart (扩展)
-class CameraTransportFactory {
+abstract class CameraTransportFactory {
+  CameraTransport makeTransport(CameraConnectionConfig config);
+}
+
+class DefaultCameraTransportFactory implements CameraTransportFactory {
+  @override
   CameraTransport makeTransport(CameraConnectionConfig config) {
     switch (config.transportMode) {
       case CameraTransportMode.experimentalNikon:
@@ -141,6 +165,10 @@ class CameraTransportFactory {
   }
 }
 ```
+
+**调用点改动**（5d 同步改）：
+- `lib/features/connection_setup/connection_view_model.dart:78` `final transport = factory.makeTransport();` → `final transport = factory.makeTransport(config);`
+- `test/helpers/fake_camera_transport.dart:77` `FakeCameraTransportFactory.makeTransport()` → 接收 `CameraConnectionConfig config`（暂时不用可忽略参数）
 
 ### 2.8 测试覆盖目标
 
@@ -283,8 +311,9 @@ class CameraTransportFactory {
 | UI 位置 | Settings 页 "相机连接" 上方单独 section | 与 "相机 IP / 端口" 平行，逻辑连续 |
 | 选择器样式 | 复刻 `ThemePickerRow`（圆点 + id） | 视觉一致 |
 | 默认值 | 老用户 `experimentalNikon`，新用户也 `experimentalNikon` | 不破坏现状 |
-| `cameraTransportMode` 字段加在 `CameraConnectionConfig` | 紧邻 `themeID` | 同为协议层偏好 |
-| JSON 兼容 | 加 `@Default` 字段，旧 config 自动 fallback | schema 向后兼容 |
+| `cameraTransportMode` 字段已存在于 `CameraConnectionConfig` | 不需新增；`@Default(CameraTransportMode.experimentalNikon)` schema 兼容 | 字段 L26 已存在 |
+| factory dispatch 路径 | 改 `CameraTransportFactory` 为 `abstract` + `DefaultCameraTransportFactory` 实现（mode-aware dispatch） | 与 §2.7 一致 |
+| Transport 实例创建时机 | 维持现状：`connect()` 时才创建，`disconnect()` 时丢弃 | 单 session 不持有 transport，避免跨 session 状态污染 |
 
 ### 5.4 关键任务
 
@@ -292,13 +321,13 @@ class CameraTransportFactory {
 |---|---|---|---|
 | 5d.0 | D6 决策（选择 UI 位置）确认 | — | — |
 | 5d.1 | `CameraBrandPickerRow` widget | `lib/features/settings/widgets/camera_brand_picker_row.dart` | 1 天 |
-| 5d.2 | `CameraConnectionConfig.cameraTransportMode` 字段 + JSON 兼容 | `lib/domain/camera_connection_config.dart` | 0.5 天 |
-| 5d.3 | `PreferencesNotifier.setTransportMode(id)` 持久化 | `lib/features/settings/settings_view_model.dart` | 0.5 天 |
-| 5d.4 | `CameraTransportFactory.makeTransport()` 改成 mode-dispatch | `lib/protocol/camera_transport_factory.dart` | 1 天 |
-| 5d.5 | `ConnectionNotifier` 启动按 mode 创建对应 transport | `lib/features/connection_setup/connection_view_model.dart` | 1 天 |
+| 5d.2 | `CameraConnectionConfig.cameraTransportMode` 字段已存在（`@Default experimentalNikon`），无需新增 | `lib/domain/camera_connection_config.dart` | 0 天 |
+| 5d.3 | `PreferencesNotifier.setTransportMode(id)` 持久化（**`settings_view_model.dart:39` 已实现**） | `lib/features/settings/settings_view_model.dart` | 0 天 |
+| 5d.4 | `CameraTransportFactory` 改成 abstract + `DefaultCameraTransportFactory` 实现（mode-aware dispatch） | `lib/protocol/camera_transport_factory.dart` | 1 天 |
+| 5d.5 | `ConnectionNotifier.connect()` 已按 `state.transportMode` 调 `factory.makeTransport()`（**`connection_view_model.dart:78` 已实现**），**仅需更新调用签名加 config 参数** | `lib/features/connection_setup/connection_view_model.dart` | 0.5 天 |
 | 5d.6 | 单测 + UI smoke | `test/features/settings/camera_brand_picker_test.dart` + smoke | 1 天 |
 | 5d.7 | 文档同步 | 多文件 | 0.5 天 |
-| **5d 总计** | | | **~5.5 天** |
+| **5d 总计** | | | **~4 天** |
 
 ### 5.5 验收标准
 
