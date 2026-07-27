@@ -6,14 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 这是一个 Flutter 跨端 app **Viewfinder (取景器)**，通过相机自带 Wi-Fi 热点和 CIPA PTP/IP 协议浏览、下载尼康相机中的照片。首版只实现 Nikon；Sony/Canon/Fujifilm 留作 Phase 5 占位。
 - 配套参考资料：源 iOS Swift 项目 `D:\桌面\Nikon_connect\` (上级目录)，只作协议参考，不复用代码。
-- 仓库路径含中文（`D:\桌面\Nikon_connect\Viewfinder`），Shell 命令必须加引号。
+- 项目路径：`D:\Nikon_connect\Viewfinder`（已从中文路径迁移）。
 - 文档宪法：`README.md`（导航）+ `AGENTS.md`（AI 工作守则）+ `docs/产品需求.md` + `docs/架构.md` + `docs/项目状态.md` + `docs/Viewfinder方案.md` + `docs/Phase1实施计划.md` + `docs/Phase2实施计划.md`。进入任何 Phase 前先把对应文档读一遍。
 - 项目成员：GitHub `AbandonS-ED/Viewfinder`，main 分支，远程 `https://github.com/AbandonS-ED/Viewfinder.git`。所有 commit 推到这；**commit / push 由人决定，AI 不要自动化**。
 - `.gitignore` 是 Flutter 标准模板。`.dart_tool/`、`build/`、`.idea/`、`viewfinder.iml` 都在忽略列表内。
 
 ## 常用命令
 
-工作目录：`D:\桌面\Nikon_connect\Viewfinder`，依赖国内镜像。每次新开 PowerShell 先 set 镜像（已 `setx` 持久化，但新会话仍要临时 `set` 一次）：
+工作目录：`D:\Nikon_connect\Viewfinder`，依赖国内镜像。每次新开 PowerShell 先 set 镜像（已 `setx` 持久化，但新会话仍要临时 `set` 一次）：
 
 ```powershell
 $env:PUB_HOSTED_URL = "https://pub.flutter-io.cn"
@@ -52,13 +52,13 @@ flutter build apk --debug
 | Phase | 内容 | 状态 |
 |---|---|---|
 | 0 | 工程骨架 + 14 个 Domain freezed model | ✅ 已完成 |
-| 1 | PTP/IP 协议层 + Dart 单测 | ✅ 已完成（47 测试全绿，`dart analyze` 干净） |
-| 2 | **UI 骨架阶段**：Riverpod Provider 拓扑 + 4 个 Tab + Amber 主题 + Shared 包 + widget smoke test | 🚧 下一步（细节见 `docs/Phase2实施计划.md`） |
-| 3 | 下载 + 进度通知 + 真机端到端验证 | ⏳ 未开始 |
-| 4 | UI 抛光 + 触觉 + 动效 | ⏳ 未开始 |
+| 1 | PTP/IP 协议层 + Dart 单测 | ✅ 已完成（47 测试全绿） |
+| 2 | UI 骨架：Riverpod Provider + 4 Tab + Shared 包 | ✅ 已完成（102 测试全绿） |
+| 3 | 下载 + 进度通知 + Android 端到端 | ✅ 已完成（198 测试全绿） |
+| 4 | UI 抛光 + 5 主题 + B10 视觉对齐 | ✅ 已完成（385 测试全绿，13/13 B items） |
 | 5 | 多品牌扩展（占位） | ⏳ 未开始 |
 
-Phase 1 详细切片见 `docs/Phase1实施计划.md` §3。Phase 2 详细切片见 `docs/Phase2实施计划.md` §5。
+Phase 4 详细切片见 `docs/Phase4实施计划.md`。
 
 ## 整体架构
 
@@ -78,7 +78,7 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 
 ### Domain 层
 
-- `lib/domain/` 下 15 个文件，10 个 `@freezed` data class + 5 个独立 enum / 工具类 + 1 个 `sealed class CameraAppError`（8 个 case）。详细字段表见 `docs/架构.md` §4。
+- `lib/domain/` 下 26 个文件（含 `.freezed.dart`），14 个 `@freezed` data class + 5 个独立 enum / 工具类 + 1 个 `sealed class CameraAppError`（8 个 case）+ `download_throughput_stats.dart`。详细字段表见 `docs/架构.md` §4。
 - 关键不变量：
   - 所有 class `final` + immutable；JSON 反序列化用 `decodeIfPresent`，**新增字段必须有默认值**（schema 向后兼容）。
   - 不导入 Flutter / `dart:io`，仅依赖 `dart:core` + `freezed_annotation`。
@@ -125,20 +125,20 @@ Domain                           ← freezed data class，无 IO / 无 Flutter
 5. **错误不向上混**：`ExperimentalNikonTransport._mapError` 把 `PTPIPError` 与未知异常统一翻成 `CameraAppError`，业务层只看到 sealed `CameraAppError`。
 6. **fake socket 必须实现 `PtpipSocket` 完整接口**（`connect / send / receivePacket / close / isConnected`），协议单测才能不依赖真机。
 
-### UI / Services / Platform（Phase 2 开始落地）
+### UI / Services / Platform（Phase 2-4 落地）
 
-- Phase 2 之前 `lib/features/`、`lib/services/`、`lib/platform/` 三个目录**还没有内容**。`lib/main.dart` 是 Phase 0 占位 `ViewfinderApp`。
-- Phase 2 起开始建：
-  - `lib/services/`：`preferences_store.dart` / `download_store.dart` / `asset_thumbnail_service.dart` / `download_notification_service.dart` / `background_download_runner.dart` / `wifi_watcher.dart` / `log_file_store.dart` / `logger.dart` / `download_asset_prioritizer.dart` — Phase 2 + Phase 3 落地。
-  - `lib/platform/`：`photo_library_channel.dart` (interface + Android + iOS + IO stub) — Phase 3 落地。
-  - `lib/features/`：`connection_setup/` / `photo_browser/` / `downloads/` / `settings/` / `shared/` — Phase 2 全部落地。
+- `lib/services/`：10 文件 — `preferences_store.dart` / `download_store.dart` / `asset_thumbnail_service.dart` / `download_notification_service.dart` / `background_download_runner.dart` / `wifi_watcher.dart` / `log_file_store.dart` / `logger.dart` / `download_asset_prioritizer.dart` + `.gitkeep`。
+- `lib/platform/`：`photo_library_channel.dart` (interface + Android + iOS + IO stub)。
+- `lib/features/`：6 个子目录 — `connection_setup/` / `photo_browser/` / `downloads/` / `settings/` (含 `widgets/`) / `app_shell/` / `shared/` (含 `widgets/` 11 文件)。
+- `lib/features/shared/theme_palette.dart`：5 套主题色板 (amber/forest/slate/terr/onyx) × 23 色 + `kEnableMultiTheme` feature flag。
+- `lib/features/shared/viewfinder_theme.dart`：`ThemeExtension` + `viewfinderTheme(p)` 工厂 + `_buildTextTheme()` (Instrument Serif + Noto Sans SC)。
 
 ## Riverpod 状态管理
 
-- 原 iOS ViewModel → Flutter Notifier：`ConnectionNotifier extends Notifier<ConnectionState>` / `GalleryNotifier extends AsyncNotifier<GalleryState>` / `DownloadManagerNotifier extends Notifier<DownloadQueueState>` / `PreferencesNotifier extends Notifier<CameraConnectionConfig>` / `AppShellNotifier extends Notifier<AppShellState>` / `CameraWifiConnectionNotifier extends Notifier<bool>`（共 6 个 Notifier）。
+- 原 iOS ViewModel → Flutter Notifier：`ThemeNotifier extends Notifier<ThemePalette>` / `ConnectionNotifier extends Notifier<ConnectionState>` / `GalleryNotifier extends AsyncNotifier<GalleryState>` / `DownloadManagerNotifier extends Notifier<DownloadQueueState>` / `PreferencesNotifier extends Notifier<CameraConnectionConfig>` / `AppShellNotifier extends Notifier<AppShellState>` / `CameraWifiConnectionNotifier extends Notifier<bool>`（共 7 个 Notifier）。
 - **协议层不持有 Riverpod**：`PtpipSession` 是 plain Dart 类，Notifier 注入并订阅。`PtpipSocket` 接口允许单测里注入 fake。
 - `StreamProvider` 包 socket 数据事件，`family` modifier 处理多任务下载（按 downloadId 区分）。
-- Phase 2 完整的 Provider 拓扑表见 `docs/架构.md` §6。
+- Phase 2-4 完整的 Provider 拓扑表见 `docs/架构.md` §6（19 Provider + 7 Notifier）。
 
 ## 平台能力与权限矩阵
 
@@ -166,12 +166,10 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 
 ## 测试规则
 
-- 测试目录 `test/` 镜像 `lib/`。协议层 `test/protocol/`，helpers `test/helpers/`。
-- 协议层单测覆盖率目标 ≥ 80%。当前已有 6 个测试文件（`test/protocol/primitives_test.dart`、`session_test.dart`、`transport/ptpip_connection_test.dart`、`experimental_nikon_transport_test.dart` + `helpers/fake_ptpip_socket.dart`），共 47 个测试用例全部通过。相对于 4 个 primitives + session + transport/socket + Nikon transport 的覆盖面，**Phase 2 仍需补**：
-  - `IoPtpipSocket` loopback 集成测试
-  - 异常场景：网络超时 / 部分数据包到达 / 大文件中断恢复（`GetPartialObject` 重试路径）/ Nikon 不同机身 opcode 差异
+- 测试目录 `test/` 镜像 `lib/`。协议层 `test/protocol/`，helpers `test/helpers/`，集成测试 `test/integration/`。
+- 当前 385 个测试全绿（51 协议 + 111 features + 53 服务 + 26 Domain + 15 平台 + 8 integration + 1 App + 8 smoke + 其他）。
 - 不要 mock 整个相机（用 fake socket server）；不要测私有方法（通过公开 API 测）；不要写脆弱的 snapshot test。
-- `dart analyze` 干净 + `flutter test` 全绿，是 commit 前的最低门槛。
+- `dart analyze`（3 unused_import 警告可接受）+ `flutter test` 全绿，是 commit 前的最低门槛。
 
 ## 文档同步规则
 
@@ -185,3 +183,4 @@ iOS Live Activity **不做**（Android 无对应，跨端统一降级）。原 i
 | 计划微调 | `docs/Viewfinder方案.md` 对应节 |
 | Phase 1 切片级进度 | `docs/Phase1实施计划.md` §3 |
 | Phase 2 UI 阶段进度 | `docs/Phase2实施计划.md` §5 |
+| Phase 4 UI 抛光进度 | `docs/Phase4实施计划.md` §2 |

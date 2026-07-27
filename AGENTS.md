@@ -8,7 +8,7 @@
 
 ## 1. 项目一句话
 
-**Viewfinder (取景器)**：Flutter 跨端 app，通过 Wi-Fi 热点连接 Nikon 相机，浏览并批量下载照片到手机。
+**Viewfinder (取景器)**：Flutter 跨端 app，通过 Wi-Fi 热点连接 Nikon 相机，浏览并批量下载照片到手机。5 套主题（amber/forest/slate/terr/onyx）+ B10 视觉对齐 muban.html（色值 27 处 + Noto Sans SC/Instrument Serif 字体）。
 
 ---
 
@@ -237,7 +237,7 @@ reference/
 - 现在在哪：[`docs/项目状态.md`](./docs/项目状态.md)
 - 实施细节：[`docs/Viewfinder方案.md`](./docs/Viewfinder方案.md)
 - Phase 2 任务：[`docs/Phase2实施计划.md`](./docs/Phase2实施计划.md)
-- 参考样板：`reference/`（Phase 1 后开始填充）
+- Phase 4 任务：[`docs/Phase4实施计划.md`](./docs/Phase4实施计划.md)
 
 ---
 
@@ -259,6 +259,11 @@ reference/
 | 2026-07-26 | **B2 补全**：`ZoomablePhotoPreview` 从脚手架升级为完整实现。StatelessWidget → StatefulWidget；新增 `TransformationController` + `_isZoomed` 状态；**双击缩放切换 1x ↔ 2.5x**（Matrix4 scaleByDouble，以屏幕为中心，跟 iOS Photos 一致）；**缩放时 close 按钮 AnimatedOpacity 淡出**（300ms）；**单击关闭仅在 1x 时触发**（缩放态空 tap 不响应，避免误触）；GestureDetector `onTap` + `onDoubleTap` 共存走双击检测窗口 (~300ms 延迟, 同 iOS Photos UX); 补 5 widget 测 (初始 scale 1.0 / 双击→2.5x / 缩放后单击不关闭 / 1x close opacity 1.0 / 缩放时 close opacity 0.0) | 测试 368 → 373 (+5), `dart analyze` 0 issues |
 | 2026-07-26 | **修复 Gallery 未连相机显示 mock 假照片**：移除 `gallery_view_model.dart` 的 `_mockState()` fallback（12 张 DSC_0100.NEF 等假数据）。`build()` / `_loadFromCamera()` 无 session 时返 `const GalleryState()` 空 state；`onSessionChanged(session → null)` 也返空（断开相机清空）；4 个 mock 依赖测试改用 `_FakeTransportWithAssets` 真数据；+1 回归测 `onSessionChanged(session → null)` 清空。GalleryPage 已有的 empty state ('暂无照片') 自然接管 | 测试 373 → 392 (+1 净: 4 改 + 1 新 - 0 删), `dart analyze` 0 issues; emulator 验证 ✅ ('暂无照片' 空 state 显示正常) |
 | 2026-07-26 | **B4 补全（轮播）**：`HeroTitle` 从 StatelessWidget → StatefulWidget + Timer.periodic 3s 轮播。waitingForWifi 状态在 `['Viewfinder', '取景器', '为 Nikon 而生']` 三个 brand 文案间切换；其他 5 个 state 走静态文案 + 淡入淡出。`titleFor()` 加 `brandIndex` 参数（默认 0，非 waitingForWifi 时忽略）；切换 state 时 timer 自动 cancel + 重启，brandIndex 从 0 重新开始；dispose 取消 timer 防泄漏。+6 widget 测 (3s 轮播 3 个 brand / 切 connecting 后 timer 取消 title 不变 / 切回 waitingForWifi timer 重启 brandIndex 归零 / brandIndex 越界取模) | 测试 392 → 398 (+6), `dart analyze` 0 issues |
+| 2026-07-26 | **B3 顶部胶囊**：`GlobalActivityCapsule` 替代全屏 loading overlay，Scaffold 顶部 Positioned 显示。带滑动+淡入动画（SlideTransition + FadeTransition），AnimatedSwitcher 切换内容 | 测试不变 |
+| 2026-07-26 | **B8 StatusBarWidget**：自定义 page 顶部装饰条（24px 高，底部 0.5px border，可选 title 文字） | 测试不变 |
+| 2026-07-26 | **B10 颜色对齐 muban.html**：5 套主题 27 处色值改（Amber 5/Forest 7/Slate 4/Terr 4/Onyx 7），重写 129 palette_test 减 14 | 测试 398 → 385 (palette 重写减少断言), `dart analyze` 0 issues |
+| 2026-07-27 | **B10 字体对齐 muban.html**：`_buildTextTheme(brightness)` 工厂 — display/headline/titleLarge 用 Instrument Serif（衬线标题），其他用 Noto Sans SC（中文正文）。+5 viewfinder_theme_test 字体断言 | 测试 385 不变 |
+| 2026-07-27 | **Phase 4 完成 13/13=100%**：Phase 4a (5 主题) + Phase 4b (B1-B10 全部) + Phase 4c (代码骨架)。项目路径从 `D:\桌面\Nikon_connect\Viewfinder` 迁到 `D:\Nikon_connect\Viewfinder` (绕开 aapt 中文路径 `Illegal byte sequence`) | **385/385 tests**, `dart analyze` 3 unused_import (Phase 4c 遗留) |
 
 ### 12.1 Phase 3 关键决策 (新增)
 
@@ -281,7 +286,7 @@ reference/
 | `lib/services/wifi_watcher.dart` | `start`/`stop`/`onWifiDisconnected` Stream；新增 `cameraWifiConnectedProvider` (NotifierProvider<bool>) 反应式订阅 `connectionStream`；`isCameraWifiConnected` 是同步 getter，`isActive` 在 BackgroundRunner 里改为 `Future<bool>` (测试用 await) |
 | `lib/services/log_file_store.dart` | `append`/`readAll`/`exportFile` + 1MB rotation；`exportFile()` 用 `viewfinder-{ms}.log` 命名避免覆盖 |
 | `lib/services/download_notification_service.dart` | `show`/`update`/`cancel`/`cancelAll` 四个公开方法；内部 `_payloads: Map<int, String>` 让 `update()` 保留首次 payload 供 deepLink |
-| `lib/features/photo_browser/gallery_view_model.dart` | `build()` 初始返 mock 12 张 (无 session 时 fallback); `onSessionChanged(prev, next)` 由外部 (app.dart) ref.listen 触发切换到真实数据；`refresh()` 调 `transport.fetchAssetsPage`；`loadMore()` 同上但 `resetTraversal: false` |
+| `lib/features/photo_browser/gallery_view_model.dart` | `build()` 初始返空 `const GalleryState()` (无 session 时); `onSessionChanged(prev, next)` 由外部 (app.dart) ref.listen 触发：next!=null 加载真实数据, next==null 返空；`refresh()` 调 `transport.fetchAssetsPage`；`loadMore()` 同上但 `resetTraversal: false`；`setGridDensity()` 切换标准/紧凑网格 |
 | `lib/features/photo_browser/gallery_container.dart` | 从 `connectionProvider.autoExportToPhotoLibrary / prioritizeJPEGDownloads` 读用户偏好传入 `downloadSelected()`（不再硬编码） |
 | `lib/features/downloads/download_manager_view_model.dart` | 13 个公开方法全真实现（含 `refreshDownloads` listRecords 对账、`appendTransportDiagnostics` _runQueue step 9、`loadPersistedQueue` markInterruptedRunningJobs） |
 | `lib/app.dart` | `WidgetsBindingObserver` 注册到 downloadManagerProvider.notifier（注意 §5.5 的 `switch` 三个 `break` 不可省，否则 resumed fall-through 重 arm 后台 runner）；ref.listen `connectionProvider.select(activeSession)` 触发 gallery.onSessionChanged + 断线自动 pauseQueue；ref.listen **`cameraWifiConnectedProvider`** 断线自动 pauseQueue |
